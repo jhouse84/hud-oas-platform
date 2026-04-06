@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HUD Asset Sales — Admin Console | House Strategies Group</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/design-system.css">
+<style>
+/* ==========================================================================
+   Admin Console — Page-Level Styles
+   ========================================================================== */
+
+/* ---- Live pulse animation ------------------------------------------------ */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
+
+.live-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: var(--color-success);
+  border-radius: 50%;
+  animation: livePulse 1.5s ease-in-out infinite;
+  margin-right: var(--space-2);
+  vertical-align: middle;
+}
+
+/* ---- Top bar inside main area ------------------------------------------- */
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
+.admin-topbar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.admin-topbar__left span.breadcrumb-active {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.admin-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.admin-topbar__right select {
+  height: 34px;
+  padding: 0 var(--space-8) 0 var(--space-3);
+  font-size: var(--text-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%237F8289' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.notification-bell {
+  position: relative;
+  font-size: 18px;
+  cursor: pointer;
+  padding: var(--space-1);
+}
+
+.notification-bell__count {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  background: var(--color-error);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- Main content area -------------------------------------------------- */
+.admin-main {
+  padding: var(--space-6);
+  padding-bottom: var(--space-16);
+}
+
+/* ---- Sale cards grid (dashboard) ---------------------------------------- */
+.sale-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-6);
+}
+
+.sale-cards-grid .card { cursor: default; }
+
+/* ---- Bid day specific --------------------------------------------------- */
+.countdown-banner {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.countdown-banner__time {
+  font-family: var(--font-heading);
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.countdown-banner__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+
+.countdown-banner__stats {
+  display: flex;
+  gap: var(--space-8);
+}
+
+.countdown-banner__stat-value {
+  font-family: var(--font-heading);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+}
+
+.countdown-banner__stat-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+
+.bid-two-col {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--space-6);
+}
+
+/* ---- AI Chat ------------------------------------------------------------ */
+.ai-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-6);
+  min-height: 600px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-height: 500px;
+}
+
+.chat-msg {
+  display: flex;
+  gap: var(--space-3);
+  max-width: 85%;
+}
+
+.chat-msg--ai { align-self: flex-start; }
+.chat-msg--user { align-self: flex-end; flex-direction: row-reverse; }
+
+.chat-msg__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.chat-msg--ai .chat-msg__avatar {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+.chat-msg--user .chat-msg__avatar {
+  background: var(--color-grey-200);
+  color: var(--color-text);
+}
+
+.chat-msg__bubble {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+.chat-msg--ai .chat-msg__bubble {
+  background: var(--color-grey-100);
+  color: var(--color-text);
+}
+
+.chat-msg--user .chat-msg__bubble {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.chat-input-bar {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+.chat-input-bar input {
+  flex: 1;
+  height: 42px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.chat-input-bar input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.starter-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-6) var(--space-4);
+}
+
+.starter-prompts button {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.starter-prompts button:hover {
+  background: var(--color-primary-bg);
+}
+
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: var(--space-3) var(--space-4);
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  background: var(--color-grey-400);
+  border-radius: 50%;
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-6px); }
+}
+
+/* ---- Settlement timeline (awards) --------------------------------------- */
+.settlement-timeline {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.settlement-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  text-align: center;
+  min-width: 110px;
+  font-size: var(--text-xs);
+}
+
+.settlement-step__dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.settlement-step--done .settlement-step__dot {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: #fff;
+}
+
+.settlement-step--active .settlement-step__dot {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.settlement-step__line {
+  flex: 1;
+  height: 2px;
+  min-width: 30px;
+  background: var(--color-border);
+  align-self: center;
+}
+
+/* ---- Sidebar subtitle --------------------------------------------------- */
+.sidebar__brand-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+
+/* ---- Misc helpers ------------------------------------------------------- */
+.two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6); }
+.mt-4 { margin-top: var(--space-4); }
+.mt-6 { margin-top: var(--space-6); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-6 { margin-bottom: var(--space-6); }
+
+.highlighted-row { background: var(--color-success-bg) !important; }
+</style>
+</head>
+<body>
+
+<!-- ======================================================================
+     LAYOUT
+     ====================================================================== -->
+<div class="app-layout">
+
+  <!-- ---- SIDEBAR -------------------------------------------------------- -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+      <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="font-family:var(--font-heading);font-weight:700;font-size:16px;color:#fff;">HSG</span>
+      </div>
+      <div>
+        <div class="sidebar__brand-name">HUD Asset Sales</div>
+        <div class="sidebar__brand-sub">Admin Console</div>
+      </div>
+    </div>
+
+    <div class="sidebar__section-label">Navigation</div>
+    <nav class="sidebar__nav">
+      <a class="nav-item" data-route="/dashboard" onclick="HSG.router.navigate('/dashboard')">
+        <span class="nav-item__icon" style="font-size:16px;">&#127968;</span> Dashboard
+      </a>
+      <a class="nav-item" data-route="/bidders" onclick="HSG.router.navigate('/bidders')">
+        <span class="nav-item__icon" style="font-size:16px;">&#128101;</span> Bidders
+      </a>
+      <a class="nav-item" data-route="/bid-day" onclick="HSG.router.navigate('/bid-day')">
+        <span class="nav-item__icon" style="font-size:16px;">&#9889;</span> Bid Day
+      </a>
+      <a class="nav-item" data-route="/awards" onclick="HSG.router.navigate('/awards')">
+        <span class="nav-item__icon" style="font-size:16px;">&#127942;</span> Awards
+      </a>
+      <a class="nav-item" data-route="/compliance" onclick="HSG.router.navigate('/compliance')">
+        <span class="nav-item__icon" style="font-size:16px;">&#128202;</span> Compliance
+      </a>
+      <a class="nav-item" data-route="/ai-assistant" onclick="HSG.router.navigate('/ai-assistant')">
+        <span class="nav-item__icon" style="font-size:16px;">&#129302;</span> AI Assistant
+      </a>
+    </nav>
+
+    <div class="sidebar__footer">
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--font-mono);font-weight:600;">TS</div>
+        <div>
+          <div style="font-size:var(--text-sm);font-weight:600;color:rgba(255,255,255,0.9);">TS Admin</div>
+          <div style="font-size:var(--text-xs);color:rgba(255,255,255,0.45);">Transaction Specialist</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ---- MAIN ----------------------------------------------------------- -->
+  <div class="app-layout__main">
+    <!-- Top bar -->
+    <div class="admin-topbar">
+      <div class="admin-topbar__left">
+        <span>Admin Console</span>
+        <span>/</span>
+        <span class="breadcrumb-active" id="breadcrumb">Dashboard</span>
+      </div>
+      <div class="admin-topbar__right">
+        <select id="global-sale-selector">
+          <option value="">All Sales</option>
+        </select>
+        <div class="notification-bell">
+          &#128276;
+          <span class="notification-bell__count" id="notif-count">3</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content area -->
+    <div class="admin-main" id="app-content">
+      <!-- Populated by router -->
+    </div>
+  </div>
+</div>
+
+<!-- Bidder Detail Modal Container -->
+<div id="modal-container"></div>
+
+<!-- ======================================================================
+     DATA FILES
+     ====================================================================== -->
+<script src="data/sales.js"></script>
+<script src="data/loans-hvls.js"></script>
+<script src="data/loans-sfls.js"></script>
+<script src="data/loans-mhls.js"></script>
+<script src="data/bidders.js"></script>
+<script src="data/bids.js"></script>
+<script src="data/documents.js"></script>
+<script src="data/timeline.js"></script>
+
+<!-- ======================================================================
+     SHARED MODULES
+     ====================================================================== -->
+<script src="shared/utils.js"></script>
+<script src="shared/components.js"></script>
+<script src="shared/router.js"></script>
+
+<!-- ======================================================================
+     ADMIN CONSOLE APPLICATION
+     ====================================================================== -->
+<script>
+(function () {
+  'use strict';
+
+  var u  = HSG.utils;
+  var c  = HSG.components;
+  var D  = window.HSG_DATA;
+  var $  = document.getElementById.bind(document);
+
+  // Convenience
+  function esc(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function render(html) { $('app-content').innerHTML = html; }
+  function setBreadcrumb(text) { $('breadcrumb').textContent = text; }
+
+  // Populate sale selector
+  (function initSaleSelector() {
+    var sel = $('global-sale-selector');
+    D.sales.forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.id + ' — ' + s.programType;
+      sel.appendChild(opt);
+    });
+  })();
+
+  // Live bid feed interval handle
+  var liveBidInterval = null;
+  function clearLiveBid() { if (liveBidInterval) { clearInterval(liveBidInterval); liveBidInterval = null; } }
+
+  // ========================================================================
+  // DASHBOARD
+  // ========================================================================
+  function renderDashboard() {
+    clearLiveBid();
+    setBreadcrumb('Dashboard');
+
+    var sales = D.sales;
+    var totalBidders = sales.reduce(function(s, x) { return s + (x.qualifiedBidders || 0); }, 0);
+    var pendingQual = D.bidders.filter(function(b) { return b.qualificationStatus.indexOf('Pending') >= 0; }).length;
+
+    // Find nearest bid date
+    var now = new Date();
+    var nextBidDays = null;
+    sales.forEach(function(s) {
+      if (s.bidDate) {
+        var d = u.daysUntil(s.bidDate);
+        if (d !== null && d >= 0 && (nextBidDays === null || d < nextBidDays)) nextBidDays = d;
+      }
+    });
+
+    var statHtml = c.renderStatBar([
+      { value: sales.length, label: 'Active Sales' },
+      { value: totalBidders, label: 'Registered Bidders' },
+      { value: pendingQual, label: 'Pending Qualifications' },
+      { value: nextBidDays !== null ? nextBidDays : '--', label: 'Days to Next Bid' }
+    ]);
+
+    // Alert bar - deadlines within 3 days
+    var alertHtml = '';
+    var urgentMilestones = [];
+    Object.keys(D.timelines).forEach(function(saleId) {
+      D.timelines[saleId].forEach(function(m) {
+        if (m.date && (m.status === 'active' || m.status === 'upcoming')) {
+          var d = u.daysUntil(m.date);
+          if (d !== null && d >= 0 && d <= 3) {
+            urgentMilestones.push(saleId + ': ' + m.label + ' (' + u.date(m.date) + ')');
+          }
+        }
+      });
+    });
+    if (urgentMilestones.length) {
+      alertHtml = c.renderAlert('warning', 'Upcoming deadlines within 3 days: ' + urgentMilestones.join(' | '));
+    }
+
+    // Upcoming deadlines - merge all timelines, sort, next 5
+    var allMilestones = [];
+    Object.keys(D.timelines).forEach(function(saleId) {
+      D.timelines[saleId].forEach(function(m) {
+        if (m.date && (m.status === 'active' || m.status === 'upcoming')) {
+          allMilestones.push({ date: m.date, label: saleId + ' — ' + m.label, status: m.status, description: m.description });
+        }
+      });
+    });
+    allMilestones.sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+    var next5 = allMilestones.slice(0, 5);
+    var timelineHtml = c.renderTimeline(next5);
+
+    // Sale cards
+    var cardsHtml = sales.map(function(sale) {
+      var timeline = D.timelines[sale.id] || [];
+      var total = timeline.length;
+      var completed = timeline.filter(function(m) { return m.status === 'completed'; }).length;
+      var pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+      var nextMilestone = timeline.filter(function(m) { return m.status === 'active' || m.status === 'upcoming'; })[0];
+
+      var pi = u.programInfo[sale.programType] || {};
+      return (
+        '<div class="card">' +
+          '<div class="card-header">' +
+            '<div class="card-header__title">' + c.renderBadge(sale.programType) + ' ' + esc(sale.name) + '</div>' +
+            '<div class="card-header__actions">' + c.renderBadge(sale.status.indexOf('Active') >= 0 ? 'active' : (sale.status.indexOf('Postponed') >= 0 ? 'warning' : 'info'), sale.status) + '</div>' +
+          '</div>' +
+          '<div class="card-body">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);">' +
+              '<span class="text-sm text-muted">Progress</span>' +
+              '<span class="mono-label">' + pct + '%</span>' +
+            '</div>' +
+            '<div class="progress mb-4"><div class="progress-fill" style="width:' + pct + '%;"></div></div>' +
+            (nextMilestone ? '<div class="text-sm mb-4"><strong>Next:</strong> ' + esc(nextMilestone.label) + (nextMilestone.date ? ' — ' + u.date(nextMilestone.date) : ' — TBD') + '</div>' : '') +
+            '<div style="display:flex;gap:var(--space-6);font-size:var(--text-sm);color:var(--color-text-muted);">' +
+              '<span>' + u.number(sale.loanCount) + ' loans</span>' +
+              '<span>' + u.currencyCompact(sale.aggregateValue) + '</span>' +
+              '<span>' + (sale.qualifiedBidders || 0) + ' bidders</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+
+    render(
+      '<div class="page-header">' +
+        '<h2 class="page-header__title">Dashboard</h2>' +
+        '<p class="page-header__subtitle">Welcome back, Transaction Specialist</p>' +
+      '</div>' +
+      statHtml +
+      (alertHtml ? '<div class="mt-6">' + alertHtml + '</div>' : '') +
+      '<div class="mt-6"><h4>Upcoming Deadlines</h4><div class="mt-4">' + timelineHtml + '</div></div>' +
+      '<div class="mt-6"><h4>Active Sales</h4><div class="sale-cards-grid mt-4">' + cardsHtml + '</div></div>'
+    );
+  }
+
+  // ========================================================================
+  // BIDDER QUALIFICATION PIPELINE
+  // ========================================================================
+  function renderBidders() {
+    clearLiveBid();
+    setBreadcrumb('Bidder Qualification Pipeline');
+
+    var bidders = D.bidders;
+    var qualified = bidders.filter(function(b) { return b.qualificationStatus.indexOf('Qualified') >= 0; });
+    var pending = bidders.filter(function(b) { return b.qualificationStatus.indexOf('Pending') >= 0; });
+    var ogc = bidders.filter(function(b) { return b.qualificationStatus.indexOf('OGC') >= 0; });
+
+    var statHtml = c.renderStatBar([
+      { value: bidders.length, label: 'Total Applications' },
+      { value: qualified.length, label: 'Qualified' },
+      { value: pending.length, label: 'Pending Review' },
+      { value: ogc.length, label: 'OGC Referrals' }
+    ]);
+
+    var tabsHtml = c.renderTabs([
+      { id: 'all', label: 'All', count: bidders.length },
+      { id: 'qualified', label: 'Qualified', count: qualified.length },
+      { id: 'pending', label: 'Pending', count: pending.length },
+      { id: 'ogc', label: 'OGC Review', count: ogc.length },
+      { id: 'rejected', label: 'Rejected', count: 0 }
+    ], 'all');
+
+    function buildTable(list) {
+      return c.renderDataTable({
+        id: 'bidder-table',
+        columns: [
+          { key: 'entityName', label: 'Bidder Name', sortable: true },
+          { key: 'entityType', label: 'Entity Type', sortable: true },
+          { key: 'qualificationStatus', label: 'Status', format: function(v) { var k = v.indexOf('Qualified') >= 0 ? 'approved' : (v.indexOf('Pending') >= 0 ? 'pending' : 'info'); return c.renderBadge(k, v); } },
+          { key: 'submittedDate', label: 'Submitted', format: 'date', sortable: true },
+          { key: 'ofacSam', label: 'OFAC/SAM', format: function(v, row) { return ''; } },
+          { key: 'priorSales', label: 'Prior Sales', sortable: true },
+          { key: 'programTypes', label: 'Programs', format: function(v) { return Array.isArray(v) ? v.map(function(p) { return c.renderBadge(p); }).join(' ') : esc(String(v)); } },
+          { key: 'actions', label: 'Actions', format: function(v) { return ''; } }
+        ],
+        data: list.map(function(b) {
+          return {
+            entityName: b.entityName,
+            entityType: b.entityType,
+            qualificationStatus: b.qualificationStatus,
+            submittedDate: b.submittedDate,
+            ofacSam: b.ofacStatus,
+            priorSales: b.priorSales,
+            programTypes: b.programTypes,
+            actions: b.bidderId
+          };
+        }),
+        emptyMessage: 'No bidders match this filter.'
+      });
+    }
+
+    var tableHtml = buildTable(bidders);
+
+    render(
+      '<div class="page-header">' +
+        '<h2 class="page-header__title">Bidder Qualification Pipeline</h2>' +
+      '</div>' +
+      statHtml +
+      '<div class="mt-6" id="bidder-tabs-container">' + tabsHtml + '</div>' +
+      '<div class="mt-4" id="bidder-table-area">' + tableHtml + '</div>'
+    );
+
+    // Fix OFAC/SAM and Action columns via DOM manipulation after render
+    fixBidderTable(bidders);
+
+    // Tab filtering
+    c.initTabs('bidder-tabs-container', function(tabId) {
+      var filtered;
+      switch (tabId) {
+        case 'qualified': filtered = qualified; break;
+        case 'pending': filtered = pending; break;
+        case 'ogc': filtered = ogc; break;
+        case 'rejected': filtered = []; break;
+        default: filtered = bidders;
+      }
+      $('bidder-table-area').innerHTML = buildTable(filtered);
+      fixBidderTable(filtered);
+      c.initTableSort();
+    });
+
+    c.initTableSort();
+  }
+
+  function fixBidderTable(list) {
+    // Patch OFAC/SAM column and Actions column
+    var rows = document.querySelectorAll('#bidder-table tbody tr');
+    rows.forEach(function(tr, i) {
+      if (i >= list.length) return;
+      var b = list[i];
+      var cells = tr.querySelectorAll('td');
+      // OFAC/SAM (index 4)
+      if (cells[4]) {
+        var ok = b.ofacStatus === 'Clear' || b.ofacStatus === 'N/A - Government Entity';
+        var samOk = b.samStatus && b.samStatus.indexOf('No Exclusions') >= 0;
+        cells[4].innerHTML = (ok && samOk)
+          ? '<span style="color:var(--color-success);font-size:16px;">&#10003;</span>'
+          : '<span style="color:var(--color-warning);font-size:16px;">&#9888;</span>';
+      }
+      // Actions (index 7)
+      if (cells[7]) {
+        cells[7].innerHTML = '<button class="btn btn--sm btn--outline" onclick="window.adminShowBidder(\'' + b.bidderId + '\')">View</button>';
+      }
+    });
+  }
+
+  window.adminShowBidder = function(bidderId) {
+    var b = D.bidders.filter(function(x) { return x.bidderId === bidderId; })[0];
+    if (!b) return;
+
+    var bodyHtml =
+      '<div class="field-row--2" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4);">' +
+        '<div><div class="eyebrow">Contact</div><p class="text-body-sm">' + esc(b.contactName) + '<br>' + esc(b.contactEmail) + '</p></div>' +
+        '<div><div class="eyebrow">Entity Type</div><p class="text-body-sm">' + esc(b.entityType) + '</p></div>' +
+      '</div>' +
+      '<div class="field-row--2" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4);">' +
+        '<div><div class="eyebrow">Qualification Status</div><p class="text-body-sm">' + esc(b.qualificationStatus) + '</p></div>' +
+        '<div><div class="eyebrow">Financial Capacity</div><p class="text-body-sm">' + esc(b.financialCapacity) + '</p></div>' +
+      '</div>' +
+      '<div class="field-row--2" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4);">' +
+        '<div><div class="eyebrow">OFAC Status</div><p class="text-body-sm">' + esc(b.ofacStatus) + '</p></div>' +
+        '<div><div class="eyebrow">SAM Status</div><p class="text-body-sm">' + esc(b.samStatus) + '</p></div>' +
+      '</div>' +
+      '<div style="margin-bottom:var(--space-4);"><div class="eyebrow">Designated Servicer</div><p class="text-body-sm">' + esc(b.designatedServicer) + '</p></div>' +
+      '<div style="margin-bottom:var(--space-4);"><div class="eyebrow">Program Types</div><p class="text-body-sm">' + (b.programTypes || []).map(function(p) { return c.renderBadge(p); }).join(' ') + '</p></div>' +
+      '<div style="margin-bottom:var(--space-4);"><div class="eyebrow">Prior Sale Participation</div><p class="text-body-sm">' + b.priorSales + ' sales</p></div>' +
+      '<div><div class="eyebrow">Notes</div><p class="text-body-sm">' + esc(b.notes) + '</p></div>';
+
+    var modalHtml = c.renderModal({
+      title: b.entityName,
+      body: bodyHtml,
+      size: 'lg',
+      id: 'bidder-modal',
+      footer: '<button class="btn btn--secondary modal-close">Close</button>'
+    });
+
+    $('modal-container').innerHTML = modalHtml;
+    setTimeout(function() {
+      var overlay = document.getElementById('bidder-modal-overlay');
+      if (overlay) overlay.classList.add('is-open');
+      c.initModals();
+    }, 10);
+  };
+
+  // ========================================================================
+  // BID DAY OPERATIONS
+  // ========================================================================
+  function renderBidDay() {
+    clearLiveBid();
+    setBreadcrumb('Bid Day Operations');
+
+    var saleId = $('global-sale-selector').value || 'HVLS-2026-2';
+    var sale = D.sales.filter(function(s) { return s.id === saleId; })[0] || D.sales[0];
+    var allBids = (D.bids.hvls || []).concat(D.bids.mhls || []);
+    var saleBids = allBids.filter(function(b) { return b.saleId === sale.id; });
+
+    // Sort by time desc
+    saleBids.sort(function(a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
+
+    var conforming = saleBids.filter(function(b) { return b.conformingStatus === 'Conforming'; });
+    var nonConforming = saleBids.filter(function(b) { return b.conformingStatus !== 'Conforming'; });
+
+    // Countdown: simulate 2h 14m remaining
+    var hoursLeft = 2, minsLeft = 14;
+
+    var countdownHtml =
+      '<div class="countdown-banner">' +
+        '<div>' +
+          '<div class="countdown-banner__label"><span class="live-dot"></span> BID WINDOW OPEN</div>' +
+          '<div class="countdown-banner__time" id="countdown-time">' + hoursLeft + 'h ' + minsLeft + 'm remaining</div>' +
+          '<div class="progress mt-4" style="height:6px;background:rgba(255,255,255,0.2);max-width:300px;"><div class="progress-fill" style="width:72%;background:#fff;"></div></div>' +
+        '</div>' +
+        '<div class="countdown-banner__stats">' +
+          '<div><div class="countdown-banner__stat-value" id="bid-total-count">' + saleBids.length + '</div><div class="countdown-banner__stat-label">Total Bids</div></div>' +
+          '<div><div class="countdown-banner__stat-value">' + conforming.length + '</div><div class="countdown-banner__stat-label">Conforming</div></div>' +
+          '<div><div class="countdown-banner__stat-value">' + nonConforming.length + '</div><div class="countdown-banner__stat-label">Non-Conforming</div></div>' +
+        '</div>' +
+      '</div>';
+
+    // Bid feed table
+    var feedRows = saleBids.map(function(b) {
+      var t = new Date(b.timestamp);
+      var timeStr = t.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      var statusBadge = b.conformingStatus === 'Conforming'
+        ? c.renderBadge('approved', 'Conforming')
+        : c.renderBadge('rejected', 'Non-Conforming');
+      return '<tr' + (b.conformingStatus !== 'Conforming' ? ' style="background:var(--color-error-bg);"' : '') + '>' +
+        '<td>' + timeStr + '</td>' +
+        '<td>' + esc(b.bidderName) + '</td>' +
+        '<td>' + esc(b.poolLabel || b.poolId) + '</td>' +
+        '<td class="cell-number">' + b.bidAmount + (b.bidAmountUnit === '% of BPO' ? '%' : '') + '</td>' +
+        '<td class="cell-number">' + u.currency(b.impliedDollarAmount || b.bidAmount) + '</td>' +
+        '<td>' + statusBadge + '</td>' +
+      '</tr>';
+    }).join('');
+
+    var feedTableHtml =
+      '<div class="card">' +
+        '<div class="card-header"><div class="card-header__title"><span class="live-dot"></span> Live Bid Feed</div></div>' +
+        '<div style="max-height:400px;overflow-y:auto;">' +
+          '<table class="data-table data-table--compact" id="bid-feed-table">' +
+            '<thead><tr><th>Time</th><th>Bidder</th><th>Pool</th><th>Bid</th><th>Implied Value</th><th>Status</th></tr></thead>' +
+            '<tbody id="bid-feed-body">' + feedRows + '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>';
+
+    // Issues log
+    var issuesHtml = nonConforming.length > 0
+      ? nonConforming.map(function(b) {
+          return '<div style="padding:var(--space-3) 0;border-bottom:1px solid var(--color-border);font-size:var(--text-sm);">' +
+            '<div style="font-weight:600;">' + esc(b.bidderName) + ' — ' + esc(b.poolLabel || b.poolId) + '</div>' +
+            '<div class="text-muted mt-4" style="margin-top:var(--space-1);">' + esc(b.nonConformingReason) + '</div>' +
+            '<button class="btn btn--sm btn--outline mt-4" style="margin-top:var(--space-2);">Resolve</button>' +
+          '</div>';
+        }).join('')
+      : '<p class="text-sm text-muted" style="padding:var(--space-4);">No issues flagged.</p>';
+
+    // Pool summary
+    var pools = sale.pools || [];
+    var poolSummaryRows = pools.map(function(pool) {
+      var poolBids = saleBids.filter(function(b) { return b.poolId === pool.poolId; });
+      var conformingBids = poolBids.filter(function(b) { return b.conformingStatus === 'Conforming'; });
+      var highest = conformingBids.reduce(function(mx, b) { return b.bidAmount > mx ? b.bidAmount : mx; }, 0);
+      var avg = conformingBids.length > 0 ? (conformingBids.reduce(function(s, b) { return s + b.bidAmount; }, 0) / conformingBids.length) : 0;
+      var reserveMet = highest >= 55; // simplified reserve check
+      return '<tr>' +
+        '<td>' + esc(pool.label) + '</td>' +
+        '<td class="cell-number">' + poolBids.length + '</td>' +
+        '<td class="cell-number">' + (highest > 0 ? highest.toFixed(1) + '%' : '--') + '</td>' +
+        '<td class="cell-number">' + (avg > 0 ? avg.toFixed(1) + '%' : '--') + '</td>' +
+        '<td>' + (reserveMet && conformingBids.length > 0 ? '<span style="color:var(--color-success);">&#10003; Yes</span>' : '<span style="color:var(--color-error);">&#10007; No</span>') + '</td>' +
+      '</tr>';
+    }).join('');
+
+    // 30-minute summary
+    var summaryText = saleBids.length + ' bids received across ' + pools.length + ' pools. ';
+    var topPool = pools.reduce(function(best, pool) {
+      var poolConf = saleBids.filter(function(b) { return b.poolId === pool.poolId && b.conformingStatus === 'Conforming'; });
+      var highest = poolConf.reduce(function(mx, b) { return b.bidAmount > mx ? b.bidAmount : mx; }, 0);
+      return highest > (best.val || 0) ? { label: pool.label, val: highest } : best;
+    }, {});
+    if (topPool.label) summaryText += topPool.label + ' leading at ' + topPool.val.toFixed(1) + '% of BPO. ';
+    summaryText += nonConforming.length + ' non-conforming bid' + (nonConforming.length !== 1 ? 's' : '') + ' flagged.';
+
+    var rightCol =
+      '<div class="card mb-6"><div class="card-header"><div class="card-header__title">Issues Log</div><div class="card-header__actions">' + c.renderBadge('rejected', nonConforming.length + ' issues') + '</div></div><div class="card-body" style="max-height:200px;overflow-y:auto;">' + issuesHtml + '</div></div>' +
+      '<div class="card mb-6"><div class="card-header"><div class="card-header__title">Pool Summary</div></div><div class="card-body" style="padding:0;"><table class="data-table data-table--compact"><thead><tr><th>Pool</th><th>Bids</th><th>Highest</th><th>Average</th><th>Reserve</th></tr></thead><tbody>' + poolSummaryRows + '</tbody></table></div></div>' +
+      '<div class="card"><div class="card-header"><div class="card-header__title">30-Minute Summary</div></div><div class="card-body"><p class="text-body-sm">' + esc(summaryText) + '</p></div></div>';
+
+    render(
+      '<div class="page-header">' +
+        '<h2 class="page-header__title">Bid Day Operations</h2>' +
+        '<p class="page-header__subtitle">' + esc(sale.name) + '</p>' +
+      '</div>' +
+      countdownHtml +
+      '<div class="bid-two-col">' +
+        '<div>' + feedTableHtml + '</div>' +
+        '<div>' + rightCol + '</div>' +
+      '</div>'
+    );
+
+    // Start live bid simulation
+    startLiveBidFeed(sale);
+  }
+
+  function startLiveBidFeed(sale) {
+    var bidderNames = ['Lone Star Capital Partners LLC', 'Atlantic Residential Mortgage Trust', 'Pinnacle Asset Recovery Group', 'National Community Stabilization Trust', 'Cook County Land Bank Authority', 'Meridian Housing Solutions Inc'];
+    var pools = sale.pools || [];
+    if (!pools.length) return;
+
+    var bidCount = document.querySelectorAll('#bid-feed-body tr').length;
+
+    liveBidInterval = setInterval(function() {
+      var tbody = document.getElementById('bid-feed-body');
+      var countEl = document.getElementById('bid-total-count');
+      if (!tbody) { clearLiveBid(); return; }
+
+      var pool = pools[Math.floor(Math.random() * pools.length)];
+      var bidder = bidderNames[Math.floor(Math.random() * bidderNames.length)];
+      var pct = (55 + Math.random() * 20).toFixed(1);
+      var bpo = pool.aggregateBPO || pool.aggregateUPB || pool.aggregateETD || pool.upb || 10000000;
+      var implied = Math.round(bpo * (parseFloat(pct) / 100));
+      var now = new Date();
+      var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      var isConforming = Math.random() > 0.15;
+      var statusBadge = isConforming
+        ? '<span class="badge badge--approved">Conforming</span>'
+        : '<span class="badge badge--rejected">Non-Conforming</span>';
+
+      var row = document.createElement('tr');
+      if (!isConforming) row.style.background = 'var(--color-error-bg)';
+      row.style.animation = 'fadeIn 0.5s ease';
+      row.innerHTML =
+        '<td>' + timeStr + '</td>' +
+        '<td>' + esc(bidder) + '</td>' +
+        '<td>' + esc(pool.label) + '</td>' +
+        '<td class="cell-number">' + pct + '%</td>' +
+        '<td class="cell-number">' + u.currency(implied) + '</td>' +
+        '<td>' + statusBadge + '</td>';
+
+      tbody.insertBefore(row, tbody.firstChild);
+      bidCount++;
+      if (countEl) countEl.textContent = bidCount;
+    }, 15000);
+  }
+
+  // ========================================================================
+  // AWARD MANAGEMENT
+  // ========================================================================
+  function renderAwards() {
+    clearLiveBid();
+    setBreadcrumb('Award Management');
+
+    var sale = D.sales.filter(function(s) { return s.id === 'HVLS-2026-2'; })[0] || D.sales[0];
+    var allBids = D.bids.hvls || [];
+    var pools = sale.pools || [];
+
+    // BEM results per pool
+    var bemHtml = pools.map(function(pool) {
+      var poolBids = allBids.filter(function(b) { return b.poolId === pool.poolId; });
+      poolBids.sort(function(a, b) { return b.bidAmount - a.bidAmount; });
+
+      var rows = poolBids.map(function(b, i) {
+        var isWinner = i === 0 && b.conformingStatus === 'Conforming';
+        var cls = isWinner ? ' class="highlighted-row"' : '';
+        return '<tr' + cls + '>' +
+          '<td>' + (i + 1) + '</td>' +
+          '<td>' + esc(b.bidderName) + '</td>' +
+          '<td class="cell-number">' + b.bidAmount + '%</td>' +
+          '<td class="cell-number">' + u.currency(b.impliedDollarAmount) + '</td>' +
+          '<td>' + (b.conformingStatus === 'Conforming' ? '<span style="color:var(--color-success);">&#10003;</span>' : '<span style="color:var(--color-error);">&#10007;</span>') + '</td>' +
+        '</tr>';
+      }).join('');
+
+      return '<div class="card mb-6">' +
+        '<div class="card-header"><div class="card-header__title">' + esc(pool.label) + '</div></div>' +
+        '<div class="card-body" style="padding:0;">' +
+          '<table class="data-table data-table--compact">' +
+            '<thead><tr><th>Rank</th><th>Bidder</th><th>Bid</th><th>Implied Value</th><th>Conforming</th></tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    // Award recommendation
+    var recHtml =
+      '<div class="card mb-6">' +
+        '<div class="card-header"><div class="card-header__title">Award Recommendation</div></div>' +
+        '<div class="card-body">' +
+          '<p class="text-body-sm">Based on Bid Evaluation Methodology (BEM) analysis, the highest conforming bids across all four pools total approximately $41.9M (75.6% weighted average of aggregate BPO). ' +
+          'Pool C received the highest bid at 78.1% from Lone Star Capital Partners. Two non-conforming bids were flagged for procedural violations. ' +
+          'Recommendation: Award to highest conforming bidders per pool pending OGC review and Departmental approval.</p>' +
+          '<div class="btn-group mt-6">' +
+            '<button class="btn btn--primary">Approve</button>' +
+            '<button class="btn btn--outline">Modify</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    // Settlement tracker
+    var steps = [
+      { label: 'Award Letter', status: 'done' },
+      { label: 'Deposit Due', status: 'done' },
+      { label: 'Deposit Received', status: 'active' },
+      { label: 'CAA Execution', status: 'upcoming' },
+      { label: 'Settlement Date', status: 'upcoming' }
+    ];
+
+    var settlementHtml = '<div class="card">' +
+      '<div class="card-header"><div class="card-header__title">Settlement Tracker</div></div>' +
+      '<div class="card-body">' +
+        '<div class="settlement-timeline">';
+
+    steps.forEach(function(step, i) {
+      var icon = step.status === 'done' ? '&#10003;' : (step.status === 'active' ? '&#9679;' : '');
+      settlementHtml += '<div class="settlement-step settlement-step--' + step.status + '">' +
+        '<div class="settlement-step__dot">' + icon + '</div>' +
+        '<div style="margin-top:var(--space-1);font-weight:500;">' + step.label + '</div>' +
+      '</div>';
+      if (i < steps.length - 1) settlementHtml += '<div class="settlement-step__line"></div>';
+    });
+
+    settlementHtml += '</div></div></div>';
+
+    render(
+      '<div class="page-header">' +
+        '<h2 class="page-header__title">Award Management</h2>' +
+        '<p class="page-header__subtitle">' + esc(sale.name) + '</p>' +
+      '</div>' +
+      '<h4 class="mb-4">BEM Results</h4>' +
+      bemHtml +
+      recHtml +
+      '<h4 class="mb-4">Settlement Tracker</h4>' +
+      settlementHtml
+    );
+  }
+
+  // ========================================================================
+  // POST-SALE COMPLIANCE
+  // ========================================================================
+  function renderCompliance() {
+    clearLiveBid();
+    setBreadcrumb('Post-Sale Compliance');
+
+    var tabsHtml = c.renderTabs([
+      { id: 'reporting', label: 'Reporting' },
+      { id: 'breach', label: 'Breach Portal' },
+      { id: 'commissioner', label: "Commissioner's Report" }
+    ], 'reporting');
+
+    // Reporting table
+    var reports = [
+      { name: 'Quarterly NSO Compliance Report', due: '2026-03-31', status: 'Submitted', sale: 'HVLS-2025-2', by: 'Lone Star Capital Partners LLC' },
+      { name: 'Monthly Servicing Transfer Status', due: '2026-04-15', status: 'Pending', sale: 'HVLS-2026-2', by: '--' },
+      { name: 'Borrower Outreach Report', due: '2026-04-30', status: 'Pending', sale: 'SFLS-2025-2', by: '--' },
+      { name: 'Annual Loss Mitigation Summary', due: '2026-06-30', status: 'Pending', sale: 'SFLS-2025-1', by: '--' },
+      { name: 'Property Disposition Report', due: '2026-03-15', status: 'Overdue', sale: 'HVLS-2025-1', by: '--' }
+    ];
+
+    var reportRows = reports.map(function(r) {
+      var badge = r.status === 'Submitted' ? c.renderBadge('approved', r.status) : (r.status === 'Overdue' ? c.renderBadge('rejected', r.status) : c.renderBadge('pending', r.status));
+      return '<tr><td>' + esc(r.name) + '</td><td>' + u.date(r.due) + '</td><td>' + badge + '</td><td>' + esc(r.sale) + '</td><td>' + esc(r.by) + '</td></tr>';
+    }).join('');
+
+    var reportingPanel =
+      '<div class="tab-panel active" data-tab-id="reporting">' +
+        '<div class="table-wrapper"><table class="data-table data-table--striped">' +
+          '<thead><tr><th>Report Name</th><th>Due Date</th><th>Status</th><th>Sale</th><th>Submitted By</th></tr></thead>' +
+          '<tbody>' + reportRows + '</tbody>' +
+        '</table></div>' +
+      '</div>';
+
+    var breachPanel =
+      '<div class="tab-panel" data-tab-id="breach">' +
+        c.renderEmptyState('&#128196;', 'No Active Breach Notices', 'There are currently no active breach notices across any sale program.') +
+        '<div style="text-align:center;margin-top:var(--space-4);"><button class="btn btn--primary">File Breach Notice</button></div>' +
+      '</div>';
+
+    var commPanel =
+      '<div class="tab-panel" data-tab-id="commissioner">' +
+        '<div class="card">' +
+          '<div class="card-body">' +
+            '<div class="field-row--2" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-6);">' +
+              '<div><div class="eyebrow">Last Report Date</div><p class="text-body-sm">December 31, 2025</p></div>' +
+              '<div><div class="eyebrow">Coverage Period</div><p class="text-body-sm">July 1 - December 31, 2025</p></div>' +
+            '</div>' +
+            '<div class="eyebrow mb-4">Summary Statistics</div>' +
+            c.renderStatBar([
+              { value: '6', label: 'Sales Completed' },
+              { value: '$412M', label: 'Total Proceeds' },
+              { value: '1,847', label: 'Loans Sold' },
+              { value: '94%', label: 'Conformance Rate' }
+            ]) +
+            '<div style="margin-top:var(--space-6);"><button class="btn btn--primary">Generate Report</button></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    render(
+      '<div class="page-header">' +
+        '<h2 class="page-header__title">Post-Sale Compliance</h2>' +
+      '</div>' +
+      '<div id="compliance-tabs-container">' + tabsHtml + '</div>' +
+      reportingPanel + breachPanel + commPanel
+    );
+
+    c.initTabs('compliance-tabs-container');
+  }
+
+  // ========================================================================
+  // AI ASSISTANT
+  // ========================================================================
+  function renderAIAssistant() {
+    clearLiveBid();
+    setBreadcrumb('AI Assistant');
+
+    var capabilities = [
+      'Document Classification',
+      'Portfolio Analytics',
+      'Bid Anomaly Detection',
+      'Bidder Risk Scoring',
+      'Natural Language Queries'
+    ];
+
+    var capList = capabilities.map(function(cap) {
+      return '<div style="padding:var(--space-2) 0;border-bottom:1px solid var(--color-border);font-size:var(--text-sm);display:flex;align-items:center;gap:var(--space-2);"><span style="color:var(--color-primary);">&#10003;</span> ' + esc(cap) + '</div>';
+    }).join('');
+
+    var leftPanel =
+      '<div class="card" style="height:100%;">' +
+        '<div class="card-header"><div class="card-header__title">Capabilities</div></div>' +
+        '<div class="card-body">' + capList + '</div>' +
+      '</div>';
+
+    var chatPanel =
+      '<div class="card" style="height:100%;display:flex;flex-direction:column;">' +
+        '<div class="card-header"><div class="card-header__title"><span style="color:var(--color-primary);">&#129302;</span> AI Assistant</div></div>' +
+        '<div class="chat-messages" id="chat-messages">' +
+          '<div class="chat-msg chat-msg--ai">' +
+            '<div class="chat-msg__avatar">AI</div>' +
+            '<div class="chat-msg__bubble">Hello! I\'m your AI assistant for HUD Asset Sales. I can help with portfolio analysis, bid evaluation, document processing, and more. What would you like to know?</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="starter-prompts" id="starter-prompts">' +
+          '<button onclick="window.adminSendAIMessage(\'Analyze HVLS 2026-2 portfolio\')">Analyze HVLS 2026-2 portfolio</button>' +
+          '<button onclick="window.adminSendAIMessage(\'Flag bid anomalies\')">Flag bid anomalies</button>' +
+          '<button onclick="window.adminSendAIMessage(\'Summarize bidder qualifications\')">Summarize bidder qualifications</button>' +
+          '<button onclick="window.adminSendAIMessage(\'Generate pool statistics\')">Generate pool statistics</button>' +
+        '</div>' +
+        '<div class="chat-input-bar">' +
+          '<input type="text" id="chat-input" placeholder="Ask about portfolio data, bids, bidders..." onkeydown="if(event.key===\'Enter\')window.adminSendAIMessage()" />' +
+          '<button class="btn btn--primary" onclick="window.adminSendAIMessage()">Send</button>' +
+        '</div>' +
+      '</div>';
+
+    render(
+      '<div class="page-header">' +
+        '<h2 class="page-header__title">AI Assistant</h2>' +
+        '<p class="page-header__subtitle">Intelligent analysis for HUD Asset Sales operations</p>' +
+      '</div>' +
+      '<div class="ai-layout">' + leftPanel + chatPanel + '</div>'
+    );
+  }
+
+  // AI chat scripted responses
+  var aiResponses = {
+    portfolio: 'HVLS 2026-2 Portfolio Analysis:\n\n' +
+      '- Total Loans: 203 across 4 pools\n' +
+      '- Aggregate BPO: $55.4M\n' +
+      '- Geographic Distribution: Southeast (31%), Northeast (27%), National (29%), Metro Targeted (13%)\n' +
+      '- Average BPO per Loan: $273,000\n' +
+      '- Median BPO: $248,500\n' +
+      '- BPO Range: $85,000 - $625,000\n' +
+      '- All properties confirmed vacant\n' +
+      '- Average time since vacancy confirmation: 8.2 months\n' +
+      '- 14 qualified bidders, including 2 nonprofit mission pool-eligible entities',
+
+    anomaly: 'Bid Anomaly Detection Results:\n\n' +
+      '1. BID-HVLS-2026-2-006 (Pinnacle Asset Recovery - Pool B): Non-conforming. Bid deposit wire received 4 minutes past the 10:00 AM ET deadline. Procedural violation per BIP Section 4.2(a).\n\n' +
+      '2. BID-HVLS-2026-2-012 (Atlantic Residential - Pool D): Non-conforming. Unauthorized modification to servicing transfer timeline in Exhibit B. Deviates from standard 60-day requirement per BIP Section 6.1(c).\n\n' +
+      '3. Statistical Outlier: Pool D bid spread (60.2% - 70.8%) is wider than expected based on historical HVLS sale patterns. May warrant additional review of Pool D valuation inputs.',
+
+    bidder: 'Bidder Qualification Pipeline Summary:\n\n' +
+      '- Total Applications: 8\n' +
+      '- Qualified: 5 (63%)\n' +
+      '- Pending Review: 3\n'  +
+      '  - Meridian Housing Solutions: Financial review in progress\n' +
+      '  - Heartland Housing Preservation: OGC nonprofit verification\n' +
+      '  - Cascade-Pacific Housing Partners JV: OGC JV structure review\n' +
+      '- Entity Type Mix: 2 Institutional, 2 For-Profit, 2 Nonprofit, 1 Government, 1 JV\n' +
+      '- Average Prior Sales (qualified): 6.2\n' +
+      '- Mission Pool Eligible: 3 entities',
+
+    pool: 'Pool Statistics for HVLS 2026-2:\n\n' +
+      'Pool A (Southeast): 62 loans, $16.85M BPO, 3 bids, Highest: 72.5%\n' +
+      'Pool B (Northeast): 55 loans, $17.23M BPO, 3 bids, Highest: 75.4%\n' +
+      'Pool C (National): 58 loans, $14.89M BPO, 3 bids, Highest: 78.1%\n' +
+      'Pool D (Metro Targeted): 28 loans, $6.45M BPO, 3 bids, Highest: 70.8%\n\n' +
+      'Weighted Average Highest Bid: 74.2% of BPO\n' +
+      'Total Implied Proceeds (highest bids): $41.1M',
+
+    default: 'I can help with portfolio analysis, bid anomaly detection, bidder qualification summaries, and pool statistics. Try asking about one of these topics.'
+  };
+
+  window.adminSendAIMessage = function(text) {
+    var input = document.getElementById('chat-input');
+    var msg = text || (input ? input.value.trim() : '');
+    if (!msg) return;
+    if (input) input.value = '';
+
+    // Hide starter prompts
+    var sp = document.getElementById('starter-prompts');
+    if (sp) sp.style.display = 'none';
+
+    // Add user message
+    var messages = document.getElementById('chat-messages');
+    if (!messages) return;
+
+    var userDiv = document.createElement('div');
+    userDiv.className = 'chat-msg chat-msg--user';
+    userDiv.innerHTML = '<div class="chat-msg__avatar">TS</div><div class="chat-msg__bubble">' + esc(msg) + '</div>';
+    messages.appendChild(userDiv);
+    messages.scrollTop = messages.scrollHeight;
+
+    // Show typing indicator
+    var typingDiv = document.createElement('div');
+    typingDiv.className = 'chat-msg chat-msg--ai';
+    typingDiv.id = 'typing-indicator';
+    typingDiv.innerHTML = '<div class="chat-msg__avatar">AI</div><div class="typing-indicator"><span></span><span></span><span></span></div>';
+    messages.appendChild(typingDiv);
+    messages.scrollTop = messages.scrollHeight;
+
+    // Determine response
+    var lower = msg.toLowerCase();
+    var responseText = aiResponses.default;
+    if (lower.indexOf('portfolio') >= 0 || lower.indexOf('analyze') >= 0 || lower.indexOf('analysis') >= 0) {
+      responseText = aiResponses.portfolio;
+    } else if (lower.indexOf('anomal') >= 0 || lower.indexOf('flag') >= 0) {
+      responseText = aiResponses.anomaly;
+    } else if (lower.indexOf('bidder') >= 0 || lower.indexOf('qualification') >= 0) {
+      responseText = aiResponses.bidder;
+    } else if (lower.indexOf('pool') >= 0 || lower.indexOf('statistic') >= 0) {
+      responseText = aiResponses.pool;
+    }
+
+    // Delay then show response
+    setTimeout(function() {
+      var ti = document.getElementById('typing-indicator');
+      if (ti) ti.remove();
+
+      var aiDiv = document.createElement('div');
+      aiDiv.className = 'chat-msg chat-msg--ai';
+      aiDiv.innerHTML = '<div class="chat-msg__avatar">AI</div><div class="chat-msg__bubble" style="white-space:pre-wrap;">' + esc(responseText) + '</div>';
+      messages.appendChild(aiDiv);
+      messages.scrollTop = messages.scrollHeight;
+    }, 1500);
+  };
+
+  // ========================================================================
+  // ROUTER SETUP
+  // ========================================================================
+  HSG.router
+    .on('/dashboard', renderDashboard)
+    .on('/bidders', renderBidders)
+    .on('/bid-day', renderBidDay)
+    .on('/awards', renderAwards)
+    .on('/compliance', renderCompliance)
+    .on('/ai-assistant', renderAIAssistant)
+    .onNotFound(function() { HSG.router.navigate('/dashboard'); });
+
+  // Default route
+  if (!window.location.hash || window.location.hash === '#' || window.location.hash === '#/') {
+    window.location.hash = '#/dashboard';
+  }
+
+  HSG.router.start();
+
+})();
+</script>
+</body>
+</html>
