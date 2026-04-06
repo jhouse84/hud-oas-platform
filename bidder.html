@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HUD Asset Sales — Bidder Portal | House Strategies Group</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/design-system.css">
+<style>
+/* ==========================================================================
+   Bidder Portal — Page-Level Styles
+   ========================================================================== */
+
+/* Override topnav height to 72px for this portal */
+.topnav {
+  height: 72px;
+}
+
+.topnav__logo-mark {
+  width: 40px;
+  height: 40px;
+  background: var(--color-primary);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topnav__logo-mark span {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 18px;
+  color: #fff;
+}
+
+.topnav__brand-sub {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.topnav__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.topnav__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+/* Main content area */
+.main-content {
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-16);
+}
+
+/* Sale cards grid */
+.sale-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-6);
+}
+
+.sale-cards-grid .card:hover {
+  box-shadow: var(--shadow-lg);
+  transition: box-shadow var(--duration-base) var(--ease-default);
+}
+
+/* ==========================================================================
+   Data Room — Three-Panel Layout
+   ========================================================================== */
+
+.data-room {
+  display: flex;
+  height: calc(100vh - 72px);
+  overflow: hidden;
+}
+
+.data-room__left {
+  width: 260px;
+  min-width: 260px;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.data-room__center {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-6);
+  background: var(--color-bg);
+}
+
+.data-room__right {
+  width: 300px;
+  min-width: 300px;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  overflow-y: auto;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* Left panel sections */
+.dr-sale-header {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dr-sale-header h4 {
+  margin-top: var(--space-2);
+  font-size: var(--text-md);
+  line-height: 1.3;
+}
+
+.dr-dates {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dr-dates h5 {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.dr-date-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  padding: var(--space-1) 0;
+  color: var(--color-text);
+}
+
+.dr-date-item span:last-child {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+/* Document browser */
+.dr-docs h5 {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.dr-doc-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast) var(--ease-default);
+}
+
+.dr-doc-item:hover {
+  background: var(--color-primary-bg);
+}
+
+.dr-doc-item::before {
+  content: '\1F4C4';
+  font-size: 12px;
+}
+
+.dr-doc-tree-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  user-select: none;
+}
+
+.dr-doc-tree-header:hover {
+  background: var(--color-grey-100);
+}
+
+.dr-doc-tree-header .arrow {
+  transition: transform var(--duration-fast);
+  font-size: 10px;
+}
+
+.dr-doc-tree-header.open .arrow {
+  transform: rotate(90deg);
+}
+
+.dr-doc-tree-body {
+  display: none;
+  padding-left: var(--space-4);
+}
+
+.dr-doc-tree-header.open + .dr-doc-tree-body {
+  display: block;
+}
+
+.dr-doc-section {
+  padding: var(--space-1) var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.dr-doc-section:hover {
+  background: var(--color-grey-100);
+  color: var(--color-text);
+}
+
+/* Center panel toolbar */
+.dr-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+  background: var(--color-surface);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.dr-toolbar input[type="search"] {
+  height: 34px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  width: 200px;
+}
+
+.dr-toolbar input[type="search"]:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.dr-toolbar select {
+  height: 34px;
+  padding: 0 var(--space-6) 0 var(--space-3);
+  font-size: var(--text-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%237F8289' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.dr-toolbar__spacer {
+  flex: 1;
+}
+
+.dr-toolbar__count {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+/* HECM info tooltip */
+.hecm-info {
+  background: var(--color-info-bg);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-info);
+  line-height: 1.5;
+}
+
+.hecm-info strong {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+/* Data room header stats */
+.dr-header-stats {
+  display: flex;
+  gap: var(--space-6);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-4);
+}
+
+.dr-header-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.dr-header-stat__value {
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.dr-header-stat__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+/* Q&A section */
+.qa-entry {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.qa-entry:last-of-type {
+  border-bottom: none;
+}
+
+.qa-question {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.qa-answer {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin-bottom: var(--space-2);
+}
+
+.qa-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-grey-400);
+}
+
+.qa-form textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: var(--space-3);
+  font-size: var(--text-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  resize: vertical;
+  margin-bottom: var(--space-2);
+  font-family: var(--font-body);
+}
+
+.qa-form textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.qa-notice {
+  font-size: var(--text-xs);
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-3);
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   Bid Submission
+   ========================================================================== */
+
+.bid-page {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.bid-header {
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-6);
+}
+
+.bid-sandbox-banner {
+  background: var(--color-warning-bg);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  color: var(--color-warning);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+  display: none;
+}
+
+.bid-sandbox-banner.visible {
+  display: block;
+}
+
+.bid-sandbox-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.bid-sandbox-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-warning);
+}
+
+.bid-pool-summary {
+  background: var(--color-grey-50);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.bid-pool-summary h5 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.bid-pool-summary .stat-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.bid-pool-summary .stat-card {
+  padding: var(--space-3);
+  border: none;
+  background: transparent;
+}
+
+.bid-pool-summary .stat-card__value {
+  font-size: var(--text-xl);
+}
+
+/* Large bid input */
+.bid-input__field {
+  width: 100%;
+  height: 64px;
+  font-family: var(--font-heading);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  text-align: center;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  transition: border-color var(--duration-fast);
+}
+
+.bid-input__field:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-100);
+}
+
+/* Bid calculator */
+.bid-calculator {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  margin-top: var(--space-4);
+}
+
+.bid-calculator__title {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.bid-calculator__row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+}
+
+.bid-calculator__row--total {
+  border-top: 2px solid var(--color-border);
+  margin-top: var(--space-2);
+  padding-top: var(--space-3);
+  font-weight: 600;
+  font-size: var(--text-md);
+}
+
+.bid-calculator__label {
+  color: var(--color-text-muted);
+}
+
+.bid-calculator__value {
+  font-family: var(--font-mono);
+  color: var(--color-text);
+}
+
+.bid-calculator__row--total .bid-calculator__value {
+  color: var(--color-primary);
+  font-size: var(--text-lg);
+}
+
+.bid-deposit {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-info-bg);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-info);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: all var(--duration-fast) var(--ease-default);
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.btn--primary:hover {
+  background: var(--color-primary-dark);
+}
+
+.btn--secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.btn--secondary:hover {
+  background: var(--color-grey-100);
+}
+
+.btn--sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.btn--lg {
+  padding: var(--space-3) var(--space-8);
+  font-size: var(--text-md);
+  height: 48px;
+}
+
+.btn--success {
+  background: var(--color-success);
+  color: #fff;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+/* ==========================================================================
+   Modal
+   ========================================================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+}
+
+.modal-overlay.is-open {
+  display: flex;
+}
+
+.modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  max-width: 520px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-header__title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.modal-header__close {
+  font-size: 24px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: var(--space-6);
+}
+
+.modal-footer {
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+/* Bid confirmation rows */
+.bid-confirm-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+}
+
+.bid-confirm-row dt {
+  color: var(--color-text-muted);
+}
+
+.bid-confirm-row dd {
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.bid-confirm-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-warning-bg);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.bid-confirm-checkbox input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Bid success state */
+.bid-success {
+  text-align: center;
+  padding: var(--space-8) var(--space-6);
+}
+
+.bid-success__icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-4);
+}
+
+.bid-success h4 {
+  margin-bottom: var(--space-2);
+  color: var(--color-success);
+}
+
+.bid-success__details {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-3);
+}
+
+/* ==========================================================================
+   Responsive — Collapse data room to single column below 900px
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .data-room {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .data-room__left,
+  .data-room__right {
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    border-right: none;
+    border-left: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .data-room__center {
+    min-height: 60vh;
+  }
+
+  .dr-panel-tabs {
+    display: flex;
+  }
+
+  .sale-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 901px) {
+  .dr-panel-tabs {
+    display: none;
+  }
+}
+
+.dr-panel-tabs {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-2) var(--space-4);
+  gap: var(--space-2);
+}
+
+.dr-panel-tabs .tab {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.dr-panel-tabs .tab.active {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Tabs component overrides
+   ========================================================================== */
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-6);
+}
+
+.tab {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--duration-fast);
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.tab__count {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  background: var(--color-grey-200);
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  margin-left: var(--space-1);
+}
+
+.tab.active .tab__count {
+  background: var(--color-primary-100);
+  color: var(--color-primary);
+}
+
+/* ==========================================================================
+   Alert overrides
+   ========================================================================== */
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.alert--info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+}
+
+.alert--warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid rgba(217, 119, 6, 0.15);
+}
+
+.alert--success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid rgba(30, 126, 62, 0.15);
+}
+
+.alert--error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid rgba(160, 50, 26, 0.15);
+}
+
+.alert__icon {
+  font-size: var(--text-lg);
+  flex-shrink: 0;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ======================================================================
+     TOP NAVIGATION
+     ====================================================================== -->
+<nav class="topnav">
+  <div class="topnav__brand">
+    <div class="topnav__logo-mark"><span>H</span></div>
+    <div>
+      <div class="topnav__brand-name">HUD Asset Sales</div>
+      <div class="topnav__brand-sub">House Strategies Group</div>
+    </div>
+  </div>
+
+  <div class="topnav__links">
+    <a href="#/sales" class="topnav__link" data-route="/sales">Sales</a>
+    <a href="#/data-room" class="topnav__link" data-route="/data-room">Data Room</a>
+    <a href="#/bid" class="topnav__link" data-route="/bid">Bid</a>
+    <a href="#/my-bids" class="topnav__link" data-route="/my-bids">My Bids</a>
+  </div>
+
+  <div class="topnav__right">
+    <div class="topnav__user">
+      <span>Demo User</span>
+      <div class="topnav__avatar">DU</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ======================================================================
+     MAIN CONTENT — Rendered by Router
+     ====================================================================== -->
+<div id="app"></div>
+
+<!-- Confirmation Modal Container -->
+<div id="modal-container"></div>
+
+<!-- ======================================================================
+     DATA FILES
+     ====================================================================== -->
+<script src="data/sales.js"></script>
+<script src="data/loans-hvls.js"></script>
+<script src="data/loans-sfls.js"></script>
+<script src="data/loans-mhls.js"></script>
+<script src="data/bidders.js"></script>
+<script src="data/bids.js"></script>
+<script src="data/documents.js"></script>
+<script src="data/timeline.js"></script>
+
+<!-- ======================================================================
+     SHARED LIBRARIES
+     ====================================================================== -->
+<script src="shared/utils.js"></script>
+<script src="shared/components.js"></script>
+<script src="shared/router.js"></script>
+
+<!-- ======================================================================
+     BIDDER PORTAL APPLICATION
+     ====================================================================== -->
+<script>
+(function () {
+  'use strict';
+
+  var u = HSG.utils;
+  var c = HSG.components;
+  var D = window.HSG_DATA;
+
+  /* ========================================================================
+     Helpers
+     ======================================================================== */
+
+  function esc(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function getSale(id) {
+    for (var i = 0; i < D.sales.length; i++) {
+      if (D.sales[i].id === id) return D.sales[i];
+    }
+    return null;
+  }
+
+  function getLoans(sale) {
+    if (!sale) return [];
+    var pt = sale.programType.toUpperCase();
+    if (pt === 'HVLS' || pt === 'HNVLS') return D.loansHVLS || [];
+    if (pt === 'SFLS') return D.loansSFLS || [];
+    if (pt === 'MHLS') return D.loansMHLS || [];
+    return [];
+  }
+
+  function uniqueValues(arr, key) {
+    var seen = {};
+    var result = [];
+    arr.forEach(function (item) {
+      var val = item[key];
+      if (val && !seen[val]) {
+        seen[val] = true;
+        result.push(val);
+      }
+    });
+    return result.sort();
+  }
+
+  /* Track user bids in session */
+  var userBids = [];
+
+  /* ========================================================================
+     ROUTE: Sale Listings (#/sales)
+     ======================================================================== */
+
+  function renderSales() {
+    var sales = D.sales;
+
+    // Compute stats
+    var activeSales = sales.filter(function (s) { return s.status.toLowerCase().indexOf('active') >= 0; }).length;
+    var totalLoans = sales.reduce(function (sum, s) { return sum + s.loanCount; }, 0);
+    var totalValue = sales.reduce(function (sum, s) { return sum + s.aggregateValue; }, 0);
+    var nextBid = null;
+    sales.forEach(function (s) {
+      if (s.bidDate) {
+        var d = new Date(s.bidDate);
+        if (!nextBid || d < nextBid) nextBid = d;
+      }
+    });
+
+    var html = '<div class="container main-content">';
+    html += '<div class="page-header">';
+    html += '<div class="eyebrow">Sale Listings</div>';
+    html += '<h2 class="page-header__title">Active &amp; Upcoming Sales</h2>';
+    html += '</div>';
+
+    // Filter tabs
+    var tabCounts = { all: sales.length, active: 0, upcoming: 0, closed: 0 };
+    sales.forEach(function (s) {
+      var st = s.status.toLowerCase();
+      if (st.indexOf('active') >= 0) tabCounts.active++;
+      else if (st.indexOf('upcoming') >= 0 || st.indexOf('pre-qual') >= 0) tabCounts.upcoming++;
+      else if (st.indexOf('closed') >= 0 || st.indexOf('awarded') >= 0) tabCounts.closed++;
+    });
+
+    html += '<div id="sale-tabs">';
+    html += c.renderTabs([
+      { id: 'all',      label: 'All',      count: tabCounts.all },
+      { id: 'active',   label: 'Active',   count: tabCounts.active },
+      { id: 'upcoming', label: 'Upcoming', count: tabCounts.upcoming },
+      { id: 'closed',   label: 'Closed',   count: tabCounts.closed }
+    ], 'all');
+    html += '</div>';
+
+    // Stat bar
+    html += c.renderStatBar([
+      { value: activeSales, label: 'Active Sales' },
+      { value: u.number(totalLoans), label: 'Total Loans' },
+      { value: u.currencyCompact(totalValue), label: 'Aggregate Value' },
+      { value: nextBid ? u.date(nextBid) : 'TBD', label: 'Next Bid Date' }
+    ]);
+
+    // Sale cards
+    html += '<div class="sale-cards-grid" id="sale-cards" style="margin-top:var(--space-6);">';
+    sales.forEach(function (s) {
+      html += c.renderSaleCard(s);
+    });
+    html += '</div>';
+
+    html += '</div>';
+
+    u.render('#app', html);
+
+    // Tab filtering
+    c.initTabs('#sale-tabs', function (tabId) {
+      var cards = document.querySelectorAll('#sale-cards .card');
+      cards.forEach(function (card) {
+        var saleId = card.getAttribute('data-sale-id');
+        var sale = getSale(saleId);
+        if (!sale) return;
+        var st = sale.status.toLowerCase();
+        var show = false;
+        if (tabId === 'all') show = true;
+        else if (tabId === 'active' && st.indexOf('active') >= 0) show = true;
+        else if (tabId === 'upcoming' && (st.indexOf('upcoming') >= 0 || st.indexOf('pre-qual') >= 0)) show = true;
+        else if (tabId === 'closed' && (st.indexOf('closed') >= 0 || st.indexOf('awarded') >= 0)) show = true;
+        // Show postponed under 'active' too
+        if (tabId === 'active' && st.indexOf('postponed') >= 0) show = true;
+        card.style.display = show ? '' : 'none';
+      });
+    });
+
+    // Card click navigation
+    document.querySelectorAll('#sale-cards .card').forEach(function (card) {
+      card.addEventListener('click', function () {
+        var saleId = card.getAttribute('data-sale-id');
+        HSG.router.navigate('/data-room/' + saleId);
+      });
+    });
+  }
+
+  /* ========================================================================
+     ROUTE: Data Room (#/data-room/:saleId)
+     ======================================================================== */
+
+  function renderDataRoom(params) {
+    var sale = getSale(params.saleId);
+    if (!sale) {
+      u.render('#app', '<div class="container main-content">' + c.renderEmptyState('&#128269;', 'Sale Not Found', 'The requested sale could not be found.') + '</div>');
+      return;
+    }
+
+    var loans = getLoans(sale);
+    var pt = sale.programType.toUpperCase();
+    var isMHLS = pt === 'MHLS';
+    var isHVLS = pt === 'HVLS' || pt === 'HNVLS';
+
+    // ── LEFT PANEL ──
+    var leftHtml = '';
+
+    // Sale info
+    leftHtml += '<div class="dr-sale-header">';
+    leftHtml += c.renderBadge(sale.programType) + ' ' + c.renderBadge(sale.status.indexOf('Active') >= 0 ? 'active' : (sale.status.indexOf('Upcoming') >= 0 ? 'pending' : 'warning'), sale.status.split(' - ')[0]);
+    leftHtml += '<h4>' + esc(sale.name) + '</h4>';
+    leftHtml += '</div>';
+
+    // Key dates
+    leftHtml += '<div class="dr-dates">';
+    leftHtml += '<h5>Key Dates</h5>';
+    leftHtml += '<div class="dr-date-item"><span>Qual Deadline</span><span>' + u.date(sale.qualificationDeadline) + '</span></div>';
+    leftHtml += '<div class="dr-date-item"><span>Bid Date</span><span>' + u.date(sale.bidDate) + '</span></div>';
+    leftHtml += '<div class="dr-date-item"><span>Award Date</span><span>' + u.date(sale.awardDate) + '</span></div>';
+    leftHtml += '<div class="dr-date-item"><span>Settlement</span><span>' + u.date(sale.settlementDate) + '</span></div>';
+    leftHtml += '</div>';
+
+    // Document browser
+    leftHtml += '<div class="dr-docs">';
+    leftHtml += '<h5>Documents</h5>';
+
+    if (isMHLS) {
+      // Tree view for MHLS
+      leftHtml += '<div class="dr-doc-tree-header" onclick="this.classList.toggle(\'open\')"><span class="arrow">&#9654;</span> Volume 1 — Loan Documents (' + D.documents.mhlsVolume1.length + ')</div>';
+      leftHtml += '<div class="dr-doc-tree-body">';
+      D.documents.mhlsVolume1.forEach(function (doc) {
+        leftHtml += '<div class="dr-doc-section" title="' + esc(doc.description) + '">Sec ' + doc.section + ': ' + esc(doc.name) + '</div>';
+      });
+      leftHtml += '</div>';
+
+      leftHtml += '<div class="dr-doc-tree-header" onclick="this.classList.toggle(\'open\')"><span class="arrow">&#9654;</span> Volume 2 — Property &amp; Financial (' + D.documents.mhlsVolume2.length + ')</div>';
+      leftHtml += '<div class="dr-doc-tree-body">';
+      D.documents.mhlsVolume2.forEach(function (doc) {
+        leftHtml += '<div class="dr-doc-section" title="' + esc(doc.description) + '">Sec ' + doc.section + ': ' + esc(doc.name) + '</div>';
+      });
+      leftHtml += '</div>';
+    } else {
+      // Flat list for HVLS/SFLS
+      var docList = D.documents.hvlsLoanDocs;
+      docList.forEach(function (doc) {
+        leftHtml += '<div class="dr-doc-item" title="' + esc(doc.description) + '">' + esc(doc.name) + '</div>';
+      });
+    }
+
+    leftHtml += '</div>';
+
+    // BIP documents
+    leftHtml += '<div class="dr-docs">';
+    leftHtml += '<h5>BIP Documents</h5>';
+    D.documents.bipDocuments.forEach(function (doc) {
+      if (doc.applicableTo.indexOf(pt) >= 0 || doc.applicableTo.indexOf(sale.programType) >= 0) {
+        leftHtml += '<div class="dr-doc-item" title="' + esc(doc.description) + '">' + esc(doc.name) + '</div>';
+      }
+    });
+    leftHtml += '</div>';
+
+    // ── CENTER PANEL ──
+    var centerHtml = '';
+
+    // Header stats
+    if (isHVLS) {
+      var totalBPO = loans.reduce(function (s, l) { return s + (l.bpoValue || 0); }, 0);
+      var totalETD = loans.reduce(function (s, l) { return s + (l.estimatedTotalDebt || 0); }, 0);
+
+      centerHtml += '<div class="hecm-info">';
+      centerHtml += '<strong>HECM Reverse Mortgage Loan Data</strong>';
+      centerHtml += 'HECM loans accrue interest. ETD represents the estimated total debt owed; BPO represents the current property value. Bids are submitted as a percentage of aggregate BPO.';
+      centerHtml += '</div>';
+
+      centerHtml += '<div class="dr-header-stats">';
+      centerHtml += '<div class="dr-header-stat"><div class="dr-header-stat__value">' + u.number(loans.length) + '</div><div class="dr-header-stat__label">Loans</div></div>';
+      centerHtml += '<div class="dr-header-stat"><div class="dr-header-stat__value">' + u.currencyCompact(totalBPO) + '</div><div class="dr-header-stat__label">Aggregate BPO</div></div>';
+      centerHtml += '<div class="dr-header-stat"><div class="dr-header-stat__value">' + u.currencyCompact(totalETD) + '</div><div class="dr-header-stat__label">Est. Total Debt</div></div>';
+      centerHtml += '<div class="dr-header-stat"><div class="dr-header-stat__value">' + sale.poolCount + '</div><div class="dr-header-stat__label">Pools</div></div>';
+      centerHtml += '</div>';
+    } else if (pt === 'SFLS') {
+      var totalUPB = loans.reduce(function (s, l) { return s + (l.upb || 0); }, 0);
+      centerHtml += '<div class="dr-header-stats">';
+      centerHtml += '<div class="dr-header-stat"><div class="dr-header-stat__value">' + u.number(loans.length) + '</div><div class="dr-header-stat__label">Loans</div></div>';
+      centerHtml += '<div class="dr-header-stat"><div class="dr-header-stat__value">' + u.currencyCompact(totalUPB) + '</div><div class="dr-header-stat__label">Aggregate UPB</div></div>';
+      centerHtml += '<div class="dr-header-stat"><div class="dr-header-stat__value">' + sale.poolCount + '</div><div class="dr-header-stat__label">Pools</div></div>';
+      centerHtml += '</div>';
+    } else if (isMHLS) {
+      var mhlsTotalUPB = loans.reduce(function (s, l) { return s + (l.upb || 0); }, 0);
+      var mhlsTotalAppraised = loans.reduce(function (s, l) { return s + (l.appraisedValue || 0); }, 0);
+      centerHtml += '<div class="dr-header-stats">';
+      centerHtml += '<div class="dr-header-stat"><div class="dr-header-stat__value">' + loans.length + '</div><div class="dr-header-stat__label">Deals</div></div>';
+      centerHtml += '<div class="dr-header-stat"><div class="dr-header-stat__value">' + u.currencyCompact(mhlsTotalUPB) + '</div><div class="dr-header-stat__label">Aggregate UPB</div></div>';
+      centerHtml += '<div class="dr-header-stat"><div class="dr-header-stat__value">' + u.currencyCompact(mhlsTotalAppraised) + '</div><div class="dr-header-stat__label">Total Appraised</div></div>';
+      centerHtml += '</div>';
+    }
+
+    // Toolbar
+    centerHtml += '<div class="dr-toolbar">';
+    centerHtml += '<input type="search" id="dr-search" placeholder="Search loans...">';
+
+    if (!isMHLS) {
+      // State filter
+      var states = uniqueValues(loans, 'state');
+      centerHtml += '<select id="dr-filter-state"><option value="">All States</option>';
+      states.forEach(function (st) { centerHtml += '<option value="' + esc(st) + '">' + esc(st) + '</option>'; });
+      centerHtml += '</select>';
+
+      // Pool filter
+      var pools = uniqueValues(loans, 'poolId');
+      centerHtml += '<select id="dr-filter-pool"><option value="">All Pools</option>';
+      pools.forEach(function (p) {
+        var label = p;
+        if (sale.pools) {
+          sale.pools.forEach(function (sp) { if (sp.poolId === p) label = sp.label; });
+        }
+        centerHtml += '<option value="' + esc(p) + '">' + esc(label) + '</option>';
+      });
+      centerHtml += '</select>';
+
+      // Value range filter
+      var valKey = isHVLS ? 'bpoValue' : 'upb';
+      centerHtml += '<select id="dr-filter-value">';
+      centerHtml += '<option value="">All Values</option>';
+      centerHtml += '<option value="0-100000">Under $100K</option>';
+      centerHtml += '<option value="100000-200000">$100K - $200K</option>';
+      centerHtml += '<option value="200000-300000">$200K - $300K</option>';
+      centerHtml += '<option value="300000-500000">$300K - $500K</option>';
+      centerHtml += '<option value="500000-999999999">$500K+</option>';
+      centerHtml += '</select>';
+    } else {
+      // MHLS: property type filter
+      var types = uniqueValues(loans, 'propertyType');
+      centerHtml += '<select id="dr-filter-type"><option value="">All Types</option>';
+      types.forEach(function (t) { centerHtml += '<option value="' + esc(t) + '">' + esc(t) + '</option>'; });
+      centerHtml += '</select>';
+    }
+
+    centerHtml += '<div class="dr-toolbar__spacer"></div>';
+    centerHtml += '<div class="dr-toolbar__count" id="dr-loan-count">' + loans.length + ' loans</div>';
+    centerHtml += '<button class="btn btn--secondary btn--sm" id="dr-csv-btn">Download CSV</button>';
+    centerHtml += '</div>';
+
+    // Build data table columns based on program type
+    var columns, tableData;
+
+    if (isHVLS) {
+      columns = [
+        { key: 'loanId',            label: 'Loan ID',          sortable: true },
+        { key: 'state',             label: 'State',            sortable: true },
+        { key: 'city',              label: 'City',             sortable: true },
+        { key: 'bpoValue',          label: 'BPO Value',        sortable: true, align: 'right', format: 'currency' },
+        { key: 'estimatedTotalDebt', label: 'Est. Total Debt', sortable: true, align: 'right', format: 'currency' },
+        { key: 'originalBalance',   label: 'Original Balance', sortable: true, align: 'right', format: 'currency' },
+        { key: 'noteRate',          label: 'Note Rate',        sortable: true, align: 'right', format: 'percent' },
+        { key: 'poolId',            label: 'Pool',             sortable: true },
+        { key: 'propertyStatus',    label: 'Property Status',  sortable: true },
+        { key: 'assignmentDate',    label: 'Assignment Date',  sortable: true, format: 'date' }
+      ];
+      tableData = loans;
+    } else if (pt === 'SFLS') {
+      columns = [
+        { key: 'loanId',            label: 'Loan ID',          sortable: true },
+        { key: 'state',             label: 'State',            sortable: true },
+        { key: 'city',              label: 'City',             sortable: true },
+        { key: 'upb',               label: 'UPB',              sortable: true, align: 'right', format: 'currency' },
+        { key: 'noteRate',          label: 'Note Rate',        sortable: true, align: 'right', format: 'percent' },
+        { key: 'originalAmount',    label: 'Original Amount',  sortable: true, align: 'right', format: 'currency' },
+        { key: 'defaultDate',       label: 'Default Date',     sortable: true, format: 'date' },
+        { key: 'delinquencyMonths', label: 'Delinquency (mo)', sortable: true, align: 'right' },
+        { key: 'poolId',            label: 'Pool',             sortable: true },
+        { key: 'occupancyStatus',   label: 'Occupancy',        sortable: true },
+        { key: 'nsoEligible',       label: 'NSO Eligible',     sortable: true, format: function (v) { return v ? 'Yes' : 'No'; } }
+      ];
+      tableData = loans;
+    } else {
+      // MHLS
+      columns = [
+        { key: 'dealId',         label: 'Deal',            sortable: true },
+        { key: 'propertyType',   label: 'Property Type',   sortable: true },
+        { key: 'location',       label: 'Location',        sortable: true },
+        { key: 'unitCount',      label: 'Units',           sortable: true, align: 'right' },
+        { key: 'upb',            label: 'UPB',             sortable: true, align: 'right', format: 'currency' },
+        { key: 'appraisedValue', label: 'Appraised Value', sortable: true, align: 'right', format: 'currency' },
+        { key: 'noi',            label: 'NOI',             sortable: true, align: 'right', format: 'currency' },
+        { key: 'dscr',           label: 'DSCR',            sortable: true, align: 'right' },
+        { key: 'occupancyRate',  label: 'Occupancy',       sortable: true, align: 'right', format: 'percent' },
+        { key: 'noteRate',       label: 'Note Rate',       sortable: true, align: 'right', format: 'percent' }
+      ];
+      // Add computed location field
+      tableData = loans.map(function (l) {
+        var copy = {};
+        for (var k in l) copy[k] = l[k];
+        copy.location = l.city + ', ' + l.state;
+        return copy;
+      });
+    }
+
+    centerHtml += '<div class="table-wrapper">';
+    centerHtml += c.renderDataTable({ columns: columns, data: tableData, id: 'dr-table' });
+    centerHtml += '</div>';
+
+    // ── RIGHT PANEL (Q&A) ──
+    var rightHtml = '';
+    rightHtml += '<h4 style="margin-bottom:var(--space-2);">Bidder Q&amp;A</h4>';
+    rightHtml += '<div class="eyebrow" style="margin-bottom:var(--space-4);">Questions &amp; Answers</div>';
+
+    var qaEntries = [
+      {
+        q: 'Are the BPO reports less than 90 days old as of the bid date?',
+        a: 'Yes. All BPO reports were completed within 90 days of the anticipated bid date. Updated BPOs will be provided if the sale timeline is extended.',
+        date: 'Mar 28, 2026',
+        by: 'Qualified Bidder'
+      },
+      {
+        q: 'Can the 60-day servicing transfer period be extended?',
+        a: 'The 60-day servicing transfer timeline is a firm requirement per BIP Section 6.1(c). Extensions require written approval from the Transaction Specialist and are granted only in extraordinary circumstances.',
+        date: 'Mar 25, 2026',
+        by: 'Qualified Bidder'
+      },
+      {
+        q: 'Will HUD provide representations regarding the validity of the underlying liens?',
+        a: 'HUD makes no representations or warranties regarding the validity, enforceability, or priority of the mortgage liens. Bidders are advised to review all title documentation in the VDR.',
+        date: 'Mar 22, 2026',
+        by: 'Qualified Bidder'
+      },
+      {
+        q: 'Is there flexibility on the bid deposit deadline relative to the bid submission deadline?',
+        a: 'No. Per BIP Section 4.2(a), bid deposits must be received via wire transfer by 10:00 AM ET on bid day. Deposits received after this time will result in a non-conforming bid determination.',
+        date: 'Mar 20, 2026',
+        by: 'Qualified Bidder'
+      }
+    ];
+
+    qaEntries.forEach(function (entry) {
+      rightHtml += '<div class="qa-entry">';
+      rightHtml += '<div class="qa-question">Q: ' + esc(entry.q) + '</div>';
+      rightHtml += '<div class="qa-answer">A: ' + esc(entry.a) + '</div>';
+      rightHtml += '<div class="qa-meta">' + entry.date + ' &mdash; Asked by: ' + esc(entry.by) + '</div>';
+      rightHtml += '</div>';
+    });
+
+    rightHtml += '<div class="qa-form" style="margin-top:var(--space-4);">';
+    rightHtml += '<textarea placeholder="Type your question..."></textarea>';
+    rightHtml += '<button class="btn btn--primary btn--sm btn--block">Submit Question</button>';
+    rightHtml += '</div>';
+
+    rightHtml += '<div class="qa-notice">All answers are visible to all qualified bidders to preserve competitive fairness.</div>';
+
+    // ── ASSEMBLE ──
+    var fullHtml = '<div class="data-room">';
+    fullHtml += '<div class="data-room__left">' + leftHtml + '</div>';
+    fullHtml += '<div class="data-room__center">' + centerHtml + '</div>';
+    fullHtml += '<div class="data-room__right">' + rightHtml + '</div>';
+    fullHtml += '</div>';
+
+    u.render('#app', fullHtml);
+
+    // Init table sorting
+    c.initTableSort();
+
+    // ── FILTERING LOGIC ──
+    var allLoans = isMHLS ? tableData : loans;
+    var filteredLoans = allLoans.slice();
+
+    function applyFilters() {
+      var searchVal = (document.getElementById('dr-search').value || '').toLowerCase();
+      filteredLoans = allLoans.filter(function (loan) {
+        // Search
+        if (searchVal) {
+          var searchable = Object.values(loan).join(' ').toLowerCase();
+          if (searchable.indexOf(searchVal) < 0) return false;
+        }
+
+        if (!isMHLS) {
+          // State filter
+          var stateFilter = document.getElementById('dr-filter-state');
+          if (stateFilter && stateFilter.value && loan.state !== stateFilter.value) return false;
+
+          // Pool filter
+          var poolFilter = document.getElementById('dr-filter-pool');
+          if (poolFilter && poolFilter.value && loan.poolId !== poolFilter.value) return false;
+
+          // Value range
+          var valueFilter = document.getElementById('dr-filter-value');
+          if (valueFilter && valueFilter.value) {
+            var parts = valueFilter.value.split('-');
+            var min = parseFloat(parts[0]);
+            var max = parseFloat(parts[1]);
+            var val = isHVLS ? loan.bpoValue : loan.upb;
+            if (val < min || val > max) return false;
+          }
+        } else {
+          // MHLS type filter
+          var typeFilter = document.getElementById('dr-filter-type');
+          if (typeFilter && typeFilter.value && loan.propertyType !== typeFilter.value) return false;
+        }
+
+        return true;
+      });
+
+      // Re-render table body
+      var table = document.getElementById('dr-table');
+      if (table) {
+        var tbody = table.querySelector('tbody');
+        if (filteredLoans.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="' + columns.length + '" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted);">No matching loans found</td></tr>';
+        } else {
+          var rowsHtml = '';
+          filteredLoans.forEach(function (row, idx) {
+            var cells = columns.map(function (col) {
+              var val = row[col.key];
+              var formatted;
+              if (typeof col.format === 'function') {
+                formatted = col.format(val);
+              } else if (!col.format) {
+                formatted = val != null ? esc(String(val)) : '—';
+              } else {
+                switch (col.format) {
+                  case 'currency':        formatted = u.currency(val); break;
+                  case 'currencyCompact': formatted = u.currencyCompact(val); break;
+                  case 'percent':         formatted = u.percent(val); break;
+                  case 'date':            formatted = u.date(val); break;
+                  case 'number':          formatted = u.number(val); break;
+                  default:                formatted = val != null ? esc(String(val)) : '—';
+                }
+              }
+              var align = col.align === 'right' ? ' class="cell-number"' : '';
+              return '<td' + align + '>' + formatted + '</td>';
+            }).join('');
+            rowsHtml += '<tr data-row-index="' + idx + '">' + cells + '</tr>';
+          });
+          tbody.innerHTML = rowsHtml;
+        }
+      }
+
+      // Update count
+      var countEl = document.getElementById('dr-loan-count');
+      if (countEl) countEl.textContent = filteredLoans.length + (isMHLS ? ' deals' : ' loans');
+
+      // Re-init sort after rebuilding tbody
+      c.initTableSort();
+    }
+
+    // Bind filter events
+    var searchInput = document.getElementById('dr-search');
+    if (searchInput) searchInput.addEventListener('input', u.debounce(applyFilters, 250));
+
+    ['dr-filter-state', 'dr-filter-pool', 'dr-filter-value', 'dr-filter-type'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', applyFilters);
+    });
+
+    // CSV export
+    var csvBtn = document.getElementById('dr-csv-btn');
+    if (csvBtn) {
+      csvBtn.addEventListener('click', function () {
+        u.exportCSV(filteredLoans, sale.id + '-loan-tape.csv');
+      });
+    }
+  }
+
+  /* ========================================================================
+     ROUTE: Bid Submission (#/bid/:saleId)
+     ======================================================================== */
+
+  function renderBid(params) {
+    var sale = getSale(params.saleId);
+    if (!sale) {
+      u.render('#app', '<div class="container main-content">' + c.renderEmptyState('&#128269;', 'Sale Not Found', 'The requested sale could not be found.') + '</div>');
+      return;
+    }
+
+    var pt = sale.programType.toUpperCase();
+    var isHVLS = pt === 'HVLS' || pt === 'HNVLS';
+    var isSFLS = pt === 'SFLS';
+    var isMHLS = pt === 'MHLS';
+    var pools = sale.pools || [];
+
+    var html = '<div class="container main-content">';
+    html += '<div class="bid-page">';
+
+    // Header
+    html += '<div class="bid-header">';
+    html += '<div style="display:flex;gap:var(--space-2);align-items:center;margin-bottom:var(--space-2);">' + c.renderBadge(sale.programType) + c.renderBadge(sale.status.indexOf('Active') >= 0 ? 'active' : 'pending', sale.status.split(' - ')[0]) + '</div>';
+    html += '<h3>' + esc(sale.name) + '</h3>';
+    html += '<div class="text-body-sm text-muted" style="margin-top:var(--space-2);">Bid Date: ' + u.date(sale.bidDate) + ' &bull; ' + sale.poolCount + ' pool' + (sale.poolCount !== 1 ? 's' : '') + '</div>';
+    html += '</div>';
+
+    // Sandbox toggle
+    html += '<div class="bid-sandbox-toggle">';
+    html += '<input type="checkbox" id="bid-sandbox"> <label for="bid-sandbox">Enable Sandbox / Test Mode</label>';
+    html += '</div>';
+    html += '<div class="bid-sandbox-banner" id="bid-sandbox-banner">TEST MODE — Bids submitted in sandbox mode will not be counted</div>';
+
+    // Pool tabs
+    var tabItems = pools.map(function (p) {
+      return { id: p.poolId, label: p.label };
+    });
+
+    html += '<div id="bid-pool-tabs">';
+    html += c.renderTabs(tabItems, pools[0] ? pools[0].poolId : '');
+    html += '</div>';
+
+    // Pool content panels
+    pools.forEach(function (pool, idx) {
+      var activeClass = idx === 0 ? ' active' : '';
+      var style = idx === 0 ? '' : 'display:none;';
+
+      html += '<div class="tab-panel' + activeClass + '" id="' + pool.poolId + '" data-tab-id="' + pool.poolId + '" style="' + style + '">';
+
+      // Pool summary
+      var aggValue, aggLabel;
+      if (isHVLS) {
+        aggValue = pool.aggregateBPO || 0;
+        aggLabel = 'Aggregate BPO';
+      } else if (isSFLS) {
+        aggValue = pool.aggregateUPB || 0;
+        aggLabel = 'Aggregate UPB';
+      } else {
+        aggValue = pool.upb || 0;
+        aggLabel = 'UPB';
+      }
+
+      html += '<div class="bid-pool-summary">';
+      html += '<h5>' + esc(pool.label) + '</h5>';
+      html += '<div class="stat-grid">';
+      html += '<div class="stat-card"><div class="stat-card__value">' + (pool.loanCount || 1) + '</div><div class="stat-card__label">' + (isMHLS ? 'Deal' : 'Loans') + '</div></div>';
+      html += '<div class="stat-card"><div class="stat-card__value">' + u.currencyCompact(aggValue) + '</div><div class="stat-card__label">' + aggLabel + '</div></div>';
+      html += '<div class="stat-card"><div class="stat-card__value">—</div><div class="stat-card__label">Geo Focus</div></div>';
+      html += '</div>';
+      html += '</div>';
+
+      // Bid input
+      if (isMHLS) {
+        html += '<div class="bid-input" data-pool-id="' + esc(pool.poolId) + '">';
+        html += '<div class="bid-input__label" style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-2);">Bid Amount ($)</div>';
+        html += '<input type="text" class="bid-input__field bid-field" data-pool="' + esc(pool.poolId) + '" data-type="dollar" data-agg="' + aggValue + '" placeholder="$0">';
+        html += '<div class="bid-input__help" style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-2);">Enter your bid as a dollar amount for this deal.</div>';
+        html += '</div>';
+
+        // Deposit calculator
+        html += '<div class="bid-deposit"><span>Deposit Required (10%)</span><span class="deposit-amount" data-pool="' + esc(pool.poolId) + '">$0</span></div>';
+      } else {
+        var pctLabel = isHVLS ? '% of BPO' : '% of UPB';
+        html += '<div class="bid-input" data-pool-id="' + esc(pool.poolId) + '">';
+        html += '<div class="bid-input__label" style="font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-2);">Bid as ' + pctLabel + '</div>';
+        html += '<input type="text" class="bid-input__field bid-field" data-pool="' + esc(pool.poolId) + '" data-type="percent" data-agg="' + aggValue + '" placeholder="0.00%">';
+        html += '<div class="bid-input__help" style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-2);">Enter your bid as a percentage of aggregate ' + (isHVLS ? 'BPO' : 'UPB') + ' for this pool.</div>';
+        html += '</div>';
+
+        // Calculator
+        html += '<div class="bid-calculator" data-pool="' + esc(pool.poolId) + '">';
+        html += '<div class="bid-calculator__title">Bid Calculator</div>';
+        html += '<div class="bid-calculator__row"><span class="bid-calculator__label">Aggregate ' + (isHVLS ? 'BPO' : 'UPB') + '</span><span class="bid-calculator__value">' + u.currency(aggValue) + '</span></div>';
+        html += '<div class="bid-calculator__row"><span class="bid-calculator__label">Bid Percentage</span><span class="bid-calculator__value calc-pct" data-pool="' + esc(pool.poolId) + '">—%</span></div>';
+        html += '<div class="bid-calculator__row bid-calculator__row--total"><span class="bid-calculator__label">Implied Bid Amount</span><span class="bid-calculator__value calc-implied" data-pool="' + esc(pool.poolId) + '">$0</span></div>';
+        html += '</div>';
+
+        // Deposit
+        html += '<div class="bid-deposit"><span>Deposit Required (10%)</span><span class="deposit-amount" data-pool="' + esc(pool.poolId) + '">$0</span></div>';
+      }
+
+      // Submit button
+      html += '<div style="margin-top:var(--space-6);">';
+      html += '<button class="btn btn--primary btn--lg btn--block bid-submit-btn" data-pool="' + esc(pool.poolId) + '" data-sale="' + esc(sale.id) + '">Review &amp; Submit Bid</button>';
+      html += '</div>';
+
+      html += '</div>'; // tab-panel
+    });
+
+    html += '</div>'; // bid-page
+    html += '</div>'; // container
+
+    u.render('#app', html);
+
+    // Sandbox toggle
+    var sandboxCheck = document.getElementById('bid-sandbox');
+    var sandboxBanner = document.getElementById('bid-sandbox-banner');
+    if (sandboxCheck) {
+      sandboxCheck.addEventListener('change', function () {
+        sandboxBanner.classList.toggle('visible', sandboxCheck.checked);
+      });
+    }
+
+    // Pool tab switching
+    c.initTabs('#bid-pool-tabs', function (tabId) {
+      document.querySelectorAll('.tab-panel').forEach(function (panel) {
+        var match = panel.id === tabId;
+        panel.style.display = match ? '' : 'none';
+        panel.classList.toggle('active', match);
+      });
+    });
+
+    // Real-time bid calculator
+    document.querySelectorAll('.bid-field').forEach(function (input) {
+      input.addEventListener('input', function () {
+        var poolId = input.getAttribute('data-pool');
+        var type = input.getAttribute('data-type');
+        var agg = parseFloat(input.getAttribute('data-agg'));
+        var rawVal = input.value.replace(/[^0-9.]/g, '');
+        var numVal = parseFloat(rawVal) || 0;
+
+        if (type === 'percent') {
+          var implied = agg * (numVal / 100);
+          var pctEl = document.querySelector('.calc-pct[data-pool="' + poolId + '"]');
+          var impliedEl = document.querySelector('.calc-implied[data-pool="' + poolId + '"]');
+          if (pctEl) pctEl.textContent = numVal ? numVal.toFixed(2) + '%' : '—%';
+          if (impliedEl) impliedEl.textContent = u.currency(implied);
+
+          var depositEl = document.querySelector('.deposit-amount[data-pool="' + poolId + '"]');
+          if (depositEl) depositEl.textContent = u.currency(implied * 0.1);
+        } else {
+          // Dollar amount (MHLS)
+          var depositEl2 = document.querySelector('.deposit-amount[data-pool="' + poolId + '"]');
+          if (depositEl2) depositEl2.textContent = u.currency(numVal * 0.1);
+        }
+      });
+    });
+
+    // Submit bid buttons
+    document.querySelectorAll('.bid-submit-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var poolId = btn.getAttribute('data-pool');
+        var saleId = btn.getAttribute('data-sale');
+        var input = document.querySelector('.bid-field[data-pool="' + poolId + '"]');
+        var type = input.getAttribute('data-type');
+        var agg = parseFloat(input.getAttribute('data-agg'));
+        var rawVal = input.value.replace(/[^0-9.]/g, '');
+        var numVal = parseFloat(rawVal) || 0;
+
+        if (numVal <= 0) {
+          alert('Please enter a bid amount.');
+          return;
+        }
+
+        var pool = null;
+        pools.forEach(function (p) { if (p.poolId === poolId) pool = p; });
+
+        var impliedValue, bidDisplay, deposit;
+        if (type === 'percent') {
+          impliedValue = agg * (numVal / 100);
+          bidDisplay = numVal.toFixed(2) + '% of ' + (isHVLS ? 'BPO' : 'UPB');
+          deposit = impliedValue * 0.1;
+        } else {
+          impliedValue = numVal;
+          bidDisplay = u.currency(numVal);
+          deposit = numVal * 0.1;
+        }
+
+        var sandbox = sandboxCheck && sandboxCheck.checked;
+
+        // Show confirmation modal
+        var modalHtml = '<div class="modal-overlay is-open" id="bid-modal">';
+        modalHtml += '<div class="modal">';
+        modalHtml += '<div class="modal-header"><h4 class="modal-header__title">Confirm Bid Submission</h4><button class="modal-header__close" onclick="document.getElementById(\'bid-modal\').classList.remove(\'is-open\')">&times;</button></div>';
+        modalHtml += '<div class="modal-body" id="bid-modal-body">';
+
+        if (sandbox) {
+          modalHtml += '<div style="background:var(--color-warning-bg);color:var(--color-warning);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-4);">SANDBOX MODE — This bid will not be counted</div>';
+        }
+
+        modalHtml += '<dl>';
+        modalHtml += '<div class="bid-confirm-row"><dt>Sale</dt><dd>' + esc(sale.name) + '</dd></div>';
+        modalHtml += '<div class="bid-confirm-row"><dt>Pool</dt><dd>' + esc(pool ? pool.label : poolId) + '</dd></div>';
+        modalHtml += '<div class="bid-confirm-row"><dt>Bid Amount</dt><dd>' + bidDisplay + '</dd></div>';
+        modalHtml += '<div class="bid-confirm-row"><dt>Implied Value</dt><dd>' + u.currency(impliedValue) + '</dd></div>';
+        modalHtml += '<div class="bid-confirm-row"><dt>Deposit Required</dt><dd>' + u.currency(deposit) + '</dd></div>';
+        modalHtml += '</dl>';
+
+        modalHtml += '<div class="bid-confirm-checkbox"><input type="checkbox" id="bid-confirm-check"><label for="bid-confirm-check">I confirm this bid is final and binding per the CAA terms</label></div>';
+
+        modalHtml += '</div>'; // modal-body
+        modalHtml += '<div class="modal-footer">';
+        modalHtml += '<button class="btn btn--secondary" onclick="document.getElementById(\'bid-modal\').classList.remove(\'is-open\')">Cancel</button>';
+        modalHtml += '<button class="btn btn--primary" id="bid-confirm-submit" disabled>Submit Bid</button>';
+        modalHtml += '</div>';
+        modalHtml += '</div></div>';
+
+        u.render('#modal-container', modalHtml);
+
+        // Enable submit only after checkbox
+        var confirmCheck = document.getElementById('bid-confirm-check');
+        var confirmSubmit = document.getElementById('bid-confirm-submit');
+        confirmCheck.addEventListener('change', function () {
+          confirmSubmit.disabled = !confirmCheck.checked;
+        });
+
+        // Submit
+        confirmSubmit.addEventListener('click', function () {
+          var bidId = 'BID-' + saleId + '-' + u.uid().toUpperCase();
+          var timestamp = new Date().toISOString();
+
+          // Store bid
+          userBids.push({
+            bidId: bidId,
+            saleId: saleId,
+            saleName: sale.name,
+            poolId: poolId,
+            poolLabel: pool ? pool.label : poolId,
+            bidAmount: numVal,
+            bidType: type,
+            impliedValue: impliedValue,
+            timestamp: timestamp,
+            status: sandbox ? 'Sandbox' : 'Submitted',
+            sandbox: sandbox
+          });
+
+          // Show success state
+          var successHtml = '<div class="bid-success">';
+          successHtml += '<div class="bid-success__icon">&#10003;</div>';
+          successHtml += '<h4>Bid Submitted Successfully</h4>';
+          successHtml += '<p style="color:var(--color-text-muted);font-size:var(--text-sm);">Your bid has been received and logged.</p>';
+          successHtml += '<div class="bid-success__details">';
+          successHtml += '<div>Bid ID: ' + bidId + '</div>';
+          successHtml += '<div>Submitted: ' + u.date(timestamp) + ' at ' + new Date(timestamp).toLocaleTimeString() + '</div>';
+          if (sandbox) successHtml += '<div style="color:var(--color-warning);margin-top:var(--space-2);">SANDBOX — Not counted</div>';
+          successHtml += '</div>';
+          successHtml += '</div>';
+
+          var modalBody = document.getElementById('bid-modal-body');
+          modalBody.innerHTML = successHtml;
+
+          // Replace footer with close button
+          var modalFooter = modalBody.parentNode.querySelector('.modal-footer');
+          modalFooter.innerHTML = '<button class="btn btn--primary" onclick="document.getElementById(\'bid-modal\').classList.remove(\'is-open\')">Close</button>';
+        });
+      });
+    });
+  }
+
+  /* ========================================================================
+     ROUTE: My Bids (#/my-bids)
+     ======================================================================== */
+
+  function renderMyBids() {
+    var html = '<div class="container main-content">';
+    html += '<div class="page-header">';
+    html += '<div class="eyebrow">My Account</div>';
+    html += '<h2 class="page-header__title">My Bids</h2>';
+    html += '</div>';
+
+    if (userBids.length === 0) {
+      html += c.renderEmptyState('&#128203;', 'No Bids Submitted Yet', 'Your submitted bids will appear here. Navigate to a sale and submit a bid to get started.');
+    } else {
+      var columns = [
+        { key: 'saleName',     label: 'Sale',           sortable: true },
+        { key: 'poolLabel',    label: 'Pool',           sortable: true },
+        { key: 'bidDisplay',   label: 'Bid Amount',     sortable: true },
+        { key: 'impliedValue', label: 'Implied Value',  sortable: true, align: 'right', format: 'currency' },
+        { key: 'submittedAt',  label: 'Submitted At',   sortable: true },
+        { key: 'status',       label: 'Status',         sortable: true }
+      ];
+
+      var tableData = userBids.map(function (b) {
+        return {
+          saleName: b.saleName,
+          poolLabel: b.poolLabel,
+          bidDisplay: b.bidType === 'percent' ? b.bidAmount.toFixed(2) + '%' : u.currency(b.bidAmount),
+          impliedValue: b.impliedValue,
+          submittedAt: u.date(b.timestamp) + ' ' + new Date(b.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: b.status
+        };
+      });
+
+      html += '<div class="table-wrapper">';
+      html += c.renderDataTable({ columns: columns, data: tableData, id: 'my-bids-table' });
+      html += '</div>';
+    }
+
+    html += '</div>';
+
+    u.render('#app', html);
+    c.initTableSort();
+  }
+
+  /* ========================================================================
+     ROUTER SETUP
+     ======================================================================== */
+
+  HSG.router
+    .on('/sales', renderSales)
+    .on('/data-room/:saleId', renderDataRoom)
+    .on('/bid/:saleId', renderBid)
+    .on('/my-bids', renderMyBids)
+    .onNotFound(function () {
+      // Default to sales
+      HSG.router.navigate('/sales');
+    });
+
+  // Start router
+  HSG.router.start();
+
+  // If no hash, navigate to sales
+  if (!window.location.hash || window.location.hash === '#' || window.location.hash === '#/') {
+    HSG.router.navigate('/sales');
+  }
+
+})();
+</script>
+
+</body>
+</html>
