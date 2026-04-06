@@ -1,54 +1,61 @@
 /**
- * HUD Office of Asset Sales - Sale Lifecycle Timelines
+ * HUD Office of Asset Sales — Sale Lifecycle Timelines
  * Milestones for each of the 4 active sales
+ *
  * Statuses: "completed" | "active" | "upcoming" | "overdue"
+ * Today: 2026-04-02
+ *
+ * Assigned to window.HSG_DATA.timelines
  */
 window.HSG_DATA = window.HSG_DATA || {};
 
 window.HSG_DATA.timelines = {
 
-  // ── HVLS 2026-2 (Active - Due Diligence) ──────────────────────────────
+  /* ========================================================================
+     HVLS 2026-2 — Active (Due Diligence), Bid Day April 22
+     Most milestones completed, approaching bid day
+     ======================================================================== */
   "HVLS-2026-2": [
     {
       date: "2026-02-18",
-      label: "Federal Register Notice Published",
+      label: "FRN Published",
       status: "completed",
-      description: "FRN published announcing HVLS 2026-2, establishing sale terms, and opening the qualification period for prospective bidders."
+      description: "Federal Register Notice published announcing HVLS 2026-2, establishing sale terms and opening the qualification period for prospective bidders."
     },
     {
       date: "2026-02-24",
-      label: "Qualification Period Opens",
+      label: "Qualification Opens",
       status: "completed",
       description: "Bidder pre-qualification applications accepted. Prospective bidders submit entity documentation, financial capacity evidence, OFAC/SAM certifications, and designated servicer information."
     },
     {
       date: "2026-03-10",
-      label: "Virtual Data Room Opens",
+      label: "Data Room Opens",
       status: "completed",
       description: "Qualified bidders granted VDR access after executing Confidentiality Agreement and Access Agreement (CAA). Loan-level documents available for due diligence."
     },
     {
       date: "2026-03-18",
-      label: "Bidder Information Package (BIP) Released",
+      label: "BIP Released",
       status: "completed",
-      description: "Complete BIP distributed to qualified bidders including bidding instructions, loan sale agreement form, servicing transfer agreement, and pool summary statistics."
+      description: "Complete Bidder Information Package distributed to qualified bidders including bidding instructions, loan sale agreement form, servicing transfer agreement, and pool summary statistics."
     },
     {
       date: "2026-04-01",
-      label: "Aggregate Loan Data (ALD) Final Update",
+      label: "ALD Final Update",
       status: "completed",
-      description: "Final ALD tape published reflecting loan status as of the Asset Listing Date cutoff. Any loans removed or added since initial ALD are noted in the update log."
+      description: "Final Aggregate Loan Data tape published reflecting loan status as of the Asset Listing Date cutoff. Removed and added loans noted in the update log."
     },
     {
       date: "2026-04-08",
       label: "Qualification Deadline",
-      status: "completed",
+      status: "active",
       description: "Final deadline for new bidder qualification applications. Late applications not accepted. 14 bidders qualified across all pools."
     },
     {
       date: "2026-04-15",
       label: "Bid Questions Deadline",
-      status: "active",
+      status: "upcoming",
       description: "Final date for bidders to submit written questions regarding the BIP, loan tape, or VDR documents. Responses distributed to all qualified bidders."
     },
     {
@@ -59,99 +66,105 @@ window.HSG_DATA.timelines = {
     },
     {
       date: "2026-05-06",
-      label: "Award Notification",
+      label: "Award Date",
       status: "upcoming",
-      description: "HUD notifies winning bidders. Award subject to HUD Office of General Counsel review and Departmental approval. Non-winning bidders notified and deposits returned."
+      description: "HUD notifies winning bidders. Award subject to Office of General Counsel review and Departmental approval. Non-winning bidders notified and deposits returned."
     },
     {
       date: "2026-06-03",
-      label: "Settlement / Closing",
+      label: "Settlement Date",
       status: "upcoming",
-      description: "Loan sale closing and settlement. Wire transfer of purchase price, execution of loan sale agreement, and initiation of servicing transfer. 60-day servicing transfer period begins."
+      description: "Loan sale closing and settlement. Wire transfer of purchase price, execution of loan sale agreement, and initiation of 60-day servicing transfer period."
     }
   ],
 
-  // ── HNVLS 2026-1 (Postponed) ──────────────────────────────────────────
+  /* ========================================================================
+     HNVLS 2026-1 — Postponed
+     Early milestones completed, then postponed pending regulatory guidance
+     ======================================================================== */
   "HNVLS-2026-1": [
     {
       date: "2026-01-22",
-      label: "Federal Register Notice Published",
+      label: "FRN Published",
       status: "completed",
-      description: "FRN published announcing HNVLS 2026-1 for approximately 150 occupied HECM loans across three geographic pools."
+      description: "Federal Register Notice published announcing HNVLS 2026-1 for approximately 150 occupied HECM loans across three geographic pools."
     },
     {
       date: "2026-01-28",
-      label: "Qualification Period Opens",
+      label: "Qualification Opens",
       status: "completed",
       description: "Bidder pre-qualification applications accepted. 9 prospective bidders submitted applications before postponement."
     },
     {
       date: "2026-02-24",
-      label: "Virtual Data Room Opens",
+      label: "Data Room Opens",
       status: "completed",
-      description: "VDR opened with loan-level documents. Data room remains accessible to qualified bidders during postponement."
+      description: "VDR opened with loan-level documents. Data room remains accessible to qualified bidders during postponement period."
     },
     {
       date: "2026-03-05",
       label: "Sale Postponed",
       status: "overdue",
-      description: "Sale postponed pending issuance of Mortgagee Letter 2026-08 clarifying post-sale borrower occupancy protections and HECM assignment requirements for occupied properties. Revised timeline to be announced via supplemental FRN."
+      description: "Sale postponed pending issuance of Mortgagee Letter 2026-08 clarifying post-sale borrower occupancy protections and HECM assignment requirements for occupied properties."
     },
     {
       date: null,
-      label: "Revised BIP Release",
+      label: "BIP Released",
       status: "upcoming",
       description: "Updated BIP reflecting any changes to sale terms based on Mortgagee Letter guidance. Will be released within 15 business days of ML publication."
     },
     {
       date: null,
-      label: "Revised Qualification Deadline",
+      label: "Qualification Deadline",
       status: "upcoming",
-      description: "New deadline for bidder qualification or re-qualification following updated sale terms. Previously qualified bidders may need to re-certify."
+      description: "Revised deadline for bidder qualification or re-qualification following updated sale terms. Previously qualified bidders may need to re-certify."
     },
     {
       date: null,
-      label: "Revised Bid Day",
+      label: "Bid Day",
       status: "upcoming",
-      description: "Rescheduled bid date to be announced. Minimum 30 days notice from BIP release to bid day."
+      description: "Rescheduled bid date to be announced via supplemental FRN. Minimum 30 days notice from BIP release to bid day."
     },
     {
       date: null,
-      label: "Award Notification",
+      label: "Award Date",
       status: "upcoming",
       description: "Award notification approximately 14 business days after bid day."
     },
     {
       date: null,
-      label: "Settlement / Closing",
+      label: "Settlement Date",
       status: "upcoming",
       description: "Settlement approximately 30 business days after award notification."
     }
   ],
 
-  // ── SFLS 2026-1 (Upcoming - Pre-Qualification) ────────────────────────
+  /* ========================================================================
+     SFLS 2026-1 — Upcoming (Pre-Qualification)
+     FRN published, qualification in progress, data room not yet open
+     ======================================================================== */
   "SFLS-2026-1": [
     {
       date: "2026-03-11",
-      label: "Federal Register Notice Published",
+      label: "FRN Published",
       status: "completed",
-      description: "FRN published announcing SFLS 2026-1 for approximately 312 defaulted forward FHA single-family mortgage loans organized into three geographic pools."
+      description: "Federal Register Notice published announcing SFLS 2026-1 for approximately 312 defaulted forward FHA single-family mortgage loans in three geographic pools."
     },
     {
       date: "2026-03-17",
-      label: "Qualification Period Opens",
-      status: "active",
+      label: "Qualification Opens",
+      status: "completed",
       description: "Bidder pre-qualification applications now being accepted. Prospective bidders must demonstrate servicing capacity or provide designated servicer arrangements."
     },
     {
       date: "2026-03-24",
-      label: "Virtual Data Room Opens",
-      status: "upcoming",
+      label: "Data Room Opens",
+      status: "active",
       description: "VDR access granted to qualified bidders after CAA execution. Loan-level documents include payment histories, property valuations, and default timeline documentation."
     },
     {
       date: "2026-04-07",
-      label: "Bidder Information Package (BIP) Released",
+      label: "BIP Released",
       status: "upcoming",
       description: "Complete BIP including bidding instructions, NSO mission provisions, loan sale agreement form, and aggregate loan data tape."
     },
@@ -165,7 +178,7 @@ window.HSG_DATA.timelines = {
       date: "2026-04-28",
       label: "ALD Final Update",
       status: "upcoming",
-      description: "Final aggregate loan data tape reflecting loan status as of the Asset Listing Date. Loans that have been resolved, paid off, or reinstated are removed."
+      description: "Final aggregate loan data tape reflecting loan status as of the Asset Listing Date. Loans resolved, paid off, or reinstated since initial ALD are removed."
     },
     {
       date: "2026-05-06",
@@ -175,41 +188,44 @@ window.HSG_DATA.timelines = {
     },
     {
       date: "2026-05-20",
-      label: "Award Notification",
+      label: "Award Date",
       status: "upcoming",
       description: "HUD notifies winning bidders following OGC review and Departmental approval. Bid deposits returned to non-winning bidders within 5 business days."
     },
     {
       date: "2026-06-17",
-      label: "Settlement / Closing",
+      label: "Settlement Date",
       status: "upcoming",
       description: "Closing and settlement with 60-day servicing transfer period. Purchaser assumes responsibility for loss mitigation and borrower outreach per NSO requirements."
     }
   ],
 
-  // ── MHLS 2026-1 (Upcoming) ────────────────────────────────────────────
+  /* ========================================================================
+     MHLS 2026-1 — Upcoming
+     Earliest stage: FRN just published, qualification just opened
+     ======================================================================== */
   "MHLS-2026-1": [
     {
       date: "2026-03-25",
-      label: "Federal Register Notice Published",
+      label: "FRN Published",
       status: "completed",
-      description: "FRN published announcing MHLS 2026-1 for 8 FHA-insured multifamily and healthcare facility loans. Each deal bid individually with separate deal books."
+      description: "Federal Register Notice published announcing MHLS 2026-1 for 8 FHA-insured multifamily and healthcare facility loans. Each deal bid individually with separate deal books."
     },
     {
       date: "2026-04-01",
-      label: "Qualification Period Opens",
+      label: "Qualification Opens",
       status: "active",
-      description: "Bidder qualification applications accepted. MHLS bidders must demonstrate multifamily asset management experience, financial capacity, and healthcare facility operating capability (for healthcare deals)."
+      description: "Bidder qualification applications accepted. MHLS bidders must demonstrate multifamily asset management experience, financial capacity, and healthcare facility operating capability for healthcare deals."
     },
     {
       date: "2026-04-07",
-      label: "Virtual Data Room Opens",
+      label: "Data Room Opens",
       status: "upcoming",
       description: "VDR access for qualified bidders. Organized by deal with Volume 1 (loan documents) and Volume 2 (property/financial documents) for each property."
     },
     {
       date: "2026-04-14",
-      label: "Bidder Information Package (BIP) Released",
+      label: "BIP Released",
       status: "upcoming",
       description: "BIP including individual deal books, bidding instructions, and deal-specific information regarding regulatory agreements, HAP contracts, LIHTC obligations, and healthcare licensing."
     },
@@ -217,7 +233,7 @@ window.HSG_DATA.timelines = {
       date: "2026-04-21",
       label: "Property Inspection Period Opens",
       status: "upcoming",
-      description: "Qualified bidders may schedule property inspections through the Transaction Specialist. Inspections available by appointment only, subject to tenant notification and healthcare facility access protocols."
+      description: "Qualified bidders may schedule property inspections through the Transaction Specialist. Inspections by appointment only, subject to tenant notification and healthcare facility access protocols."
     },
     {
       date: "2026-05-06",
@@ -239,15 +255,15 @@ window.HSG_DATA.timelines = {
     },
     {
       date: "2026-06-10",
-      label: "Award Notification",
+      label: "Award Date",
       status: "upcoming",
       description: "Award notification by deal. Each deal awarded independently to the highest conforming bidder, subject to OGC review of regulatory agreement transfer requirements."
     },
     {
       date: "2026-07-15",
-      label: "Settlement / Closing",
+      label: "Settlement Date",
       status: "upcoming",
-      description: "Deal closings may occur on different dates by deal. Healthcare facility deals require state licensing agency approval of operator transfer prior to closing."
+      description: "Deal closings may occur on different dates. Healthcare facility deals require state licensing agency approval of operator transfer prior to closing."
     }
   ]
 };
