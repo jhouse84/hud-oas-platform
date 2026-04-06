@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HUD Asset Sales Platform | House Strategies Group</title>
+<meta name="description" content="A purpose-built transaction platform for HUD's Office of Asset Sales. Intelligent. Unified. Unbreakable.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ========================================
+   RESET & BASE
+   ======================================== */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg-deep: #0a0e1a;
+  --bg-surface: rgba(255,255,255,0.03);
+  --bg-card: rgba(255,255,255,0.04);
+  --blue: #3B82F6;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --rose: #ef4444;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #475569;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Fira Code', monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ========================================
+   NAVIGATION
+   ======================================== */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 1.25rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.4s ease, backdrop-filter 0.4s ease, padding 0.4s ease;
+}
+
+.nav.scrolled {
+  background: rgba(10, 14, 26, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 0.75rem 2.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.nav-logo {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--blue);
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  transition: color 0.3s;
+  letter-spacing: 0.02em;
+}
+
+.nav-links a:hover {
+  color: var(--text-primary);
+}
+
+.nav-cta {
+  font-size: 0.75rem !important;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  border-radius: 6px;
+  color: var(--blue) !important;
+  transition: all 0.3s !important;
+}
+
+.nav-cta:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: var(--blue);
+}
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.hamburger span {
+  width: 22px;
+  height: 1.5px;
+  background: var(--text-secondary);
+  transition: all 0.3s;
+}
+
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 14, 26, 0.97);
+  backdrop-filter: blur(30px);
+  z-index: 999;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.mobile-menu.active {
+  display: flex;
+  opacity: 1;
+}
+
+.mobile-menu a {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  transition: color 0.3s;
+}
+
+.mobile-menu a:hover {
+  color: var(--text-primary);
+}
+
+.mobile-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* ========================================
+   HERO SECTION
+   ======================================== */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.hero-mesh {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 30% 40%, rgba(59,130,246,0.08), transparent),
+    radial-gradient(ellipse 500px 500px at 70% 60%, rgba(34,197,94,0.05), transparent),
+    radial-gradient(ellipse 400px 300px at 50% 80%, rgba(239,68,68,0.04), transparent);
+  animation: meshDrift 20s ease-in-out infinite;
+}
+
+@keyframes meshDrift {
+  0%, 100% {
+    background:
+      radial-gradient(ellipse 600px 400px at 30% 40%, rgba(59,130,246,0.08), transparent),
+      radial-gradient(ellipse 500px 500px at 70% 60%, rgba(34,197,94,0.05), transparent),
+      radial-gradient(ellipse 400px 300px at 50% 80%, rgba(239,68,68,0.04), transparent);
+  }
+  33% {
+    background:
+      radial-gradient(ellipse 600px 400px at 50% 30%, rgba(59,130,246,0.10), transparent),
+      radial-gradient(ellipse 500px 500px at 30% 70%, rgba(245,158,11,0.06), transparent),
+      radial-gradient(ellipse 400px 300px at 70% 50%, rgba(34,197,94,0.04), transparent);
+  }
+  66% {
+    background:
+      radial-gradient(ellipse 600px 400px at 70% 50%, rgba(239,68,68,0.06), transparent),
+      radial-gradient(ellipse 500px 500px at 40% 40%, rgba(59,130,246,0.08), transparent),
+      radial-gradient(ellipse 400px 300px at 60% 70%, rgba(245,158,11,0.05), transparent);
+  }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+}
+
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: var(--blue);
+  margin-bottom: 1.75rem;
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards 0.2s;
+}
+
+.hero-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(2.75rem, 6vw, 4.5rem);
+  font-weight: 600;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards 0.4s;
+}
+
+.hero-headline .gradient-text {
+  background: linear-gradient(135deg, var(--blue) 0%, #818cf8 40%, #a78bfa 70%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: clamp(1rem, 2vw, 1.125rem);
+  font-weight: 300;
+  color: var(--text-secondary);
+  max-width: 560px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.7;
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards 0.6s;
+}
+
+.hero-ctas {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards 0.8s;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  background: var(--blue);
+  color: white;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  background-size: 200% 100%;
+  background-image: linear-gradient(90deg, var(--blue) 0%, #6366f1 50%, var(--blue) 100%);
+  background-position: 0% 50%;
+}
+
+.btn-primary:hover {
+  background-position: 100% 50%;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px rgba(59,130,246,0.3);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-outline:hover {
+  border-color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.05);
+  transform: translateY(-1px);
+}
+
+.hero-stats {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.05em;
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards 1s;
+}
+
+.hero-stats span {
+  margin: 0 0.5rem;
+  opacity: 0.4;
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards 1.2s;
+}
+
+.scroll-indicator span {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.scroll-chevron {
+  width: 20px;
+  height: 20px;
+  border-right: 1.5px solid var(--text-tertiary);
+  border-bottom: 1.5px solid var(--text-tertiary);
+  transform: rotate(45deg);
+  animation: scrollBounce 2s ease-in-out infinite;
+}
+
+@keyframes scrollBounce {
+  0%, 100% { transform: rotate(45deg) translateY(0); opacity: 0.4; }
+  50% { transform: rotate(45deg) translateY(6px); opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================
+   SECTION BASE STYLES
+   ======================================== */
+section {
+  position: relative;
+  padding: 6rem 2rem;
+}
+
+.section-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: var(--blue);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+}
+
+.section-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 600;
+  line-height: 1.15;
+  margin-bottom: 1.25rem;
+  max-width: 700px;
+}
+
+.section-desc {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  max-width: 600px;
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+/* Reveal animation */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ========================================
+   SECTION 2: THE PROBLEM
+   ======================================== */
+.problem {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  background:
+    radial-gradient(ellipse 500px 300px at 20% 50%, rgba(239,68,68,0.04), transparent),
+    radial-gradient(ellipse 400px 400px at 80% 50%, rgba(245,158,11,0.03), transparent);
+}
+
+.problem-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+.problem-card {
+  padding: 2rem;
+  background: rgba(239,68,68,0.03);
+  border: 1px solid rgba(239,68,68,0.08);
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.problem-card:hover {
+  background: rgba(239,68,68,0.05);
+  border-color: rgba(239,68,68,0.15);
+  transform: translateY(-2px);
+}
+
+.problem-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(239,68,68,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  font-size: 1.1rem;
+}
+
+.problem-card h3 {
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.problem-card p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  font-weight: 300;
+}
+
+.problem-closing {
+  margin-top: 2.5rem;
+  font-size: 0.95rem;
+  color: var(--text-tertiary);
+  font-style: italic;
+  max-width: 600px;
+}
+
+/* ========================================
+   SECTION 3: FOUR PROGRAMS
+   ======================================== */
+.programs {
+  padding: 8rem 2rem;
+  background:
+    radial-gradient(ellipse 600px 400px at 50% 30%, rgba(59,130,246,0.05), transparent);
+}
+
+.programs .section-headline {
+  text-align: center;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.programs .section-eyebrow {
+  text-align: center;
+}
+
+.programs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-top: 4rem;
+}
+
+.program-card {
+  position: relative;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.program-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.program-card:nth-child(1):hover { box-shadow: 0 20px 60px rgba(59,130,246,0.12); }
+.program-card:nth-child(2):hover { box-shadow: 0 20px 60px rgba(34,197,94,0.12); }
+.program-card:nth-child(3):hover { box-shadow: 0 20px 60px rgba(245,158,11,0.12); }
+.program-card:nth-child(4):hover { box-shadow: 0 20px 60px rgba(239,68,68,0.12); }
+
+.program-gradient {
+  height: 4px;
+  transition: height 0.4s ease;
+}
+
+.program-card:hover .program-gradient {
+  height: 6px;
+}
+
+.program-gradient.blue { background: linear-gradient(90deg, var(--blue), #818cf8); }
+.program-gradient.green { background: linear-gradient(90deg, var(--green), #4ade80); }
+.program-gradient.amber { background: linear-gradient(90deg, var(--amber), #fbbf24); }
+.program-gradient.rose { background: linear-gradient(90deg, var(--rose), #f87171); }
+
+.program-body {
+  padding: 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.program-abbr {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  margin-bottom: 0.5rem;
+}
+
+.program-card:nth-child(1) .program-abbr { color: var(--blue); }
+.program-card:nth-child(2) .program-abbr { color: var(--green); }
+.program-card:nth-child(3) .program-abbr { color: var(--amber); }
+.program-card:nth-child(4) .program-abbr { color: var(--rose); }
+
+.program-name {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.program-stat {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-bottom: 1rem;
+}
+
+.program-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-weight: 300;
+  margin-bottom: 1.25rem;
+  flex: 1;
+}
+
+.program-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.pill {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 100px;
+  letter-spacing: 0.02em;
+}
+
+.program-card:nth-child(1) .pill { background: rgba(59,130,246,0.1); color: var(--blue); border: 1px solid rgba(59,130,246,0.15); }
+.program-card:nth-child(2) .pill { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.15); }
+.program-card:nth-child(3) .pill { background: rgba(245,158,11,0.1); color: var(--amber); border: 1px solid rgba(245,158,11,0.15); }
+.program-card:nth-child(4) .pill { background: rgba(239,68,68,0.1); color: var(--rose); border: 1px solid rgba(239,68,68,0.15); }
+
+.program-link {
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: gap 0.3s;
+}
+
+.program-card:nth-child(1) .program-link { color: var(--blue); }
+.program-card:nth-child(2) .program-link { color: var(--green); }
+.program-card:nth-child(3) .program-link { color: var(--amber); }
+.program-card:nth-child(4) .program-link { color: var(--rose); }
+
+.program-link:hover { gap: 0.6rem; }
+
+/* ========================================
+   SECTION 4: PLATFORM FEATURES
+   ======================================== */
+.features {
+  padding: 8rem 2rem;
+}
+
+.feature-block {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  margin-bottom: 8rem;
+}
+
+.feature-block:last-child {
+  margin-bottom: 0;
+}
+
+.feature-block.reverse {
+  direction: rtl;
+}
+
+.feature-block.reverse > * {
+  direction: ltr;
+}
+
+.feature-text .section-eyebrow {
+  margin-bottom: 0.75rem;
+}
+
+.feature-text h3 {
+  font-family: var(--font-serif);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 600;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.feature-text p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-weight: 300;
+  margin-bottom: 1.5rem;
+}
+
+.feature-detail-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.feature-detail-list li {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.feature-detail-list li::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--blue);
+  flex-shrink: 0;
+}
+
+/* CSS Mockups */
+.mockup {
+  position: relative;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 16/10;
+}
+
+.mockup-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.mockup-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.mockup-dot:nth-child(1) { background: #ef4444; }
+.mockup-dot:nth-child(2) { background: #f59e0b; }
+.mockup-dot:nth-child(3) { background: #22c55e; }
+
+.mockup-toolbar-title {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+}
+
+.mockup-body {
+  padding: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  height: calc(100% - 40px);
+}
+
+.mockup-panel {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 6px;
+  padding: 0.75rem;
+  overflow: hidden;
+}
+
+.mockup-panel.sidebar { flex: 0 0 25%; }
+.mockup-panel.main { flex: 1; }
+.mockup-panel.detail { flex: 0 0 30%; }
+
+.mockup-line {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.06);
+  margin-bottom: 6px;
+}
+
+.mockup-line.short { width: 60%; }
+.mockup-line.med { width: 80%; }
+.mockup-line.long { width: 95%; }
+.mockup-line.accent { background: rgba(59,130,246,0.15); }
+.mockup-line.green-accent { background: rgba(34,197,94,0.15); }
+.mockup-line.amber-accent { background: rgba(245,158,11,0.15); }
+
+.mockup-header-line {
+  height: 10px;
+  width: 50%;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.1);
+  margin-bottom: 12px;
+}
+
+.mockup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+.mockup-cell {
+  height: 20px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+.mockup-bid-slip {
+  background: rgba(59,130,246,0.06);
+  border: 1px solid rgba(59,130,246,0.12);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.mockup-input {
+  height: 22px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.mockup-btn {
+  height: 22px;
+  width: 70%;
+  background: rgba(59,130,246,0.3);
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.mockup-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+}
+
+.mockup-ai-bubble {
+  background: rgba(139,92,246,0.06);
+  border: 1px solid rgba(139,92,246,0.1);
+  border-radius: 8px;
+  padding: 0.6rem;
+}
+
+.mockup-ai-bubble.response {
+  background: rgba(59,130,246,0.06);
+  border-color: rgba(59,130,246,0.1);
+  margin-left: 1rem;
+}
+
+/* ========================================
+   SECTION 5: BY THE NUMBERS
+   ======================================== */
+.numbers {
+  padding: 8rem 2rem;
+  text-align: center;
+  background:
+    radial-gradient(ellipse 500px 300px at 30% 50%, rgba(59,130,246,0.04), transparent),
+    radial-gradient(ellipse 400px 300px at 70% 50%, rgba(139,92,246,0.04), transparent);
+}
+
+.numbers-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3rem 2rem;
+  margin-top: 4rem;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.number-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.number-value {
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--blue) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.number-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+/* ========================================
+   SECTION 6: BUILT ON RESEARCH
+   ======================================== */
+.research {
+  padding: 6rem 2rem;
+  text-align: center;
+}
+
+.research-inner {
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.research-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--blue);
+  letter-spacing: 0.05em;
+  margin-bottom: 2rem;
+}
+
+.research .section-headline {
+  max-width: 100%;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.research p {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-weight: 300;
+  margin-bottom: 2rem;
+}
+
+.research-respondents {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+
+.respondent-type {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.respondent-type .count {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.respondent-type .label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ========================================
+   FOOTER
+   ======================================== */
+.footer {
+  padding: 4rem 2rem 2rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.footer-brand {
+  max-width: 280px;
+}
+
+.footer-logo {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--blue);
+  margin-bottom: 0.75rem;
+}
+
+.footer-tagline {
+  font-size: 0.85rem;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+.footer-links {
+  display: flex;
+  gap: 3rem;
+}
+
+.footer-col h4 {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.footer-col a {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.6rem;
+  transition: color 0.3s;
+}
+
+.footer-col a:hover {
+  color: var(--text-primary);
+}
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 3rem auto 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.footer-bottom p {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  font-weight: 300;
+}
+
+.footer-bottom .powered {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+/* ========================================
+   DIVIDER LINES
+   ======================================== */
+.section-divider {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 1024px) {
+  .feature-block {
+    gap: 2.5rem;
+  }
+  .programs-grid {
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+  .hamburger {
+    display: flex;
+  }
+  .hero {
+    padding: 6rem 1.5rem 4rem;
+  }
+  .problem-cards {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .programs-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .program-card {
+    min-height: auto;
+  }
+  .feature-block,
+  .feature-block.reverse {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    direction: ltr;
+  }
+  .mockup {
+    aspect-ratio: 4/3;
+  }
+  .numbers-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem 1.5rem;
+  }
+  .footer-inner {
+    flex-direction: column;
+  }
+  .footer-links {
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+  }
+  .research-respondents {
+    gap: 1.5rem;
+  }
+  section {
+    padding: 4rem 1.5rem;
+  }
+  .programs, .features, .numbers {
+    padding: 5rem 1.5rem;
+  }
+  .feature-block {
+    margin-bottom: 5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-ctas {
+    flex-direction: column;
+    align-items: center;
+  }
+  .hero-stats {
+    font-size: 9px;
+    line-height: 1.8;
+  }
+  .numbers-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ========================================
+     NAVIGATION
+     ======================================== -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav-logo">HOUSE STRATEGIES</a>
+  <ul class="nav-links">
+    <li><a href="#programs">Programs</a></li>
+    <li><a href="#features">Platform</a></li>
+    <li><a href="#numbers">Impact</a></li>
+    <li><a href="#research">Research</a></li>
+    <li><a href="bidder.html" class="nav-cta">Bidder Portal</a></li>
+  </ul>
+  <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMobileMenu()">&times;</button>
+  <a href="#programs" onclick="toggleMobileMenu()">Programs</a>
+  <a href="#features" onclick="toggleMobileMenu()">Platform</a>
+  <a href="#numbers" onclick="toggleMobileMenu()">Impact</a>
+  <a href="#research" onclick="toggleMobileMenu()">Research</a>
+  <a href="bidder.html">Bidder Portal</a>
+  <a href="admin.html">Admin Console</a>
+</div>
+
+<!-- ========================================
+     HERO
+     ======================================== -->
+<section class="hero">
+  <div class="hero-mesh"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">HOUSE STRATEGIES GROUP</p>
+    <h1 class="hero-headline">
+      The Future of<br>
+      <span class="gradient-text">Federal Asset Sales</span>
+    </h1>
+    <p class="hero-subtitle">
+      A purpose-built transaction platform for HUD's Office of Asset Sales. Intelligent. Unified. Unbreakable.
+    </p>
+    <div class="hero-ctas">
+      <a href="bidder.html" class="btn-primary">Enter Bidder Portal &rarr;</a>
+      <a href="admin.html" class="btn-outline">Admin Console &rarr;</a>
+    </div>
+    <p class="hero-stats">
+      4 Sale Programs <span>&middot;</span> 500+ Bidders Supported <span>&middot;</span> Zero-Downtime Architecture
+    </p>
+  </div>
+  <div class="scroll-indicator">
+    <span>Scroll to explore</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</section>
+
+<!-- ========================================
+     THE PROBLEM
+     ======================================== -->
+<section class="problem">
+  <div class="section-inner">
+    <div class="reveal">
+      <p class="section-eyebrow">THE CHALLENGE</p>
+      <h2 class="section-headline">Excel Spreadsheets. Email Chains.<br>System Timeouts on Bid Day.</h2>
+    </div>
+    <div class="problem-cards">
+      <div class="problem-card reveal" style="transition-delay: 0.1s">
+        <div class="problem-card-icon">&#9888;</div>
+        <h3>Manual Qualification</h3>
+        <p>Bidder vetting scattered across email threads and shared drives. No centralized tracking. No audit trail. Qualification status lost between sale cycles.</p>
+      </div>
+      <div class="problem-card reveal" style="transition-delay: 0.2s">
+        <div class="problem-card-icon">&#128450;</div>
+        <h3>Fragmented Data Rooms</h3>
+        <p>Loan tape data spread across multiple platforms and formats. Bidders forced to reconcile data manually. No standardized filtering or export capabilities.</p>
+      </div>
+      <div class="problem-card reveal" style="transition-delay: 0.3s">
+        <div class="problem-card-icon">&#9889;</div>
+        <h3>Unreliable Bid Infrastructure</h3>
+        <p>Platform timeouts during critical bid windows. No persistent state management. Bid confirmations delayed by manual processing. Results delivery measured in days.</p>
+      </div>
+    </div>
+    <p class="problem-closing reveal" style="transition-delay: 0.4s">
+      The current Transaction Specialist platform was built for a different era. HUD deserves better.
+    </p>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ========================================
+     FOUR PROGRAMS
+     ======================================== -->
+<section class="programs" id="programs">
+  <div class="section-inner">
+    <p class="section-eyebrow reveal">THE PLATFORM</p>
+    <h2 class="section-headline reveal">One Platform. Four Programs.<br>Every Asset Class.</h2>
+    <div class="programs-grid">
+      <div class="program-card reveal" style="transition-delay: 0.1s">
+        <div class="program-gradient blue"></div>
+        <div class="program-body">
+          <p class="program-abbr">HVLS</p>
+          <h3 class="program-name">HECM Vacant Loan Sales</h3>
+          <p class="program-stat">~200 loans &middot; ~$55M BPO</p>
+          <p class="program-desc">Reverse mortgage loans on vacant properties. Bids submitted as a percentage of Broker Price Opinion value.</p>
+          <div class="program-pills">
+            <span class="pill">Pool-Based Bidding</span>
+            <span class="pill">Geographic Clusters</span>
+            <span class="pill">BPO Analytics</span>
+          </div>
+          <a href="#" class="program-link">Explore &rarr;</a>
+        </div>
+      </div>
+      <div class="program-card reveal" style="transition-delay: 0.2s">
+        <div class="program-gradient green"></div>
+        <div class="program-body">
+          <p class="program-abbr">SFLS</p>
+          <h3 class="program-name">Single Family Loan Sales</h3>
+          <p class="program-stat">~300 loans &middot; ~$125M UPB</p>
+          <p class="program-desc">Forward FHA-insured defaulted mortgages. Full NSO compliance tracking and workout analytics integration.</p>
+          <div class="program-pills">
+            <span class="pill">UPB-Based Bidding</span>
+            <span class="pill">NSO Pools</span>
+            <span class="pill">Workout Analytics</span>
+          </div>
+          <a href="#" class="program-link">Explore &rarr;</a>
+        </div>
+      </div>
+      <div class="program-card reveal" style="transition-delay: 0.3s">
+        <div class="program-gradient amber"></div>
+        <div class="program-body">
+          <p class="program-abbr">MHLS</p>
+          <h3 class="program-name">Multifamily Loan Sales</h3>
+          <p class="program-stat">~8 deals &middot; ~$195M UPB</p>
+          <p class="program-desc">Commercial mortgage notes on apartment complexes. Deal-level underwriting with comprehensive document sections.</p>
+          <div class="program-pills">
+            <span class="pill">Deal Cards</span>
+            <span class="pill">NOI/Cap Rate</span>
+            <span class="pill">25+ Doc Sections</span>
+          </div>
+          <a href="#" class="program-link">Explore &rarr;</a>
+        </div>
+      </div>
+      <div class="program-card reveal" style="transition-delay: 0.4s">
+        <div class="program-gradient rose"></div>
+        <div class="program-body">
+          <p class="program-abbr">HEALTHCARE</p>
+          <h3 class="program-name">Healthcare Loan Sales</h3>
+          <p class="program-stat">SNF &middot; ALF &middot; Section 232</p>
+          <p class="program-desc">Skilled nursing and assisted living facilities. Navigating complex regulatory requirements and compliance tracking.</p>
+          <div class="program-pills">
+            <span class="pill">CMS Ratings</span>
+            <span class="pill">CHOW Tracking</span>
+            <span class="pill">Section 232</span>
+          </div>
+          <a href="#" class="program-link">Explore &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ========================================
+     PLATFORM FEATURES
+     ======================================== -->
+<section class="features" id="features">
+  <div class="section-inner">
+
+    <!-- Feature 1: Data Room -->
+    <div class="feature-block reveal">
+      <div class="feature-text">
+        <p class="section-eyebrow">DATA ROOM</p>
+        <h3>Intelligent Loan<br>Data Room</h3>
+        <p>Every data field, every document, every detail — organized, searchable, and instantly accessible. Designed around how bidders actually evaluate assets.</p>
+        <ul class="feature-detail-list">
+          <li>In-browser column filtering and sort</li>
+          <li>One-click CSV and Excel export</li>
+          <li>HECM-aware terminology and field labels</li>
+          <li>Pool-level and loan-level dual views</li>
+        </ul>
+      </div>
+      <div class="mockup">
+        <div class="mockup-toolbar">
+          <div class="mockup-dot"></div>
+          <div class="mockup-dot"></div>
+          <div class="mockup-dot"></div>
+          <span class="mockup-toolbar-title">Data Room &mdash; HVLS 2026-1</span>
+        </div>
+        <div class="mockup-body">
+          <div class="mockup-panel sidebar">
+            <div class="mockup-line short accent"></div>
+            <div class="mockup-line med"></div>
+            <div class="mockup-line long"></div>
+            <div class="mockup-line short"></div>
+            <div class="mockup-line med accent"></div>
+            <div class="mockup-line long"></div>
+            <div class="mockup-line short"></div>
+            <div class="mockup-line med"></div>
+          </div>
+          <div class="mockup-panel main">
+            <div class="mockup-header-line"></div>
+            <div class="mockup-grid">
+              <div class="mockup-cell"></div><div class="mockup-cell"></div><div class="mockup-cell"></div>
+              <div class="mockup-cell"></div><div class="mockup-cell"></div><div class="mockup-cell"></div>
+              <div class="mockup-cell"></div><div class="mockup-cell"></div><div class="mockup-cell"></div>
+              <div class="mockup-cell"></div><div class="mockup-cell"></div><div class="mockup-cell"></div>
+              <div class="mockup-cell"></div><div class="mockup-cell"></div><div class="mockup-cell"></div>
+            </div>
+          </div>
+          <div class="mockup-panel detail">
+            <div class="mockup-line accent short"></div>
+            <div class="mockup-line long"></div>
+            <div class="mockup-line med"></div>
+            <div class="mockup-line short"></div>
+            <div style="height:8px"></div>
+            <div class="mockup-line green-accent short"></div>
+            <div class="mockup-line long"></div>
+            <div class="mockup-line med"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 2: Bid Submission -->
+    <div class="feature-block reverse reveal">
+      <div class="feature-text">
+        <p class="section-eyebrow">BID ENGINE</p>
+        <h3>State-of-the-Art<br>Bid Submission</h3>
+        <p>A persistent, real-time bid workspace that never loses state. Every keystroke saved. Every calculation instant. Every confirmation immediate.</p>
+        <ul class="feature-detail-list">
+          <li>Persistent bid slip with auto-save</li>
+          <li>Real-time bid amount calculators</li>
+          <li>Type-to-confirm submission safeguard</li>
+          <li>Zero-downtime architecture on bid day</li>
+        </ul>
+      </div>
+      <div class="mockup">
+        <div class="mockup-toolbar">
+          <div class="mockup-dot"></div>
+          <div class="mockup-dot"></div>
+          <div class="mockup-dot"></div>
+          <span class="mockup-toolbar-title">Bid Workspace &mdash; Pool A</span>
+        </div>
+        <div class="mockup-body" style="flex-direction: column;">
+          <div class="mockup-panel main" style="flex: 1;">
+            <div class="mockup-header-line"></div>
+            <div class="mockup-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
+              <div class="mockup-cell"></div><div class="mockup-cell"></div><div class="mockup-cell"></div><div class="mockup-cell"></div>
+              <div class="mockup-cell"></div><div class="mockup-cell"></div><div class="mockup-cell"></div><div class="mockup-cell"></div>
+              <div class="mockup-cell"></div><div class="mockup-cell"></div><div class="mockup-cell"></div><div class="mockup-cell"></div>
+            </div>
+          </div>
+          <div class="mockup-bid-slip">
+            <div class="mockup-line accent short" style="margin-bottom:8px;"></div>
+            <div style="display:flex;gap:8px;">
+              <div class="mockup-input" style="flex:1;"></div>
+              <div class="mockup-input" style="flex:1;"></div>
+            </div>
+            <div class="mockup-btn"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 3: AI Intelligence -->
+    <div class="feature-block reveal">
+      <div class="feature-text">
+        <p class="section-eyebrow">AI ENGINE</p>
+        <h3>AI-Powered<br>Intelligence</h3>
+        <p>Machine learning that understands federal asset sales. From document classification to bid anomaly detection, the platform learns and adapts.</p>
+        <ul class="feature-detail-list">
+          <li>Automated document classification</li>
+          <li>Bid anomaly and outlier detection</li>
+          <li>Natural language reporting queries</li>
+          <li>Predictive bid-range modeling</li>
+        </ul>
+      </div>
+      <div class="mockup">
+        <div class="mockup-toolbar">
+          <div class="mockup-dot"></div>
+          <div class="mockup-dot"></div>
+          <div class="mockup-dot"></div>
+          <span class="mockup-toolbar-title">AI Assistant</span>
+        </div>
+        <div class="mockup-body">
+          <div class="mockup-ai" style="flex:1;">
+            <div class="mockup-ai-bubble">
+              <div class="mockup-line long" style="background:rgba(139,92,246,0.12);"></div>
+              <div class="mockup-line med" style="background:rgba(139,92,246,0.08);"></div>
+            </div>
+            <div class="mockup-ai-bubble response">
+              <div class="mockup-line long" style="background:rgba(59,130,246,0.12);"></div>
+              <div class="mockup-line long" style="background:rgba(59,130,246,0.08);"></div>
+              <div class="mockup-line med" style="background:rgba(59,130,246,0.12);"></div>
+              <div class="mockup-line short" style="background:rgba(59,130,246,0.08);"></div>
+            </div>
+            <div class="mockup-ai-bubble">
+              <div class="mockup-line med" style="background:rgba(139,92,246,0.12);"></div>
+            </div>
+            <div class="mockup-ai-bubble response">
+              <div class="mockup-line long" style="background:rgba(59,130,246,0.12);"></div>
+              <div class="mockup-line short" style="background:rgba(59,130,246,0.08);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 4: Compliance -->
+    <div class="feature-block reverse reveal">
+      <div class="feature-text">
+        <p class="section-eyebrow">COMPLIANCE</p>
+        <h3>Post-Sale Compliance<br>& Reporting</h3>
+        <p>Locked reporting schemas. Automated breach detection. Commissioner's Report generation. Every OIG finding addressed by design.</p>
+        <ul class="feature-detail-list">
+          <li>Locked post-sale reporting schemas</li>
+          <li>Breach portal with escalation workflows</li>
+          <li>Commissioner's Report automation</li>
+          <li>OIG-aligned audit trail architecture</li>
+        </ul>
+      </div>
+      <div class="mockup">
+        <div class="mockup-toolbar">
+          <div class="mockup-dot"></div>
+          <div class="mockup-dot"></div>
+          <div class="mockup-dot"></div>
+          <span class="mockup-toolbar-title">Compliance Dashboard</span>
+        </div>
+        <div class="mockup-body" style="flex-direction: column; gap: 0.5rem;">
+          <div class="mockup-panel main" style="flex: none; padding: 0.6rem 0.75rem;">
+            <div class="mockup-line green-accent short" style="margin-bottom: 4px;"></div>
+            <div style="display:flex; gap: 6px;">
+              <div class="mockup-cell" style="flex:1; background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.12);"></div>
+              <div class="mockup-cell" style="flex:1; background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.12);"></div>
+              <div class="mockup-cell" style="flex:1; background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.12);"></div>
+            </div>
+          </div>
+          <div class="mockup-panel main" style="flex: 1;">
+            <div class="mockup-header-line" style="width: 35%;"></div>
+            <div class="mockup-line long"></div>
+            <div class="mockup-line long"></div>
+            <div class="mockup-line med"></div>
+            <div style="height:6px;"></div>
+            <div class="mockup-line amber-accent short"></div>
+            <div class="mockup-line long"></div>
+            <div class="mockup-line med"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ========================================
+     BY THE NUMBERS
+     ======================================== -->
+<section class="numbers" id="numbers">
+  <div class="section-inner">
+    <p class="section-eyebrow reveal">BY THE NUMBERS</p>
+    <h2 class="section-headline reveal" style="max-width:100%; text-align:center; margin-left:auto; margin-right:auto;">Built for Scale. Engineered for Precision.</h2>
+    <div class="numbers-grid">
+      <div class="number-item reveal">
+        <span class="number-value" data-target="4">0</span>
+        <span class="number-label">Sale Programs</span>
+      </div>
+      <div class="number-item reveal">
+        <span class="number-value" data-target="48">0</span>
+        <span class="number-label">Survey Questions Analyzed</span>
+      </div>
+      <div class="number-item reveal">
+        <span class="number-value" data-target="200" data-suffix="+">0</span>
+        <span class="number-label">Loans Per HVLS Sale</span>
+      </div>
+      <div class="number-item reveal">
+        <span class="number-value" data-target="30" data-suffix=" min">0</span>
+        <span class="number-label">Bid Results Delivery</span>
+      </div>
+      <div class="number-item reveal">
+        <span class="number-value" data-target="1" data-prefix="<" data-suffix="s">0</span>
+        <span class="number-label">Platform Response Time</span>
+      </div>
+      <div class="number-item reveal">
+        <span class="number-value" data-target="0" data-is-zero="true">0</span>
+        <span class="number-label">Downtime Tolerance</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ========================================
+     BUILT ON RESEARCH
+     ======================================== -->
+<section class="research" id="research">
+  <div class="research-inner">
+    <div class="research-badge reveal">&#9672; Requirements-Driven Development</div>
+    <h2 class="section-headline reveal">Built on Research,<br>Not Assumptions</h2>
+    <p class="reveal">Every feature in this platform traces back to documented requirements gathered from stakeholders across the HUD asset sales ecosystem.</p>
+    <div class="research-respondents reveal">
+      <div class="respondent-type">
+        <span class="count">HUD</span>
+        <span class="label">Program Office</span>
+      </div>
+      <div class="respondent-type">
+        <span class="count">OAS</span>
+        <span class="label">Asset Sales Staff</span>
+      </div>
+      <div class="respondent-type">
+        <span class="count">TS</span>
+        <span class="label">Transaction Specialists</span>
+      </div>
+      <div class="respondent-type">
+        <span class="count">BID</span>
+        <span class="label">Active Bidders</span>
+      </div>
+    </div>
+    <div class="hero-ctas reveal" style="animation:none; opacity:1; transform:none;">
+      <a href="plan.html" class="btn-primary">View Development Plan &rarr;</a>
+      <a href="#" class="btn-outline">Survey Analyzer &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================
+     FOOTER
+     ======================================== -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <p class="footer-logo">HOUSE STRATEGIES GROUP</p>
+      <p class="footer-tagline">Purpose-built technology for federal asset management and disposition programs.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <a href="bidder.html">Bidder Portal</a>
+        <a href="admin.html">Admin Console</a>
+        <a href="plan.html">Development Plan</a>
+      </div>
+      <div class="footer-col">
+        <h4>Research</h4>
+        <a href="#">Survey</a>
+        <a href="#">Survey Analyzer</a>
+        <a href="#">Requirements</a>
+      </div>
+      <div class="footer-col">
+        <h4>Programs</h4>
+        <a href="#">HVLS</a>
+        <a href="#">SFLS</a>
+        <a href="#">MHLS</a>
+        <a href="#">Healthcare</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 House Strategies Group LLC. All rights reserved.</p>
+    <span class="powered">Built by House Strategies Group &middot; Powered by Purpose</span>
+  </div>
+</footer>
+
+<!-- ========================================
+     JAVASCRIPT
+     ======================================== -->
+<script>
+(function() {
+  'use strict';
+
+  /* ---- Navigation scroll behavior ---- */
+  const nav = document.getElementById('nav');
+  let lastScroll = 0;
+
+  window.addEventListener('scroll', function() {
+    const scrollY = window.scrollY;
+    if (scrollY > 60) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
+    lastScroll = scrollY;
+  }, { passive: true });
+
+  /* ---- Mobile menu ---- */
+  window.toggleMobileMenu = function() {
+    const menu = document.getElementById('mobileMenu');
+    menu.classList.toggle('active');
+  };
+
+  /* ---- Scroll reveal ---- */
+  const revealElements = document.querySelectorAll('.reveal');
+
+  const revealObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        // Parse the transition-delay from inline style if present
+        const el = entry.target;
+        const delay = el.style.transitionDelay || '0s';
+        el.style.transitionDelay = delay;
+        el.classList.add('visible');
+        revealObserver.unobserve(el);
+      }
+    });
+  }, {
+    threshold: 0.1,
+    rootMargin: '0px 0px -40px 0px'
+  });
+
+  revealElements.forEach(function(el) {
+    revealObserver.observe(el);
+  });
+
+  /* ---- Counter animation ---- */
+  const counterElements = document.querySelectorAll('.number-value[data-target]');
+
+  function animateCounter(el) {
+    const target = parseInt(el.getAttribute('data-target'));
+    const prefix = el.getAttribute('data-prefix') || '';
+    const suffix = el.getAttribute('data-suffix') || '';
+    const isZero = el.getAttribute('data-is-zero') === 'true';
+    const duration = 1500;
+    const startTime = performance.now();
+
+    if (isZero) {
+      el.textContent = '0';
+      return;
+    }
+
+    function update(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(eased * target);
+
+      el.textContent = prefix + current + suffix;
+
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      } else {
+        el.textContent = prefix + target + suffix;
+      }
+    }
+
+    requestAnimationFrame(update);
+  }
+
+  const counterObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        animateCounter(entry.target);
+        counterObserver.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.5
+  });
+
+  counterElements.forEach(function(el) {
+    counterObserver.observe(el);
+  });
+
+  /* ---- Smooth anchor scrolling with offset ---- */
+  document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+    anchor.addEventListener('click', function(e) {
+      const targetId = this.getAttribute('href');
+      if (targetId === '#') return;
+      const target = document.querySelector(targetId);
+      if (target) {
+        e.preventDefault();
+        const offset = 80;
+        const position = target.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top: position, behavior: 'smooth' });
+      }
+    });
+  });
+
+})();
+</script>
+
+</body>
+</html>
