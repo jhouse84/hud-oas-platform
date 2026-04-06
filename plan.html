@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HUD OAS Platform — Development Plan | House Strategies Group</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:#2D2E8F;--blue-d:#1E1F6B;--blue-l:#4E4FAA;--blue-bg:#F2F2FA;--blue-br:rgba(45,46,143,.15);
+  --grey:#7F8289;--grey-d:#57595F;--grey-l:#B0B3B8;--grey-bg:#F7F7F8;
+  --white:#FFFFFF;--ink:#111111;--ink-m:#333333;--ink-l:#666666;
+  --green:#1e7e3e;--red:#a0321a;--orange:#D97706;--teal:#3E8FA8;
+  --bdr:rgba(45,46,143,.12);--bdr-l:rgba(0,0,0,.10);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--grey-bg);color:var(--ink);line-height:1.6;min-height:100vh}
+.nav{position:sticky;top:0;z-index:300;background:var(--white);border-bottom:1px solid var(--bdr);box-shadow:0 2px 16px rgba(0,0,0,.06);height:72px}
+.nav-in{max-width:1280px;margin:0 auto;padding:0 40px;height:100%;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none}
+.nav-logo-mark{width:44px;height:44px;background:var(--blue);border-radius:4px;display:flex;align-items:center;justify-content:center}
+.nav-logo-h{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:22px;color:white}
+.nav-brand{display:flex;flex-direction:column;line-height:1.2}
+.nav-title{font-size:15px;font-weight:600;color:var(--ink)}
+.nav-sub{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--grey)}
+.nav-right{display:flex;gap:12px;align-items:center}
+.nav-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:6px 14px;border-radius:20px;border:1px solid var(--bdr)}
+.nav-badge.live{background:rgba(30,126,62,.06);color:var(--green);border-color:rgba(30,126,62,.2)}
+
+.container{max-width:1080px;margin:0 auto;padding:0 40px}
+
+/* Hero */
+.hero{padding:60px 0 48px;border-bottom:1px solid var(--bdr)}
+.hero-eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.hero-eyebrow-line{width:24px;height:2px;background:var(--blue)}
+.hero-eyebrow-text{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--blue)}
+.hero h1{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:clamp(32px,4vw,48px);color:var(--ink);line-height:1.08;margin-bottom:10px}
+.hero h1 em{font-style:italic;color:var(--blue)}
+.hero p{font-size:16px;color:var(--ink-l);max-width:680px;line-height:1.7}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:32px 0;border-bottom:1px solid var(--bdr)}
+.stat{text-align:center;padding:20px}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700;color:var(--blue);line-height:1}
+.stat-label{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--grey);margin-top:6px}
+
+/* Phase Cards */
+.phases{padding:48px 0}
+.phases-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;margin-bottom:8px}
+.phases-sub{font-size:14px;color:var(--grey);margin-bottom:36px}
+
+.phase{background:var(--white);border:1px solid var(--bdr-l);border-left:4px solid var(--blue);border-radius:0 8px 8px 0;margin-bottom:24px;overflow:hidden;transition:box-shadow .2s}
+.phase:hover{box-shadow:0 4px 20px rgba(0,0,0,.06)}
+.phase.completed{border-left-color:var(--green)}
+.phase.active{border-left-color:var(--blue);box-shadow:0 4px 20px rgba(45,46,143,.08)}
+.phase.upcoming{border-left-color:var(--grey-l)}
+
+.phase-header{display:flex;align-items:center;justify-content:space-between;padding:20px 28px;cursor:pointer}
+.phase-left{display:flex;align-items:center;gap:16px}
+.phase-num{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--grey-l);width:32px;height:32px;border-radius:50%;border:1.5px solid var(--bdr-l);display:flex;align-items:center;justify-content:center}
+.phase.completed .phase-num{background:rgba(30,126,62,.08);border-color:rgba(30,126,62,.2);color:var(--green)}
+.phase.active .phase-num{background:var(--blue-bg);border-color:var(--blue-br);color:var(--blue)}
+.phase-title{font-size:16px;font-weight:600}
+.phase-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--grey);letter-spacing:.06em}
+.phase-right{display:flex;align-items:center;gap:12px}
+.phase-status{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;border-radius:12px}
+.phase-status.completed{background:rgba(30,126,62,.08);color:var(--green)}
+.phase-status.active{background:var(--blue-bg);color:var(--blue)}
+.phase-status.upcoming{background:var(--grey-bg);color:var(--grey)}
+.phase-arrow{font-size:12px;color:var(--grey-l);transition:transform .2s}
+.phase.open .phase-arrow{transform:rotate(180deg)}
+
+.phase-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.phase.open .phase-body{max-height:2000px}
+.phase-content{padding:0 28px 24px;padding-left:76px}
+.phase-desc{font-size:14px;color:var(--ink-l);line-height:1.7;margin-bottom:16px}
+
+.task-list{list-style:none}
+.task{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.04)}
+.task:last-child{border-bottom:none}
+.task-check{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--bdr-l);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:2px}
+.task.done .task-check{background:rgba(30,126,62,.08);border-color:var(--green);color:var(--green)}
+.task.in-progress .task-check{background:var(--blue-bg);border-color:var(--blue);color:var(--blue)}
+.task-text{font-size:13.5px;color:var(--ink-m);line-height:1.5}
+.task.done .task-text{color:var(--grey);text-decoration:line-through}
+.task-tag{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.08em;padding:2px 6px;border-radius:3px;background:var(--blue-bg);color:var(--blue);margin-left:6px;vertical-align:middle;text-transform:uppercase}
+
+/* Deliverables */
+.deliverables{padding:48px 0;border-top:1px solid var(--bdr)}
+.deliverables-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;margin-bottom:28px}
+.del-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.del-card{background:var(--white);border:1px solid var(--bdr-l);border-radius:8px;padding:20px;transition:border-color .2s}
+.del-card:hover{border-color:var(--blue-br)}
+.del-icon{font-size:24px;margin-bottom:10px}
+.del-name{font-size:14px;font-weight:600;margin-bottom:4px}
+.del-desc{font-size:12.5px;color:var(--grey);line-height:1.5}
+.del-url{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--blue);margin-top:8px;word-break:break-all}
+
+/* Architecture */
+.arch{padding:48px 0;border-top:1px solid var(--bdr)}
+.arch-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;margin-bottom:28px}
+.arch-box{background:var(--blue);border-radius:8px;padding:28px 32px;color:white;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:2;white-space:pre;overflow-x:auto}
+.arch-box .dir{color:rgba(255,255,255,.5)}
+.arch-box .file{color:rgba(255,255,255,.9)}
+.arch-box .desc{color:rgba(255,255,255,.4);font-style:italic}
+
+/* Footer */
+.footer{padding:32px 0;border-top:1px solid var(--bdr);text-align:center}
+.footer-text{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--grey-l);letter-spacing:.06em;line-height:2}
+.footer-text a{color:var(--blue);text-decoration:none}
+
+@media(max-width:900px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .del-grid{grid-template-columns:1fr}
+  .phase-content{padding-left:28px}
+  .container{padding:0 20px}
+}
+@media(max-width:600px){
+  .stats{grid-template-columns:1fr}
+  .phase-header{flex-direction:column;align-items:flex-start;gap:8px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-in">
+    <a href="https://www.housestrategiesgroup.com" class="nav-logo">
+      <div class="nav-logo-mark"><span class="nav-logo-h">H</span></div>
+      <div class="nav-brand">
+        <span class="nav-title">House Strategies Group</span>
+        <span class="nav-sub">HUD OAS Platform Development</span>
+      </div>
+    </a>
+    <div class="nav-right">
+      <span class="nav-badge live">In Development</span>
+      <span class="nav-badge">April 2026</span>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-eyebrow"><div class="hero-eyebrow-line"></div><span class="hero-eyebrow-text">Development Roadmap</span></div>
+    <h1>HUD Asset Sales <em>Platform Build Plan</em></h1>
+    <p>A purpose-built transaction platform for HUD's Office of Asset Sales, supporting HVLS, HNVLS, SFLS, and MHLS loan sale programs. Replacing Falcon Capital's white-labeled Mission Capital portal with an intelligent, unified system.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat"><div class="stat-val">7</div><div class="stat-label">Build Days</div></div>
+    <div class="stat"><div class="stat-val">14</div><div class="stat-label">Platform Pages</div></div>
+    <div class="stat"><div class="stat-val">4</div><div class="stat-label">Sale Programs</div></div>
+    <div class="stat"><div class="stat-val">Apr 9</div><div class="stat-label">Client Meeting</div></div>
+  </div>
+
+  <!-- Build Phases -->
+  <div class="phases">
+    <div class="phases-title">Build Phases</div>
+    <div class="phases-sub">7-day sprint targeting the April 9 client presentation. Each phase builds on the previous.</div>
+
+    <!-- Phase 0 -->
+    <div class="phase completed open" onclick="togglePhase(this)">
+      <div class="phase-header">
+        <div class="phase-left">
+          <div class="phase-num">0</div>
+          <div><div class="phase-title">Requirements & Research</div><div class="phase-date">March 10 – April 1, 2026</div></div>
+        </div>
+        <div class="phase-right">
+          <span class="phase-status completed">Complete</span>
+          <span class="phase-arrow">&#9660;</span>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-content">
+          <div class="phase-desc">Primary source research, stakeholder surveys, PWS analysis, regulatory review, and competitive intelligence gathering.</div>
+          <ul class="task-list">
+            <li class="task done"><div class="task-check">&#10003;</div><div class="task-text">Compile HUD OAS primary source documentation (Federal Register, eCFR, OIG reports)</div></li>
+            <li class="task done"><div class="task-check">&#10003;</div><div class="task-text">Analyze PWS for all 13 contract modules and deliverable requirements</div></li>
+            <li class="task done"><div class="task-check">&#10003;</div><div class="task-text">Build and deploy 48-question requirements gathering survey <span class="task-tag">Live</span></div></li>
+            <li class="task done"><div class="task-check">&#10003;</div><div class="task-text">Collect and synthesize 3 stakeholder responses (TS operator, nonprofit bidder, institutional bidder)</div></li>
+            <li class="task done"><div class="task-check">&#10003;</div><div class="task-text">Build live survey analysis dashboard with Google Sheets integration <span class="task-tag">Live</span></div></li>
+            <li class="task done"><div class="task-check">&#10003;</div><div class="task-text">Research federal AI regulations (M-25-21, FedRAMP, NIST, Fair Housing Act compliance)</div></li>
+            <li class="task done"><div class="task-check">&#10003;</div><div class="task-text">Add self-registration with SendGrid email verification to survey</div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 1 -->
+    <div class="phase active open" onclick="togglePhase(this)">
+      <div class="phase-header">
+        <div class="phase-left">
+          <div class="phase-num">1</div>
+          <div><div class="phase-title">Platform Foundation</div><div class="phase-date">April 2, 2026 (Day 1)</div></div>
+        </div>
+        <div class="phase-right">
+          <span class="phase-status active">In Progress</span>
+          <span class="phase-arrow">&#9660;</span>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-content">
+          <div class="phase-desc">Design system, shared components, routing infrastructure, and realistic demo data for all four sale programs.</div>
+          <ul class="task-list">
+            <li class="task done"><div class="task-check">&#10003;</div><div class="task-text">Initialize GitHub repo and Vercel deployment pipeline <span class="task-tag">jhouse84/hud-oas-platform</span></div></li>
+            <li class="task done"><div class="task-check">&#10003;</div><div class="task-text">Design system CSS — 1,100 lines covering typography, layout, cards, tables, badges, forms, modals, bid inputs, chat panel</div></li>
+            <li class="task done"><div class="task-check">&#10003;</div><div class="task-text">Hash-based SPA router with parameterized routes</div></li>
+            <li class="task done"><div class="task-check">&#10003;</div><div class="task-text">Utility library — currency formatting, date helpers, CSV export, program type metadata</div></li>
+            <li class="task in-progress"><div class="task-check">&#8226;</div><div class="task-text">Shared component library — stat bars, sale cards, data tables, timelines, modals, tabs, bid inputs</div></li>
+            <li class="task in-progress"><div class="task-check">&#8226;</div><div class="task-text">Demo data: 4 sales, 50 HVLS loans, 30 SFLS loans, 8 MHLS deals, 8 bidder profiles, 15 bids</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">VDR document manifests (MHLS 25+ section Volume 1 & 2 structure)</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Sale lifecycle timelines with milestone data for all 4 sales</div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="phase upcoming" onclick="togglePhase(this)">
+      <div class="phase-header">
+        <div class="phase-left">
+          <div class="phase-num">2</div>
+          <div><div class="phase-title">Bidder Portal</div><div class="phase-date">April 3–4, 2026 (Days 2–3)</div></div>
+        </div>
+        <div class="phase-right">
+          <span class="phase-status upcoming">Upcoming</span>
+          <span class="phase-arrow">&#9660;</span>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-content">
+          <div class="phase-desc">The external-facing bidder experience — from sale discovery through bid submission. This is what HUD's bidders interact with.</div>
+          <ul class="task-list">
+            <li class="task"><div class="task-check"></div><div class="task-text"><strong>Sale Listings</strong> — Card grid with program badges, filter tabs (All/Active/Upcoming/Closed), key dates and bidder counts</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text"><strong>Data Room / Loan Tape Viewer</strong> — Three-panel layout: document browser, sortable/filterable ALD table, Q&A module</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">HVLS-specific data presentation: BPO + Estimated Total Debt (not UPB), HECM-aware terminology</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">MHLS deal-level document tree with Volume 1 (25+ sections) and Volume 2 structure</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">In-browser filtering (state, property type, value range) with one-click CSV/Excel export</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text"><strong>Bid Submission</strong> — HVLS: % of BPO with calculator; MHLS: $/loan per deal; SFLS: % of UPB</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Bid sandbox/test mode with orange warning banner</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Bid confirmation modal with conforming/non-conforming validation</div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="phase upcoming" onclick="togglePhase(this)">
+      <div class="phase-header">
+        <div class="phase-left">
+          <div class="phase-num">3</div>
+          <div><div class="phase-title">TS Admin Console</div><div class="phase-date">April 4–5, 2026 (Days 3–4)</div></div>
+        </div>
+        <div class="phase-right">
+          <span class="phase-status upcoming">Upcoming</span>
+          <span class="phase-arrow">&#9660;</span>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-content">
+          <div class="phase-desc">The operator-facing console — sale management, bidder vetting, bid day operations, and compliance. This shows HUD our operational capability.</div>
+          <ul class="task-list">
+            <li class="task"><div class="task-check"></div><div class="task-text"><strong>Dashboard</strong> — Active sales overview, deadline tracker, registration counts, days to next bid day</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text"><strong>Bidder Qualification Pipeline</strong> — Application tracker: Submitted → Under Review → OFAC/SAM → OGC → Approved/Rejected</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text"><strong>Bid Day Operations</strong> — Live bid monitoring, countdown timer, conforming/non-conforming counts, issues log</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">30-minute bid summary auto-generation and BEM results view with ranked bids per pool</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Sale configuration interface — create/manage sales, pool construction, date management</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Data room management — upload/manage loan data and documents</div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 4 -->
+    <div class="phase upcoming" onclick="togglePhase(this)">
+      <div class="phase-header">
+        <div class="phase-left">
+          <div class="phase-num">4</div>
+          <div><div class="phase-title">Showcase & Presentation</div><div class="phase-date">April 5–6, 2026 (Days 4–5)</div></div>
+        </div>
+        <div class="phase-right">
+          <span class="phase-status upcoming">Upcoming</span>
+          <span class="phase-arrow">&#9660;</span>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-content">
+          <div class="phase-desc">Marketing showcase page on housestrategiesgroup.com and client-facing presentation materials.</div>
+          <ul class="task-list">
+            <li class="task"><div class="task-check"></div><div class="task-text"><strong>Platform Showcase Page</strong> — Feature breakdowns, prototype screenshots, architecture overview</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Survey findings integration — key insights from requirements gathering displayed as cards</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Compliance callouts — FedRAMP, NIST 800-53, Section 508, FISMA badges</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">CTAs linking to live bidder portal and admin console demos</div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 5 -->
+    <div class="phase upcoming" onclick="togglePhase(this)">
+      <div class="phase-header">
+        <div class="phase-left">
+          <div class="phase-num">5</div>
+          <div><div class="phase-title">AI, Polish & Deploy</div><div class="phase-date">April 6–8, 2026 (Days 5–7)</div></div>
+        </div>
+        <div class="phase-right">
+          <span class="phase-status upcoming">Upcoming</span>
+          <span class="phase-arrow">&#9660;</span>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-content">
+          <div class="phase-desc">AI assistant demo, secondary features, cross-browser QA, and production deployment.</div>
+          <ul class="task-list">
+            <li class="task"><div class="task-check"></div><div class="task-text"><strong>AI Assistant Panel</strong> — Scripted demo chat with keyword matching, typing animation, starter prompts</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Bidder registration & qualification form — multi-step with real-time validation, re-qualification fast-track</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Award status & settlement tracker — timeline view with deposit/PSA/settlement milestones</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Post-sale compliance hub — reporting schema, breach portal, Commissioner's Report template</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Cross-browser QA (Chrome, Edge, Safari) and responsive testing</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Vercel production deployment with custom domain configuration</div></li>
+            <li class="task"><div class="task-check"></div><div class="task-text">Presentation walkthrough rehearsal for April 9 meeting</div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deliverables -->
+  <div class="deliverables">
+    <div class="phases-title">Platform Deliverables</div>
+    <div class="del-grid">
+      <div class="del-card">
+        <div class="del-icon">&#128100;</div>
+        <div class="del-name">Bidder Portal</div>
+        <div class="del-desc">Sale listings, data room with loan tape viewer, program-specific bid submission, award tracking</div>
+        <div class="del-url">bidder.html</div>
+      </div>
+      <div class="del-card">
+        <div class="del-icon">&#9881;</div>
+        <div class="del-name">TS Admin Console</div>
+        <div class="del-desc">Dashboard, sale config, bidder pipeline, bid day operations, compliance hub, AI assistant</div>
+        <div class="del-url">admin.html</div>
+      </div>
+      <div class="del-card">
+        <div class="del-icon">&#127942;</div>
+        <div class="del-name">Platform Showcase</div>
+        <div class="del-desc">Marketing page on HSG site presenting capabilities, survey findings, and architecture</div>
+        <div class="del-url">housestrategiesgroup.com</div>
+      </div>
+      <div class="del-card">
+        <div class="del-icon">&#128202;</div>
+        <div class="del-name">Survey Analyzer</div>
+        <div class="del-desc">Live dashboard synthesizing stakeholder feedback from requirements gathering survey</div>
+        <div class="del-url">survey-analyzer.html <span class="task-tag" style="font-size:7px">Live</span></div>
+      </div>
+      <div class="del-card">
+        <div class="del-icon">&#128221;</div>
+        <div class="del-name">Requirements Survey</div>
+        <div class="del-desc">48-question survey with self-registration, email verification, and voice dictation</div>
+        <div class="del-url">Requirements-Gathering-Survey.html <span class="task-tag" style="font-size:7px">Live</span></div>
+      </div>
+      <div class="del-card">
+        <div class="del-icon">&#129302;</div>
+        <div class="del-name">AI Intelligence Layer</div>
+        <div class="del-desc">Document classification, portfolio analytics, bid anomaly detection, contextual help — all human-in-the-loop</div>
+        <div class="del-url">Integrated across platform</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Architecture -->
+  <div class="arch">
+    <div class="arch-title">File Architecture</div>
+    <div class="arch-box"><span class="dir">hud-oas-platform/</span>
+<span class="dir">  ├── </span><span class="file">bidder.html</span>          <span class="desc">← Bidder Portal SPA</span>
+<span class="dir">  ├── </span><span class="file">admin.html</span>           <span class="desc">← TS Admin Console SPA</span>
+<span class="dir">  ├── </span><span class="file">plan.html</span>            <span class="desc">← This development plan</span>
+<span class="dir">  ├── shared/</span>
+<span class="dir">  │   ├── </span><span class="file">design-system.css</span>  <span class="desc">← 1,100-line design system</span>
+<span class="dir">  │   ├── </span><span class="file">router.js</span>          <span class="desc">← Hash-based SPA router</span>
+<span class="dir">  │   ├── </span><span class="file">components.js</span>      <span class="desc">← Reusable UI renderers</span>
+<span class="dir">  │   ├── </span><span class="file">utils.js</span>           <span class="desc">← Formatters & helpers</span>
+<span class="dir">  │   ├── </span><span class="file">ai-chat.js</span>         <span class="desc">← AI assistant panel</span>
+<span class="dir">  │   ├── </span><span class="file">nav-bidder.js</span>      <span class="desc">← Bidder top nav</span>
+<span class="dir">  │   └── </span><span class="file">nav-admin.js</span>       <span class="desc">← Admin sidebar nav</span>
+<span class="dir">  └── data/</span>
+<span class="dir">      ├── </span><span class="file">sales.js</span>           <span class="desc">← 4 active sales</span>
+<span class="dir">      ├── </span><span class="file">loans-hvls.js</span>      <span class="desc">← 50 HECM vacant loans</span>
+<span class="dir">      ├── </span><span class="file">loans-sfls.js</span>      <span class="desc">← 30 forward FHA loans</span>
+<span class="dir">      ├── </span><span class="file">loans-mhls.js</span>      <span class="desc">← 8 MF/HC deals</span>
+<span class="dir">      ├── </span><span class="file">bidders.js</span>         <span class="desc">← 8 bidder profiles</span>
+<span class="dir">      ├── </span><span class="file">bids.js</span>            <span class="desc">← Sample bid data</span>
+<span class="dir">      ├── </span><span class="file">documents.js</span>       <span class="desc">← VDR doc manifests</span>
+<span class="dir">      └── </span><span class="file">timeline.js</span>        <span class="desc">← Sale milestones</span></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-text">
+      House Strategies Group LLC &bull; HUD Office of Asset Sales Platform Development<br>
+      <a href="https://www.housestrategiesgroup.com">housestrategiesgroup.com</a> &bull;
+      <a href="https://github.com/jhouse84/hud-oas-platform">GitHub Repository</a> &bull;
+      Updated April 2, 2026
+    </div>
+  </div>
+
+</div>
+
+<script>
+function togglePhase(el) {
+  el.classList.toggle('open');
+}
+// Open active phase by default
+document.querySelectorAll('.phase.active').forEach(function(p) { p.classList.add('open'); });
+</script>
+
+</body>
+</html>
