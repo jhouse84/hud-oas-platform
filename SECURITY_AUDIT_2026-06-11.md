@@ -98,8 +98,8 @@ The pool is `MfaConfiguration: OPTIONAL` — a user can decline TOTP. The spec a
 
 ---
 
-## What I changed in this pass
-1. **S-1** — added the `Qualified` + open-data-room gate to `sales/loans.mjs` and `loans/get.mjs`.
-2. **S-2** — added a security-headers `ResponseHeadersPolicy` to `template.yaml`, attached to the default and API cache behaviors.
+## What I changed in this pass — DEPLOYED & VERIFIED LIVE
+1. **S-1** — `requireQualifiedForSale()` gate on `sales/loans.mjs` and `loans/get.mjs` (+ BIDDERS-table read grants on both function roles, template-managed). **Verified:** unqualified bidder → 403 ("Qualification required before sale data access"), qualified → 200, on both tape endpoints.
+2. **S-2** — explicit security-headers `ResponseHeadersPolicy` on the default and `/api/*` behaviors. **Verified live on `hudloansales.housestrategiesgroup.com`:** HSTS (2yr, preload), CSP, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` all serving.
 
-Both deploy with the next backend deploy. Everything else above is a ranked recommendation, not yet applied.
+Commits: `33a7a11` (audit + S-1/S-2 code), `0ab0b18` (tape-handler IAM grants). Everything else above is a ranked recommendation, not yet applied.
