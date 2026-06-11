@@ -102,4 +102,23 @@ The pool is `MfaConfiguration: OPTIONAL` — a user can decline TOTP. The spec a
 1. **S-1** — `requireQualifiedForSale()` gate on `sales/loans.mjs` and `loans/get.mjs` (+ BIDDERS-table read grants on both function roles, template-managed). **Verified:** unqualified bidder → 403 ("Qualification required before sale data access"), qualified → 200, on both tape endpoints.
 2. **S-2** — explicit security-headers `ResponseHeadersPolicy` on the default and `/api/*` behaviors. **Verified live on `hudloansales.housestrategiesgroup.com`:** HSTS (2yr, preload), CSP, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` all serving.
 
-Commits: `33a7a11` (audit + S-1/S-2 code), `0ab0b18` (tape-handler IAM grants). Everything else above is a ranked recommendation, not yet applied.
+Commits: `33a7a11` (audit + S-1/S-2 code), `0ab0b18` (tape-handler IAM grants).
+
+## Hardening pass — same day, all recommendations executed (commit `a09055a`)
+
+Every open finding was implemented, deployed, and verified live the same day:
+
+| Finding | Disposition |
+|---|---|
+| S-3 MFA optional | **CLOSED** — pool `MfaConfiguration: ON` (TOTP). Verified: fresh sign-in forces MFA_SETUP; smoke suite enrolls and authenticates through the challenge. |
+| S-4 No WAF | **CLOSED** — WAFv2 ACL on the distribution: Common + KnownBadInputs + IpReputation managed rules, 1,000 req/5-min/IP rate cap. Association verified. |
+| S-5 Watermark deferred | **CLOSED** — per-bidder stamp (entity, bidder ID, email, timestamp) burned into every PDF page on demand at presign; bidder receives only the stamped copy. Verified by download (stamped bytes differ from original). Plus docKey traversal/existence validation. |
+| S-6 No CloudTrail | **CLOSED** — multi-region trail, log-file validation on, to a locked versioned bucket with Glacier transition + ~7-year retention. `IsLogging: true` verified. |
+| S-7 No alarms | **CLOSED** — SNS ops topic (email to admin; subscription confirmation pending click) + 5 alarms: bids-submit errors, presign errors, intake errors, API 5xx, throttles. |
+| S-8 Advanced security off | **CLOSED** — `UserPoolTier: PLUS`, `AdvancedSecurityMode: ENFORCED`. Verified on the pool. |
+| S-9 SES unverified | **CODE CLOSED / DNS PENDING** — `ses.mjs` returns delivery status; receipts expose `emailDelivered` honestly (verified `false` in sandbox). Sender-identity verification emails dispatched; **production access requested via API**; the 3 DKIM CNAMEs for GoDaddy are in `DNS_RECORDS_TODO.md` — the one remaining human step. |
+| P3 runtime deprecation | **CLOSED** — all functions on `nodejs24.x` ahead of the 2026-07-01 update freeze. |
+| (new) Withdraw route missing | **CLOSED** — `POST /bids/{bidId}/withdraw`: ownership + window enforcement, audit row, notification, email, idempotent. |
+| (new) presign SalesTable grant missing | **CLOSED** — latent AccessDenied fixed via template policy. |
+
+Final verification: **15/15 MFA-enrolled end-to-end suite green** against the deployed stack; all six security headers serving on `hudloansales.housestrategiesgroup.com`.
