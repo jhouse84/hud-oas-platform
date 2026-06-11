@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BEM &amp; Awards · HUD OAS Admin</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <link rel="stylesheet" href="_shell.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    .bem-grid { display: grid; grid-template-columns: 320px 1fr; gap: var(--space-5); align-items: flex-start; }
+    @media (max-width: 1100px) { .bem-grid { grid-template-columns: 1fr; } }
+
+    .scenario-list { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+    .scenario-row { padding: var(--space-3); border-bottom: 1px solid var(--color-grey-100); cursor: pointer; transition: background var(--duration-fast); }
+    .scenario-row:hover { background: var(--color-grey-50); }
+    .scenario-row.active { background: var(--color-portal-soft); border-left: 3px solid var(--color-portal); padding-left: calc(var(--space-3) - 3px); }
+    .scenario-row__name { font-weight: 600; font-size: var(--text-sm); }
+    .scenario-row__desc { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+    .scenario-row__meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px; display: flex; gap: var(--space-2); flex-wrap: wrap; }
+    .scenario-row__compare { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs); }
+
+    .config-block { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-4); }
+    .config-block h4 { font-family: var(--font-heading); margin-bottom: var(--space-3); font-size: var(--text-md); }
+
+    .reserve-table { width: 100%; border-collapse: collapse; }
+    .reserve-table th { text-align: left; padding: var(--space-2); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); }
+    .reserve-table td { padding: var(--space-2); border-bottom: 1px solid var(--color-grey-100); font-size: var(--text-sm); }
+    .reserve-table input { width: 100px; padding: var(--space-1) var(--space-2); text-align: right; font-feature-settings: 'tnum'; }
+
+    .award-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); margin-top: var(--space-3); }
+    .award-table th { text-align: left; padding: var(--space-2) var(--space-3); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); border-bottom: 2px solid var(--color-border); text-transform: uppercase; letter-spacing: 0.04em; }
+    .award-table td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-grey-100); }
+    .award-table tr:hover { background: var(--color-grey-50); }
+    .award-table .winner { font-weight: 600; color: var(--color-success); }
+
+    .summary-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); margin-top: var(--space-3); }
+    .summary-cell { padding: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+    .summary-cell__label { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.04em; }
+    .summary-cell__value { font-family: var(--font-heading); font-size: var(--text-2xl); margin-top: 4px; line-height: 1; }
+
+    .rationale-card { background: linear-gradient(135deg, var(--color-portal) 0%, var(--color-portal-dark) 100%); color: #FFF; border-radius: var(--radius-md); padding: var(--space-5); margin-bottom: var(--space-4); }
+    .rationale-card__label { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.08em; opacity: 0.7; }
+    .rationale-card__title { font-family: var(--font-heading); font-size: var(--text-xl); margin: var(--space-2) 0; }
+    .rationale-card__body { font-size: var(--text-sm); line-height: 1.6; opacity: 0.95; }
+
+    .compare-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .compare-table th { padding: var(--space-2) var(--space-3); font-family: var(--font-mono); font-size: var(--text-xs); border-bottom: 2px solid var(--color-border); text-align: right; }
+    .compare-table th:first-child { text-align: left; }
+    .compare-table td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-grey-100); text-align: right; font-feature-settings: 'tnum'; }
+    .compare-table td:first-child { text-align: left; font-family: var(--font-mono); font-size: var(--text-xs); }
+    .delta-up { color: var(--color-success); }
+    .delta-down { color: var(--color-error); }
+
+    .toolbar { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap: wrap; }
+  </style>
+</head>
+<body data-portal="admin">
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-label">HUD OAS Admin</div>
+        <div class="sidebar__brand-name">Console</div>
+      </div>
+      <div class="sidebar__section">Overview</div>
+      <a class="sidebar__nav-item" href="index.html">Dashboard</a>
+      <a class="sidebar__nav-item" href="bidders.html">Bidders</a>
+      <a class="sidebar__nav-item" href="bid-day.html">Bid day ops</a>
+      <a class="sidebar__nav-item active" href="bem.html">BEM &amp; awards</a>
+      <div class="sidebar__section">Post-sale</div>
+      <a class="sidebar__nav-item" href="qa.html">Q&amp;A inbox</a>
+      <a class="sidebar__nav-item" href="settlements.html">Settlements</a>
+      <a class="sidebar__nav-item" href="compliance.html">Compliance &amp; QC</a>
+      <div class="sidebar__user">
+        <div id="user-name" style="color: #FFF; font-weight: 600;">…</div>
+        <div id="user-email" style="font-size: var(--text-xs); opacity: 0.7;"></div>
+        <a href="#" id="signout-link" style="display: inline-block; margin-top: var(--space-2); color: var(--color-portal-bright); text-decoration: underline; font-size: var(--text-sm);">Sign out</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="main__header">
+        <h1 class="main__title">BEM &amp; Awards</h1>
+        <div>
+          <select class="form-select" id="sale-select" style="width: auto; margin-right: var(--space-2);"></select>
+          <button class="btn-portal" id="new-scenario-btn" style="font-size: var(--text-sm);">+ New scenario</button>
+        </div>
+      </header>
+      <div class="main__content" id="app">
+        <p class="empty">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/api.js"></script>
+  <script>
+  (function () {
+    var u = HSG.utils;
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+    if (!HSG.cognito.isAuthenticated()) { window.location.href = 'login.html?next=bem.html'; return; }
+    var claims = HSG.api.decodeClaims() || {};
+    document.getElementById('user-name').textContent = claims['custom:entityName'] || claims.email || 'Admin';
+    document.getElementById('user-email').textContent = claims.email || '';
+    document.getElementById('signout-link').addEventListener('click', function (e) {
+      e.preventDefault(); HSG.cognito.signOut(); window.location.href = 'login.html';
+    });
+
+    var $app = document.getElementById('app');
+    var currentSale = null;
+    var scenarios = [];
+    var activeScenarioId = null;
+    var activeRunResult = null;
+    var compareSelection = new Set();
+
+    function load() {
+      $app.innerHTML = '<p class="empty">Loading sales…</p>';
+      HSG.api.sales.list({}).then(function (r) {
+        var sales = (r && r.sales) || [];
+        var sel = document.getElementById('sale-select');
+        sel.innerHTML = sales.map(function (s) {
+          var sid = s.saleId || s.sale_id;
+          return '<option value="' + esc(sid) + '">' + esc(s.long_name || s.sale_name || s.name || sid) + '</option>';
+        }).join('') || '<option value="">No sales</option>';
+        sel.addEventListener('change', function () { selectSale(sel.value); });
+        if (sales.length > 0) selectSale(sales[0].saleId || sales[0].sale_id);
+      }).catch(function (err) {
+        $app.innerHTML = '<div class="error-box">' + esc(err.message) + '</div>';
+      });
+    }
+
+    function selectSale(saleId) {
+      $app.innerHTML = '<p class="empty">Loading scenarios…</p>';
+      Promise.all([
+        HSG.api.sales.get(saleId),
+        HSG.api.bem.listScenarios(saleId).catch(function () { return { scenarios: [] }; })
+      ]).then(function (r) {
+        currentSale = r[0].sale;
+        scenarios = (r[1] && r[1].scenarios) || [];
+        activeScenarioId = scenarios[0] ? scenarios[0].scenarioId : null;
+        activeRunResult = null;
+        compareSelection.clear();
+        render();
+      }).catch(function (err) {
+        $app.innerHTML = '<div class="error-box">' + esc(err.message) + '</div>';
+      });
+    }
+
+    function render() {
+      var saleId = currentSale.saleId || currentSale.sale_id;
+      var pools = currentSale.pools || [];
+      var active = scenarios.find(function (s) { return s.scenarioId === activeScenarioId; }) || makeDefaultScenario();
+
+      var html = '<div class="bem-grid">';
+
+      // LEFT — scenario list
+      html += '<div>';
+      html += '<h3 style="font-family: var(--font-heading); font-size: var(--text-lg); margin-bottom: var(--space-3);">Scenarios <span style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 400;">' + scenarios.length + '</span></h3>';
+      if (scenarios.length === 0) {
+        html += '<div class="empty">No scenarios yet. Click "New scenario" to start.</div>';
+      } else {
+        html += '<div class="scenario-list">' + scenarios.map(function (s) {
+          var isActive = s.scenarioId === activeScenarioId;
+          var inCompare = compareSelection.has(s.scenarioId);
+          return '<div class="scenario-row ' + (isActive ? 'active' : '') + '" data-scenario-id="' + esc(s.scenarioId) + '">' +
+            '<div class="scenario-row__name">' + esc(s.name) + '</div>' +
+            (s.description ? '<div class="scenario-row__desc">' + esc(s.description) + '</div>' : '') +
+            '<div class="scenario-row__meta">' +
+              '<span>' + esc(s.awardMode || '—') + '</span>' +
+              '<span>' + esc(s.tieBreaker || '—') + '</span>' +
+              '<span>' + esc(u.dateRelative(s.updatedAt || s.createdAt)) + '</span>' +
+            '</div>' +
+            '<label class="scenario-row__compare" onclick="event.stopPropagation();" style="margin-top: 6px;">' +
+              '<input type="checkbox" data-compare-id="' + esc(s.scenarioId) + '" ' + (inCompare ? 'checked' : '') + ' /> Compare' +
+            '</label>' +
+          '</div>';
+        }).join('') + '</div>';
+      }
+      if (compareSelection.size >= 2) {
+        html += '<button class="btn-portal" id="compare-btn" style="margin-top: var(--space-3); font-size: var(--text-sm); width: 100%;">Compare ' + compareSelection.size + ' scenarios →</button>';
+      }
+      html += '</div>';
+
+      // RIGHT — scenario detail + runner
+      html += '<div>';
+      html += renderScenarioDetail(active, pools);
+      html += '</div>';
+      html += '</div>';
+
+      $app.innerHTML = html;
+
+      $app.querySelectorAll('[data-scenario-id]').forEach(function (row) {
+        row.addEventListener('click', function () { activeScenarioId = row.getAttribute('data-scenario-id'); activeRunResult = null; render(); });
+      });
+      $app.querySelectorAll('[data-compare-id]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+          var id = cb.getAttribute('data-compare-id');
+          if (cb.checked) compareSelection.add(id); else compareSelection.delete(id);
+          render();
+        });
+      });
+      var compareBtn = document.getElementById('compare-btn');
+      if (compareBtn) compareBtn.addEventListener('click', runCompare);
+
+      // Wire the right-hand panel
+      wireScenarioPanel(active, pools);
+    }
+
+    function renderScenarioDetail(s, pools) {
+      var reserves = (s.config && s.config.reserves) || {};
+      var html = '';
+
+      // Toolbar
+      html += '<div class="toolbar">' +
+        '<button class="btn-portal" id="run-btn">Run BEM →</button>' +
+        '<button class="btn-portal btn-portal--ghost" id="save-btn">Save</button>' +
+        (s.scenarioId ? '<button class="btn-portal btn-portal--ghost" id="delete-btn" style="color: var(--color-error); border-color: var(--color-error);">Delete</button>' : '') +
+        (activeRunResult ? '<button class="btn-portal" id="approve-btn" style="margin-left: auto; background: var(--color-success);">Approve all awards →</button>' : '') +
+      '</div>';
+
+      // Identity
+      html += '<div class="config-block">' +
+        '<div class="form-grid form-grid--2">' +
+          '<div class="wizard__field" style="margin-bottom: 0;"><label class="wizard__label">Scenario name</label><input class="form-input" id="cfg-name" value="' + esc(s.name || '') + '" /></div>' +
+          '<div class="wizard__field" style="margin-bottom: 0;"><label class="wizard__label">Description</label><input class="form-input" id="cfg-desc" value="' + esc(s.description || '') + '" /></div>' +
+        '</div>' +
+      '</div>';
+
+      // Reserve prices
+      html += '<div class="config-block">' +
+        '<h4>Reserve prices per pool</h4>' +
+        '<table class="reserve-table">' +
+          '<thead><tr><th>Pool</th><th>Loans</th><th style="text-align:right;">Aggregate UPB</th><th style="text-align:right;">Reserve (% UPB)</th><th style="text-align:right;">Reserve $</th></tr></thead>' +
+          '<tbody>' + pools.map(function (p) {
+            var pid = p.pool_id || p.poolId;
+            var aggUpb = (p.summary && p.summary.aggregate_upb) || 0;
+            var reservePct = reserves[pid] != null ? reserves[pid] : 50;
+            var reserveDollar = aggUpb * (reservePct / 100);
+            return '<tr>' +
+              '<td><strong>' + esc(p.pool_name || pid) + '</strong></td>' +
+              '<td>' + ((p.summary && p.summary.loan_count) || 0) + '</td>' +
+              '<td style="text-align:right;">' + esc(u.currency(aggUpb)) + '</td>' +
+              '<td style="text-align:right;"><input type="number" step="0.5" min="0" max="100" data-reserve-pool="' + esc(pid) + '" value="' + reservePct + '" /></td>' +
+              '<td style="text-align:right;" data-reserve-dollar="' + esc(pid) + '">' + esc(u.currency(reserveDollar)) + '</td>' +
+            '</tr>';
+          }).join('') + '</tbody>' +
+        '</table>' +
+      '</div>';
+
+      // Award + tie-break config
+      html += '<div class="config-block">' +
+        '<h4>Award policy</h4>' +
+        '<div class="form-grid form-grid--3">' +
+          '<div class="wizard__field" style="margin-bottom: 0;"><label class="wizard__label">Award mode</label>' +
+            '<select class="form-select" id="cfg-award-mode">' +
+              ['highest-aggregate','highest-per-pool','mission-priority'].map(function (m) {
+                return '<option value="' + esc(m) + '" ' + (s.awardMode === m ? 'selected' : '') + '>' + esc(m.replace(/-/g,' ')) + '</option>';
+              }).join('') +
+            '</select>' +
+          '</div>' +
+          '<div class="wizard__field" style="margin-bottom: 0;"><label class="wizard__label">Tie breaker</label>' +
+            '<select class="form-select" id="cfg-tie">' +
+              ['earliest-timestamp','highest-prior-sales','highest-financial-capacity'].map(function (m) {
+                return '<option value="' + esc(m) + '" ' + (s.tieBreaker === m ? 'selected' : '') + '>' + esc(m.replace(/-/g,' ')) + '</option>';
+              }).join('') +
+            '</select>' +
+          '</div>' +
+          '<div class="wizard__field" style="margin-bottom: 0;"><label class="wizard__label">Mission discount %</label>' +
+            '<input class="form-input" type="number" step="0.5" min="0" max="20" id="cfg-mission" value="' + ((s.config && s.config.missionDiscountPct) || 0) + '" />' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+      // Run results
+      if (activeRunResult) {
+        html += renderRunResult(activeRunResult, pools);
+      }
+
+      return html;
+    }
+
+    function renderRunResult(result, pools) {
+      var awards = result.awards || {};
+      var summary = result.summary || {};
+      var poolAwarded = Object.keys(awards).length;
+      var totalProceeds = summary.totalProceeds || 0;
+
+      var html = '<div class="rationale-card">' +
+        '<div class="rationale-card__label">AI BEM RATIONALE</div>' +
+        '<div class="rationale-card__title">' + poolAwarded + ' of ' + pools.length + ' pools awarded · ' + u.currencyCompact(totalProceeds) + ' proceeds</div>' +
+        '<div class="rationale-card__body">' + buildRationale(result, pools) + '</div>' +
+      '</div>';
+
+      html += '<div class="summary-strip">' +
+        '<div class="summary-cell"><div class="summary-cell__label">POOLS AWARDED</div><div class="summary-cell__value">' + poolAwarded + '/' + pools.length + '</div></div>' +
+        '<div class="summary-cell"><div class="summary-cell__label">PROCEEDS</div><div class="summary-cell__value">' + u.currencyCompact(totalProceeds) + '</div></div>' +
+        '<div class="summary-cell"><div class="summary-cell__label">BIDS EVALUATED</div><div class="summary-cell__value">' + (summary.bidsEvaluated || 0) + '</div></div>' +
+        '<div class="summary-cell"><div class="summary-cell__label">RUN AT</div><div class="summary-cell__value" style="font-size: var(--text-md);">' + esc(u.dateRelative(result.runAt)) + '</div></div>' +
+      '</div>';
+
+      html += '<h4 style="font-family: var(--font-heading); margin: var(--space-4) 0 var(--space-2);">Award allocation</h4>';
+      html += '<table class="award-table">' +
+        '<thead><tr><th>Pool</th><th>Winner</th><th style="text-align:right;">Bid</th><th style="text-align:right;">% UPB</th><th>Mission</th><th>Confirmation</th></tr></thead>' +
+        '<tbody>' + pools.map(function (p) {
+          var pid = p.pool_id || p.poolId;
+          var w = awards[pid];
+          if (!w) {
+            return '<tr><td><strong>' + esc(p.pool_name || pid) + '</strong></td><td colspan="5" style="color: var(--color-text-muted); font-style: italic;">No award (below reserve or no bids)</td></tr>';
+          }
+          var aggUpb = (p.summary && p.summary.aggregate_upb) || 0;
+          var pct = aggUpb > 0 ? ((w.bidAmountUSD || w.bidAmount || 0) / aggUpb) * 100 : 0;
+          return '<tr>' +
+            '<td><strong>' + esc(p.pool_name || pid) + '</strong></td>' +
+            '<td class="winner">' + esc(w.bidderName || w.bidderId) + '</td>' +
+            '<td style="text-align:right;">' + esc(u.currency(w.bidAmountUSD || w.bidAmount || 0)) + '</td>' +
+            '<td style="text-align:right;">' + pct.toFixed(2) + '%</td>' +
+            '<td>' + (w.missionBid ? '<span class="badge badge--qualified">MISSION</span>' : '—') + '</td>' +
+            '<td><span style="font-family: var(--font-mono); font-size: var(--text-xs);">' + esc(w.confirmationCode || w.bidId) + '</span></td>' +
+          '</tr>';
+        }).join('') + '</tbody>' +
+      '</table>';
+
+      return html;
+    }
+
+    function buildRationale(result, pools) {
+      var awards = result.awards || {};
+      var awarded = Object.values(awards);
+      if (awarded.length === 0) {
+        return 'No awards generated under the current parameters. Either no bids were submitted, or all bids fell below reserve.';
+      }
+      var top = awarded.slice().sort(function (a, b) { return Number(b.bidAmountUSD || 0) - Number(a.bidAmountUSD || 0); })[0];
+      var missionCount = awarded.filter(function (a) { return a.missionBid; }).length;
+      return 'Allocation maximizes aggregate proceeds across the conforming bid set. Top award: <strong>' + esc(top.bidderName) + '</strong> at ' + esc(u.currency(top.bidAmountUSD)) + '. ' +
+        missionCount + ' of ' + awarded.length + ' awards went to mission-bid bidders. Reserve discipline held — ' +
+        (pools.length - awarded.length) + ' pools fell below reserve and remain unawarded. Recommend OGC sign-off and proceed to award letters.';
+    }
+
+    function makeDefaultScenario() {
+      return {
+        scenarioId: null,
+        saleId: currentSale.saleId || currentSale.sale_id,
+        name: 'New scenario',
+        description: '',
+        awardMode: 'highest-aggregate',
+        tieBreaker: 'earliest-timestamp',
+        config: { reserves: {}, missionDiscountPct: 0 }
+      };
+    }
+
+    function wireScenarioPanel(scenario, pools) {
+      // Reserve % → $ live calc
+      $app.querySelectorAll('[data-reserve-pool]').forEach(function (input) {
+        input.addEventListener('input', function () {
+          var pid = input.getAttribute('data-reserve-pool');
+          var p = pools.find(function (x) { return (x.pool_id || x.poolId) === pid; });
+          var aggUpb = (p && p.summary && p.summary.aggregate_upb) || 0;
+          var pct = parseFloat(input.value) || 0;
+          var dollar = aggUpb * (pct / 100);
+          var cell = document.querySelector('[data-reserve-dollar="' + pid + '"]');
+          if (cell) cell.textContent = u.currency(dollar);
+        });
+      });
+
+      var saveBtn = document.getElementById('save-btn');
+      if (saveBtn) saveBtn.addEventListener('click', function () { saveScenario(scenario); });
+
+      var runBtn = document.getElementById('run-btn');
+      if (runBtn) runBtn.addEventListener('click', function () {
+        saveScenario(scenario, true).then(function (saved) {
+          activeScenarioId = saved.scenarioId;
+          return HSG.api.bem.run(saved.scenarioId);
+        }).then(function (r) {
+          activeRunResult = r;
+          render();
+        }).catch(function (err) { alert('Run failed: ' + (err.message || err)); });
+      });
+
+      var deleteBtn = document.getElementById('delete-btn');
+      if (deleteBtn) deleteBtn.addEventListener('click', function () {
+        if (!confirm('Delete this scenario?')) return;
+        HSG.api.bem.deleteScenario(scenario.scenarioId).then(function () {
+          activeScenarioId = null; activeRunResult = null;
+          return HSG.api.bem.listScenarios(currentSale.saleId || currentSale.sale_id);
+        }).then(function (r) {
+          scenarios = (r && r.scenarios) || []; render();
+        }).catch(function (err) { alert('Delete failed: ' + (err.message || err)); });
+      });
+
+      var approveBtn = document.getElementById('approve-btn');
+      if (approveBtn) approveBtn.addEventListener('click', function () {
+        if (!activeRunResult) return;
+        if (!confirm('Approve all awards and create settlement records? This action will email each winning bidder.')) return;
+        approveBtn.disabled = true; approveBtn.textContent = 'Creating settlements…';
+        HSG.api.bem.approveAwards(currentSale.saleId || currentSale.sale_id, activeScenarioId).then(function (r) {
+          alert('Created ' + (r.settlementsCreated || 0) + ' settlement record(s). Award emails dispatched.');
+          window.location.href = 'settlements.html';
+        }).catch(function (err) { alert('Approve failed: ' + (err.message || err)); approveBtn.disabled = false; approveBtn.textContent = 'Approve all awards →'; });
+      });
+    }
+
+    function saveScenario(base, returnRecord) {
+      var pools = currentSale.pools || [];
+      var reserves = {};
+      $app.querySelectorAll('[data-reserve-pool]').forEach(function (input) {
+        reserves[input.getAttribute('data-reserve-pool')] = parseFloat(input.value) || 0;
+      });
+      var payload = {
+        scenarioId: base.scenarioId || undefined,
+        saleId: currentSale.saleId || currentSale.sale_id,
+        name: (document.getElementById('cfg-name') || {}).value || base.name,
+        description: (document.getElementById('cfg-desc') || {}).value || '',
+        awardMode: (document.getElementById('cfg-award-mode') || {}).value || base.awardMode,
+        tieBreaker: (document.getElementById('cfg-tie') || {}).value || base.tieBreaker,
+        config: {
+          reserves: reserves,
+          missionDiscountPct: parseFloat((document.getElementById('cfg-mission') || {}).value) || 0
+        }
+      };
+      return HSG.api.bem.saveScenario(payload).then(function (r) {
+        var saved = (r && r.scenario) || {};
+        // refresh list
+        return HSG.api.bem.listScenarios(currentSale.saleId || currentSale.sale_id).then(function (lr) {
+          scenarios = (lr && lr.scenarios) || [];
+          if (!returnRecord) {
+            activeScenarioId = saved.scenarioId; render();
+          }
+          return saved;
+        });
+      });
+    }
+
+    function runCompare() {
+      var ids = Array.from(compareSelection);
+      Promise.all(ids.map(function (id) { return HSG.api.bem.run(id); })).then(function (results) {
+        renderCompareModal(ids, results);
+      }).catch(function (err) { alert('Compare failed: ' + (err.message || err)); });
+    }
+
+    function renderCompareModal(ids, results) {
+      var pools = currentSale.pools || [];
+      var modal = document.createElement('div');
+      modal.className = 'drawer-overlay active';
+      modal.innerHTML = '<div style="position: fixed; inset: var(--space-12); background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-6); overflow-y: auto; box-shadow: var(--shadow-xl);">' +
+        '<div style="display: flex; justify-content: space-between; margin-bottom: var(--space-4);">' +
+          '<h2 style="font-family: var(--font-heading);">Scenario comparison</h2>' +
+          '<button class="btn-portal btn-portal--ghost" id="close-cmp">Close</button>' +
+        '</div>' +
+        '<table class="compare-table">' +
+          '<thead><tr><th>Metric</th>' + ids.map(function (id) {
+            var s = scenarios.find(function (x) { return x.scenarioId === id; });
+            return '<th>' + esc((s && s.name) || id) + '</th>';
+          }).join('') + '</tr></thead>' +
+          '<tbody>' +
+            compareRow('Pools awarded', results, function (r) { return Object.keys(r.awards || {}).length + ' / ' + pools.length; }) +
+            compareRow('Total proceeds', results, function (r) { return u.currencyCompact((r.summary && r.summary.totalProceeds) || 0); }, true) +
+            compareRow('Bids evaluated', results, function (r) { return (r.summary && r.summary.bidsEvaluated) || 0; }) +
+          '</tbody>' +
+        '</table>' +
+        '<h3 style="font-family: var(--font-heading); margin: var(--space-5) 0 var(--space-3);">Per-pool winner</h3>' +
+        '<table class="compare-table">' +
+          '<thead><tr><th>Pool</th>' + ids.map(function (id) {
+            var s = scenarios.find(function (x) { return x.scenarioId === id; });
+            return '<th>' + esc((s && s.name) || id) + '</th>';
+          }).join('') + '</tr></thead>' +
+          '<tbody>' + pools.map(function (p) {
+            var pid = p.pool_id || p.poolId;
+            return '<tr><td>' + esc(p.pool_name || pid) + '</td>' + results.map(function (r) {
+              var w = (r.awards || {})[pid];
+              return '<td>' + (w ? esc(w.bidderName) + '<br /><span style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">' + esc(u.currencyCompact(w.bidAmountUSD || 0)) + '</span>' : '—') + '</td>';
+            }).join('') + '</tr>';
+          }).join('') + '</tbody>' +
+        '</table>' +
+      '</div>';
+      document.body.appendChild(modal);
+      document.getElementById('close-cmp').addEventListener('click', function () { document.body.removeChild(modal); });
+      modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+    }
+
+    function compareRow(label, results, fn) {
+      return '<tr><td>' + esc(label) + '</td>' + results.map(function (r) { return '<td>' + esc(fn(r)) + '</td>'; }).join('') + '</tr>';
+    }
+
+    document.getElementById('new-scenario-btn').addEventListener('click', function () {
+      activeScenarioId = null;
+      activeRunResult = null;
+      render();
+    });
+
+    load();
+  })();
+  </script>
+</body>
+</html>

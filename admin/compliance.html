@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compliance &amp; QC · HUD OAS Admin</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <link rel="stylesheet" href="_shell.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    .qc-grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); align-items: flex-start; }
+    @media (max-width: 1024px) { .qc-grid { grid-template-columns: 1fr; } }
+    .reconcile-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .reconcile-table th, .reconcile-table td { padding: var(--space-2) var(--space-3); text-align: left; border-bottom: 1px solid var(--color-grey-100); }
+    .reconcile-table th { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.05em; text-transform: uppercase; }
+    .delta-pos { color: var(--color-success); }
+    .delta-neg { color: var(--color-error); }
+    .delta-zero { color: var(--color-text-muted); }
+  </style>
+</head>
+<body data-portal="admin">
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-label">HUD OAS Admin</div>
+        <div class="sidebar__brand-name">Console</div>
+      </div>
+      <div class="sidebar__section">Overview</div>
+      <a class="sidebar__nav-item" href="index.html">Dashboard</a>
+      <a class="sidebar__nav-item" href="bidders.html">Bidders</a>
+      <a class="sidebar__nav-item" href="bid-day.html">Bid day ops</a>
+      <a class="sidebar__nav-item" href="bem.html">BEM &amp; awards</a>
+      <div class="sidebar__section">Post-sale</div>
+      <a class="sidebar__nav-item" href="qa.html">Q&amp;A inbox</a>
+      <a class="sidebar__nav-item" href="settlements.html">Settlements</a>
+      <a class="sidebar__nav-item active" href="compliance.html">Compliance &amp; QC</a>
+      <div class="sidebar__user">
+        <div id="user-name" style="color: #FFF; font-weight: 600;">…</div>
+        <div id="user-email" style="font-size: var(--text-xs); opacity: 0.7;"></div>
+        <a href="#" id="signout-link" style="display: inline-block; margin-top: var(--space-2); color: var(--color-portal-bright); text-decoration: underline; font-size: var(--text-sm);">Sign out</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="main__header">
+        <h1 class="main__title">Compliance &amp; QC</h1>
+        <div id="main-actions">
+          <select class="form-select" id="sale-filter" style="width: auto; margin-right: var(--space-2);"></select>
+          <button class="btn-portal btn-portal--ghost" id="rerun-btn" style="font-size: var(--text-sm);">Re-run reconciliation</button>
+        </div>
+      </header>
+      <div class="main__content" id="app">
+        <p class="empty">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/api.js"></script>
+  <script>
+  (function () {
+    var u = HSG.utils;
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      });
+    }
+
+    if (!HSG.cognito.isAuthenticated()) { window.location.href = 'login.html?next=compliance.html'; return; }
+    var claims = HSG.api.decodeClaims() || {};
+    document.getElementById('user-name').textContent = claims['custom:entityName'] || claims.email || 'Admin';
+    document.getElementById('user-email').textContent = claims.email || '';
+    document.getElementById('signout-link').addEventListener('click', function (e) {
+      e.preventDefault(); HSG.cognito.signOut(); window.location.href = 'login.html';
+    });
+
+    var $app = document.getElementById('app');
+    var currentSaleId = null;
+    var currentFindings = [];
+    var currentStatusFilter = '';
+
+    function loadSales() {
+      HSG.api.sales.list({}).then(function (r) {
+        var sales = (r && r.sales) || [];
+        var sel = document.getElementById('sale-filter');
+        sel.innerHTML = sales.length === 0
+          ? '<option value="">No sales</option>'
+          : sales.map(function (s) {
+              var sid = s.saleId || s.sale_id;
+              var name = s.name || s.sale_name || sid;
+              return '<option value="' + esc(sid) + '">' + esc(name) + '</option>';
+            }).join('');
+        sel.addEventListener('change', function () { currentSaleId = sel.value; loadFindings(); });
+        if (sales.length > 0) {
+          currentSaleId = sales[0].saleId || sales[0].sale_id;
+          loadFindings();
+        }
+      }).catch(function (err) { $app.innerHTML = '<div class="error-box">' + esc(err.message) + '</div>'; });
+    }
+
+    function loadFindings() {
+      if (!currentSaleId) { $app.innerHTML = '<div class="empty">Select a sale.</div>'; return; }
+      $app.innerHTML = '<p class="empty">Loading findings…</p>';
+      HSG.api.qc.listForSale(currentSaleId).then(function (r) {
+        currentFindings = (r && r.findings) || [];
+        render();
+      }).catch(function (err) {
+        $app.innerHTML = '<div class="error-box">' + esc(err.message) + '</div>';
+      });
+    }
+
+    function render() {
+      var f = currentFindings;
+      var statusCounts = {
+        verified: 0,
+        verified_negative_noi: 0,
+        needs_review: 0,
+        missing_financials: 0
+      };
+      f.forEach(function (x) { if (statusCounts[x.status] != null) statusCounts[x.status]++; });
+
+      var stats = '<div class="stat-grid">' +
+        '<div class="stat-card"><div class="stat-card__label">TOTAL FINDINGS</div><div class="stat-card__value">' + f.length + '</div></div>' +
+        '<div class="stat-card" style="cursor: pointer;" data-status="verified"><div class="stat-card__label">VERIFIED</div><div class="stat-card__value" style="color: var(--color-success);">' + statusCounts.verified + '</div></div>' +
+        '<div class="stat-card" style="cursor: pointer;" data-status="verified_negative_noi"><div class="stat-card__label">VERIFIED · NEG NOI</div><div class="stat-card__value" style="color: var(--color-warning);">' + statusCounts.verified_negative_noi + '</div></div>' +
+        '<div class="stat-card" style="cursor: pointer;" data-status="needs_review"><div class="stat-card__label">NEEDS REVIEW</div><div class="stat-card__value">' + statusCounts.needs_review + '</div></div>' +
+        '<div class="stat-card" style="cursor: pointer;" data-status="missing_financials"><div class="stat-card__label">MISSING FINANCIALS</div><div class="stat-card__value">' + statusCounts.missing_financials + '</div></div>' +
+      '</div>';
+
+      var pills = '<div class="pill-group">' +
+        '<span class="pill ' + (currentStatusFilter === '' ? 'active' : '') + '" data-filter="">All (' + f.length + ')</span>' +
+        '<span class="pill ' + (currentStatusFilter === 'verified' ? 'active' : '') + '" data-filter="verified">Verified (' + statusCounts.verified + ')</span>' +
+        '<span class="pill ' + (currentStatusFilter === 'verified_negative_noi' ? 'active' : '') + '" data-filter="verified_negative_noi">Neg NOI (' + statusCounts.verified_negative_noi + ')</span>' +
+        '<span class="pill ' + (currentStatusFilter === 'needs_review' ? 'active' : '') + '" data-filter="needs_review">Review (' + statusCounts.needs_review + ')</span>' +
+        '<span class="pill ' + (currentStatusFilter === 'missing_financials' ? 'active' : '') + '" data-filter="missing_financials">Missing (' + statusCounts.missing_financials + ')</span>' +
+      '</div>';
+
+      var visible = currentStatusFilter ? f.filter(function (x) { return x.status === currentStatusFilter; }) : f;
+      var rows = visible.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding: var(--space-6); color: var(--color-text-muted);">No findings match this filter.</td></tr>' :
+        visible.map(function (x) {
+          var sevColor = x.severity === 'high' ? 'var(--color-error)'
+                       : x.severity === 'medium' ? 'var(--color-warning)'
+                       : 'var(--color-text-muted)';
+          return '<tr data-finding-id="' + esc(x.qcId || x.qc_id) + '" style="cursor: pointer;">' +
+            '<td><strong>' + esc(x.loanId || x.loan_id) + '</strong></td>' +
+            '<td>' + esc(x.property_name || '—') + '</td>' +
+            '<td>' + renderStatusBadge(x.status) + '</td>' +
+            '<td><span style="color: ' + sevColor + '; font-family: var(--font-mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em;">' + esc(x.severity || '—') + '</span></td>' +
+            '<td>' + esc(x.finding || '—') + '</td>' +
+            '<td>' + esc(x.checked_at ? u.dateShort(x.checked_at) : '—') + '</td>' +
+          '</tr>';
+        }).join('');
+
+      $app.innerHTML = stats + pills +
+        '<table class="data-table">' +
+          '<thead><tr><th>Loan</th><th>Property</th><th>Status</th><th>Severity</th><th>Finding</th><th>Checked</th></tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>' +
+        '<div id="finding-detail" style="margin-top: var(--space-8);"></div>';
+
+      $app.querySelectorAll('[data-status]').forEach(function (el) {
+        el.addEventListener('click', function () { currentStatusFilter = el.getAttribute('data-status'); render(); });
+      });
+      $app.querySelectorAll('[data-filter]').forEach(function (el) {
+        el.addEventListener('click', function () { currentStatusFilter = el.getAttribute('data-filter'); render(); });
+      });
+      $app.querySelectorAll('tr[data-finding-id]').forEach(function (row) {
+        row.addEventListener('click', function () { openFindingDetail(row.getAttribute('data-finding-id')); });
+      });
+    }
+
+    function renderStatusBadge(status) {
+      var map = {
+        verified:                 { mod: 'verified',              icon: '✓', label: 'Verified' },
+        verified_negative_noi:    { mod: 'verified-negative-noi', icon: '⚠', label: 'Neg NOI' },
+        needs_review:             { mod: 'needs-review',          icon: '?', label: 'Review' },
+        missing_financials:       { mod: 'missing-financials',    icon: '—', label: 'Missing' }
+      };
+      var m = map[status] || { mod: 'needs-review', icon: '?', label: status || '—' };
+      return '<span class="qc-badge qc-badge--' + m.mod + '"><span class="qc-badge__icon">' + m.icon + '</span> ' + esc(m.label) + '</span>';
+    }
+
+    function openFindingDetail(qcId) {
+      var f = currentFindings.find(function (x) { return (x.qcId || x.qc_id) === qcId; });
+      if (!f) return;
+      var detailEl = document.getElementById('finding-detail');
+      var fields = (f.fields_checked || []).map(function (fld) { return '<li>' + esc(fld) + '</li>'; }).join('');
+      detailEl.innerHTML = '<div class="card" style="padding: var(--space-6);">' +
+        '<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-3);">' +
+          '<div>' +
+            '<h3 style="font-family: var(--font-heading); font-size: var(--text-xl);">' + esc(f.property_name || f.loanId) + '</h3>' +
+            '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.05em;">' + esc(f.qcId || f.qc_id) + ' · loan ' + esc(f.loanId || f.loan_id) + '</div>' +
+          '</div>' +
+          '<div>' + renderStatusBadge(f.status) + '</div>' +
+        '</div>' +
+        '<div style="font-size: var(--text-sm); margin-bottom: var(--space-4);"><strong>Reconciliation target:</strong> ' + esc(f.reconciliation_target || 'SALD vs OPIIS') + '</div>' +
+        '<div style="font-size: var(--text-sm); margin-bottom: var(--space-4);"><strong>Finding:</strong> ' + esc(f.finding || '—') + '</div>' +
+        (fields ? '<h4 style="font-family: var(--font-heading); margin-top: var(--space-4); margin-bottom: var(--space-2);">Fields checked</h4><ul style="font-size: var(--text-sm); padding-left: var(--space-5);">' + fields + '</ul>' : '') +
+        '<div style="margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-border); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">' +
+          'Checked by: ' + esc(f.checked_by || 'qc-engine') + ' · ' + esc(f.checked_at ? u.date(f.checked_at) : '—') +
+        '</div>' +
+      '</div>';
+      detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    document.getElementById('rerun-btn').addEventListener('click', function () {
+      alert('Re-run reconciliation: queues a Lambda that compares the freshly-uploaded SALD tape against the OPIIS source-of-truth, regenerates QC findings, and emails the TS when complete. (Stub for now — wire to a /qc/rerun endpoint.)');
+    });
+
+    loadSales();
+  })();
+  </script>
+</body>
+</html>

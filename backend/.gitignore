@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# SAM
+.aws-sam/
+samconfig.toml.local
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# AWS credentials (never commit)
+.aws/
+*.pem
+*.key
+*accessKeys*.csv
+
+# OS
+.DS_Store
+Thumbs.db

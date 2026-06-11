@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HUD-9611 Qualification · Residential Loan Sales</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <script src="../shared/config.js"></script>
+</head>
+<body data-portal="residential">
+
+  <header class="portal-banner">
+    <div>
+      <span class="portal-banner__label">HUD-9611 Qualification</span>
+      <span class="portal-banner__programs"> · HVLS · HNVLS · SFLS</span>
+    </div>
+    <nav class="portal-banner__nav">
+      <a href="index.html">← Back to landing</a>
+      <a href="login.html">Sign in</a>
+    </nav>
+  </header>
+
+  <main class="wizard">
+    <div class="wizard__header">
+      <h1 style="font-family: var(--font-heading); font-size: var(--text-3xl); margin-bottom: var(--space-2);">Bidder Qualification — HUD-9611</h1>
+      <p style="color: var(--color-text-muted);">Complete this digital HUD-9611 to qualify for HECM and Single Family loan sales. Required: federal entity ID, beneficial ownership, financial capacity, and a designated HUD-approved servicer. Allow ~15 minutes.</p>
+    </div>
+
+    <div class="wizard__steps" id="steps"></div>
+    <div class="wizard__panel" id="panel">
+      <p style="color: var(--color-text-muted);">Loading…</p>
+    </div>
+  </main>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="../shared/screening.js"></script>
+  <script src="../shared/forms-9611.js"></script>
+  <script>
+  (function () {
+    var form = HSG.forms9611.defaults();
+    var stepIdx = 0;
+    var stepsEl = document.getElementById('steps');
+    var panelEl = document.getElementById('panel');
+
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+    function $(id) { return document.getElementById(id); }
+
+    function renderSteps() {
+      stepsEl.innerHTML = HSG.forms9611.STEPS.map(function (s, i) {
+        var cls = 'wizard__step' + (i === stepIdx ? ' wizard__step--active' : (i < stepIdx ? ' wizard__step--done' : ''));
+        return '<div class="' + cls + '">' + esc(s.label) + '<br><span style="text-transform: none; letter-spacing: 0; font-size: var(--text-xs); color: var(--color-text-muted);">' + esc(s.desc) + '</span></div>';
+      }).join('');
+    }
+
+    function renderField(name, label, type, value, hint, error) {
+      var input;
+      if (type === 'textarea') {
+        input = '<textarea class="form-textarea' + (error ? ' form-input--error' : '') + '" name="' + esc(name) + '">' + esc(value || '') + '</textarea>';
+      } else if (type === 'select') {
+        input = '<select class="form-select' + (error ? ' form-select--error' : '') + '" name="' + esc(name) + '"></select>';
+      } else {
+        input = '<input class="form-input' + (error ? ' form-input--error' : '') + '" name="' + esc(name) + '" type="' + esc(type || 'text') + '" value="' + esc(value || '') + '" />';
+      }
+      return '<div class="wizard__field">' +
+        '<label class="wizard__label">' + esc(label) + '</label>' +
+        input +
+        (hint ? '<p class="wizard__hint">' + esc(hint) + '</p>' : '') +
+        (error ? '<p class="wizard__error">' + esc(error) + '</p>' : '') +
+      '</div>';
+    }
+
+    function renderProgramTypes(errors) {
+      var pts = ['HVLS', 'HNVLS', 'SFLS'];
+      var labels = { HVLS: 'HECM Vacant Loan Sales', HNVLS: 'HECM Non-Vacant Loan Sales', SFLS: 'Single Family Forward' };
+      var checked = form.programTypes || [];
+      return '<div class="wizard__field">' +
+        '<label class="wizard__label">Programs you wish to bid on (select all that apply)</label>' +
+        pts.map(function (pt) {
+          return '<label class="form-checkbox" style="margin-bottom: var(--space-2);">' +
+            '<input type="checkbox" name="programType" value="' + pt + '"' + (checked.indexOf(pt) >= 0 ? ' checked' : '') + ' />' +
+            '<span><span class="form-checkbox__label">' + esc(pt) + ' · ' + esc(labels[pt]) + '</span></span>' +
+          '</label>';
+        }).join('') +
+        (errors && errors['programTypes'] ? '<p class="wizard__error">' + esc(errors['programTypes']) + '</p>' : '') +
+      '</div>';
+    }
+
+    function renderEntity(errors) {
+      var e = form.entity;
+      var html = '<h2 class="wizard__panel-title">Entity Information</h2>' +
+        '<p class="wizard__panel-subtitle">Legal organization details and primary contact for this qualification.</p>' +
+        renderProgramTypes(errors) +
+        '<div class="form-grid form-grid--2">' +
+          renderField('legalName', 'Legal entity name', 'text', e.legalName, null, errors['entity.legalName']) +
+          renderField('dba', 'DBA / trade name (optional)', 'text', e.dba) +
+          '<div class="wizard__field">' +
+            '<label class="wizard__label">Entity type</label>' +
+            '<select class="form-select' + (errors['entity.entityType'] ? ' form-select--error' : '') + '" name="entityType">' +
+              '<option value="">Select…</option>' +
+              HSG.forms9611.ENTITY_TYPES.map(function (t) { return '<option value="' + esc(t.value) + '"' + (e.entityType === t.value ? ' selected' : '') + '>' + esc(t.label) + '</option>'; }).join('') +
+            '</select>' +
+            (errors['entity.entityType'] ? '<p class="wizard__error">' + esc(errors['entity.entityType']) + '</p>' : '') +
+          '</div>' +
+          renderField('stateOfFormation', 'State of formation', 'text', e.stateOfFormation, '2-letter state code', errors['entity.stateOfFormation']) +
+          renderField('yearFormed', 'Year formed', 'number', e.yearFormed, null, errors['entity.yearFormed']) +
+          renderField('ein', 'Federal EIN', 'text', e.ein, '12-3456789', errors['entity.ein']) +
+          renderField('uei', 'SAM.gov UEI', 'text', e.uei, '12 alphanumeric characters', errors['entity.uei']) +
+          renderField('cage', 'CAGE code (optional)', 'text', e.cage, null, errors['entity.cage']) +
+        '</div>' +
+        '<h3 style="margin: var(--space-6) 0 var(--space-3); font-family: var(--font-heading);">Physical address</h3>' +
+        '<div class="form-grid form-grid--2">' +
+          renderField('addr.line1', 'Street', 'text', e.physicalAddress.line1, null, errors['entity.physicalAddress.line1']) +
+          renderField('addr.line2', 'Suite (optional)', 'text', e.physicalAddress.line2) +
+          renderField('addr.city', 'City', 'text', e.physicalAddress.city, null, errors['entity.physicalAddress.city']) +
+          renderField('addr.state', 'State', 'text', e.physicalAddress.state, null, errors['entity.physicalAddress.state']) +
+          renderField('addr.zip', 'ZIP', 'text', e.physicalAddress.zip, null, errors['entity.physicalAddress.zip']) +
+        '</div>' +
+        '<h3 style="margin: var(--space-6) 0 var(--space-3); font-family: var(--font-heading);">Primary contact</h3>' +
+        '<div class="form-grid form-grid--2">' +
+          renderField('contactName', 'Full name', 'text', e.contactName, null, errors['entity.contactName']) +
+          renderField('contactTitle', 'Title', 'text', e.contactTitle) +
+          renderField('contactEmail', 'Email', 'email', e.contactEmail, null, errors['entity.contactEmail']) +
+          renderField('contactPhone', 'Phone', 'tel', e.contactPhone, null, errors['entity.contactPhone']) +
+        '</div>';
+      return html;
+    }
+
+    function renderOwnership(errors) {
+      var o = form.ownership;
+      var ownersHtml = (o.owners || []).map(function (own, i) {
+        return '<div class="card" style="padding: var(--space-4); margin-bottom: var(--space-3); background: var(--color-grey-50);">' +
+          '<div class="form-grid form-grid--2">' +
+            renderField('owner.' + i + '.name', 'Owner #' + (i + 1) + ' name', 'text', own.name, null, errors['ownership.owners[' + i + '].name']) +
+            renderField('owner.' + i + '.ownershipPct', '% ownership', 'number', own.ownershipPct, null, errors['ownership.owners[' + i + '].ownershipPct']) +
+            renderField('owner.' + i + '.address', 'Address', 'text', own.address) +
+            renderField('owner.' + i + '.citizenship', 'Citizenship', 'text', own.citizenship, null, errors['ownership.owners[' + i + '].citizenship']) +
+            '<label class="form-checkbox"><input type="checkbox" name="owner.' + i + '.isControlPerson"' + (own.isControlPerson ? ' checked' : '') + ' /><span><span class="form-checkbox__label">Control person</span><span class="form-checkbox__desc">Senior officer, director, or person with substantial authority</span></span></label>' +
+          '</div>' +
+          '<button type="button" class="btn-portal btn-portal--ghost" data-action="remove-owner" data-idx="' + i + '" style="margin-top: var(--space-2); font-size: var(--text-sm); padding: var(--space-2) var(--space-3);">Remove owner</button>' +
+        '</div>';
+      }).join('');
+      return '<h2 class="wizard__panel-title">Beneficial Ownership</h2>' +
+        '<p class="wizard__panel-subtitle">Per the Corporate Transparency Act, list every individual or entity holding 25% or more direct or indirect ownership.</p>' +
+        ownersHtml +
+        '<button type="button" class="btn-portal btn-portal--ghost" data-action="add-owner" style="margin-bottom: var(--space-4);">+ Add beneficial owner</button>' +
+        (errors['ownership.owners'] ? '<p class="wizard__error">' + esc(errors['ownership.owners']) + '</p>' : '') +
+        '<label class="form-checkbox" style="margin-bottom: var(--space-2);"><input type="checkbox" name="ctaCompliant"' + (o.ctaCompliant ? ' checked' : '') + ' /><span><span class="form-checkbox__label">CTA compliance</span><span class="form-checkbox__desc">I affirm this entity has filed (or is exempt from) the Corporate Transparency Act Beneficial Ownership Information Report with FinCEN.</span></span></label>' +
+        (errors['ownership.ctaCompliant'] ? '<p class="wizard__error">' + esc(errors['ownership.ctaCompliant']) + '</p>' : '') +
+        '<label class="form-checkbox"><input type="checkbox" name="confirmedNoForeignAdversary"' + (o.confirmedNoForeignAdversary ? ' checked' : '') + ' /><span><span class="form-checkbox__label">No foreign-adversary ownership</span><span class="form-checkbox__desc">No beneficial owner is a national or government of a country designated a foreign adversary (15 CFR §791.4).</span></span></label>' +
+        (errors['ownership.confirmedNoForeignAdversary'] ? '<p class="wizard__error">' + esc(errors['ownership.confirmedNoForeignAdversary']) + '</p>' : '');
+    }
+
+    function renderFinancial(errors) {
+      var f = form.financial;
+      return '<h2 class="wizard__panel-title">Financial Capacity</h2>' +
+        '<p class="wizard__panel-subtitle">Demonstrate the financial capacity to fund the maximum bid you intend to submit. Audited financials may be requested.</p>' +
+        '<div class="form-grid form-grid--2">' +
+          renderField('liquidCapitalUSD', 'Liquid capital (USD)', 'number', f.liquidCapitalUSD, 'Cash + readily marketable securities', errors['financial.liquidCapitalUSD']) +
+          renderField('totalAUMUSD', 'Total AUM (USD)', 'number', f.totalAUMUSD, null, errors['financial.totalAUMUSD']) +
+          renderField('designatedServicerName', 'Designated servicer', 'text', f.designatedServicerName, null, errors['financial.designatedServicerName']) +
+          renderField('bankReferenceName', 'Bank reference name', 'text', f.bankReferenceName, null, errors['financial.bankReferenceName']) +
+          renderField('bankReferenceContact', 'Bank reference contact', 'text', f.bankReferenceContact, 'Name + phone', errors['financial.bankReferenceContact']) +
+        '</div>' +
+        '<label class="form-checkbox" style="margin-top: var(--space-4);"><input type="checkbox" name="designatedServicerHUDApproved"' + (f.designatedServicerHUDApproved ? ' checked' : '') + ' /><span><span class="form-checkbox__label">Servicer is HUD-approved</span><span class="form-checkbox__desc">The named servicer is on the current list of HUD-approved single family servicers.</span></span></label>' +
+        (errors['financial.designatedServicerHUDApproved'] ? '<p class="wizard__error">' + esc(errors['financial.designatedServicerHUDApproved']) + '</p>' : '') +
+        '<label class="form-checkbox" style="margin-top: var(--space-2);"><input type="checkbox" name="auditedFinancialsAttached"' + (f.auditedFinancialsAttached ? ' checked' : '') + ' /><span><span class="form-checkbox__label">Audited financials available on request</span></span></label>' +
+        renderField('priorHUDLoanSalePurchases', 'Prior HUD loan sale purchases (narrative)', 'textarea', f.priorHUDLoanSalePurchases, 'List sale identifiers, dates, and pool sizes.');
+    }
+
+    function renderMission(errors) {
+      var m = form.mission;
+      var c = m.commitments || {};
+      var nsoOptions = ['rehab', 'rental', 'reo-conversion', 'loan-modification'];
+      return '<h2 class="wizard__panel-title">Mission / NSO Commitments (optional)</h2>' +
+        '<p class="wizard__panel-subtitle">Mission-eligible bidders may receive carveouts or discounts on designated pools in exchange for Neighborhood Stabilization Outcome commitments. Optional. Skip if you do not seek mission-eligible status.</p>' +
+        (form.entity && form.entity.entityType === 'NONPROFIT' ? renderField('nonprofitCertNumber', '501(c)(3) certification number', 'text', m.nonprofitCertNumber, null, errors['mission.nonprofitCertNumber']) : '') +
+        '<label class="form-checkbox" style="margin-bottom: var(--space-4);"><input type="checkbox" name="electMissionEligible"' + (m.electMissionEligible ? ' checked' : '') + ' /><span><span class="form-checkbox__label">Elect mission-eligible status</span><span class="form-checkbox__desc">Commits to NSO outcomes; subject to quarterly post-sale reporting.</span></span></label>' +
+        '<div class="wizard__field">' +
+          '<label class="wizard__label">NSO outcomes you commit to deliver</label>' +
+          nsoOptions.map(function (o) {
+            return '<label class="form-checkbox" style="margin-bottom: var(--space-1);"><input type="checkbox" name="nso.' + o + '"' + ((c.nsoOutcomes || []).indexOf(o) >= 0 ? ' checked' : '') + ' /><span><span class="form-checkbox__label">' + esc(o.replace(/-/g, ' ')) + '</span></span></label>';
+          }).join('') +
+          (errors['mission.commitments.nsoOutcomes'] ? '<p class="wizard__error">' + esc(errors['mission.commitments.nsoOutcomes']) + '</p>' : '') +
+        '</div>' +
+        renderField('minHoldingPeriodMonths', 'Minimum holding period (months)', 'number', c.minHoldingPeriodMonths, '36-month minimum if mission-elected', errors['mission.commitments.minHoldingPeriodMonths']);
+    }
+
+    function renderRelated(errors) {
+      var r = form.related;
+      return '<h2 class="wizard__panel-title">Related Party Disclosures</h2>' +
+        '<p class="wizard__panel-subtitle">Per OIG report 2024-KC-0001, comprehensive disclosure of related parties is required.</p>' +
+        renderField('priorHUDStaffRelationships', 'Prior employment of HUD or contractor staff', 'textarea', r.priorHUDStaffRelationships, 'Identify any current employee, officer, or contractor of your organization who was employed by HUD or a HUD contractor in the prior 24 months.') +
+        renderField('commonOwnershipWithOtherBidders', 'Common ownership / control with other bidders', 'textarea', r.commonOwnershipWithOtherBidders, 'Identify any other entity that may bid in this sale that shares 25%+ ownership or common control.') +
+        '<label class="form-checkbox"><input type="checkbox" name="relationshipsDisclosed"' + (r.relationshipsDisclosed ? ' checked' : '') + ' /><span><span class="form-checkbox__label">Disclosure complete</span><span class="form-checkbox__desc">All known Related Party relationships have been disclosed.</span></span></label>' +
+        (errors['related.relationshipsDisclosed'] ? '<p class="wizard__error">' + esc(errors['related.relationshipsDisclosed']) + '</p>' : '');
+    }
+
+    function renderCertify(errors, screening) {
+      var c = form.certify;
+      var screeningHtml = '';
+      if (screening) {
+        screeningHtml = '<div style="margin-bottom: var(--space-6);">' +
+          '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-3);">Pre-submission screening</h3>' +
+          HSG.screening.renderStatusRow('OFAC SDN', screening.ofac) +
+          HSG.screening.renderStatusRow('SAM.gov', screening.sam) +
+          HSG.screening.renderStatusRow('IRS TIN Match', screening.tin) +
+        '</div>';
+      }
+      return '<h2 class="wizard__panel-title">Certification &amp; Signature</h2>' +
+        '<p class="wizard__panel-subtitle">Review and sign. Submission triggers OFAC, SAM, and TIN screening before reaching the Transaction Specialist.</p>' +
+        screeningHtml +
+        '<div class="form-grid form-grid--2">' +
+          renderField('certifierName', 'Certifier name', 'text', c.certifierName, null, errors['certify.certifierName']) +
+          renderField('certifierTitle', 'Title', 'text', c.certifierTitle, null, errors['certify.certifierTitle']) +
+          renderField('certifierDate', 'Date', 'date', c.certifierDate || new Date().toISOString().slice(0,10), null, errors['certify.certifierDate']) +
+          renderField('certifierSignature', 'Signature (type full legal name)', 'text', c.certifierSignature, null, errors['certify.certifierSignature']) +
+        '</div>' +
+        '<label class="form-checkbox" style="margin-top: var(--space-4);"><input type="checkbox" name="attestNoFalseStatements"' + (c.attestNoFalseStatements ? ' checked' : '') + ' /><span><span class="form-checkbox__label">No false statements</span><span class="form-checkbox__desc">I certify under penalty of 18 U.S.C. §1001 that the information herein is true and correct.</span></span></label>' +
+        (errors['certify.attestNoFalseStatements'] ? '<p class="wizard__error">' + esc(errors['certify.attestNoFalseStatements']) + '</p>' : '') +
+        '<label class="form-checkbox" style="margin-top: var(--space-2);"><input type="checkbox" name="attestComplyWithCAA"' + (c.attestComplyWithCAA ? ' checked' : '') + ' /><span><span class="form-checkbox__label">Comply with Conditional Award Acceptance</span><span class="form-checkbox__desc">If awarded, I will execute the CAA, ISA, and PSA on time and in full.</span></span></label>' +
+        (errors['certify.attestComplyWithCAA'] ? '<p class="wizard__error">' + esc(errors['certify.attestComplyWithCAA']) + '</p>' : '') +
+        '<label class="form-checkbox" style="margin-top: var(--space-2);"><input type="checkbox" name="attestUnderstandsBidderResponsibilities"' + (c.attestUnderstandsBidderResponsibilities ? ' checked' : '') + ' /><span><span class="form-checkbox__label">Bidder responsibilities</span><span class="form-checkbox__desc">I have read and understand 24 CFR 291 Subpart G and the Bidder Information Package for the relevant sale.</span></span></label>' +
+        (errors['certify.attestUnderstandsBidderResponsibilities'] ? '<p class="wizard__error">' + esc(errors['certify.attestUnderstandsBidderResponsibilities']) + '</p>' : '');
+    }
+
+    function renderActions(extraButton) {
+      return '<div class="wizard__actions">' +
+        '<button type="button" class="btn-portal btn-portal--ghost" data-action="back"' + (stepIdx === 0 ? ' disabled' : '') + '>← Back</button>' +
+        '<div style="display:flex; gap: var(--space-2);">' +
+          (stepIdx < HSG.forms9611.STEPS.length - 1 ? '<button type="button" class="btn-portal" data-action="next">Continue →</button>' : '') +
+          (extraButton || '') +
+        '</div>' +
+      '</div>';
+    }
+
+    function render(errors, screening) {
+      errors = errors || {};
+      renderSteps();
+      var stepKey = HSG.forms9611.STEPS[stepIdx].key;
+      var content = '';
+      if (stepKey === 'entity')    content = renderEntity(errors);
+      else if (stepKey === 'ownership') content = renderOwnership(errors);
+      else if (stepKey === 'financial') content = renderFinancial(errors);
+      else if (stepKey === 'mission')   content = renderMission(errors);
+      else if (stepKey === 'related')   content = renderRelated(errors);
+      else if (stepKey === 'certify')   content = renderCertify(errors, screening);
+      var extra = stepKey === 'certify'
+        ? '<button type="button" class="btn-portal" data-action="submit">Submit qualification →</button>'
+        : '';
+      panelEl.innerHTML = content + renderActions(extra);
+      bind();
+    }
+
+    function readEntity() {
+      var inputs = panelEl.querySelectorAll('input, select, textarea');
+      inputs.forEach(function (el) {
+        var name = el.name;
+        if (!name) return;
+        var v = el.type === 'checkbox' ? el.checked : el.value;
+        if (name === 'legalName') form.entity.legalName = v;
+        else if (name === 'dba') form.entity.dba = v;
+        else if (name === 'entityType') form.entity.entityType = v;
+        else if (name === 'stateOfFormation') form.entity.stateOfFormation = v;
+        else if (name === 'yearFormed') form.entity.yearFormed = +v || '';
+        else if (name === 'ein') form.entity.ein = v;
+        else if (name === 'uei') form.entity.uei = (v || '').toUpperCase();
+        else if (name === 'cage') form.entity.cage = (v || '').toUpperCase();
+        else if (name === 'addr.line1') form.entity.physicalAddress.line1 = v;
+        else if (name === 'addr.line2') form.entity.physicalAddress.line2 = v;
+        else if (name === 'addr.city') form.entity.physicalAddress.city = v;
+        else if (name === 'addr.state') form.entity.physicalAddress.state = (v || '').toUpperCase();
+        else if (name === 'addr.zip') form.entity.physicalAddress.zip = v;
+        else if (name === 'contactName') form.entity.contactName = v;
+        else if (name === 'contactTitle') form.entity.contactTitle = v;
+        else if (name === 'contactEmail') form.entity.contactEmail = v;
+        else if (name === 'contactPhone') form.entity.contactPhone = v;
+        else if (name === 'programType') {
+          if (v) { if (form.programTypes.indexOf(el.value) < 0) form.programTypes.push(el.value); }
+          else form.programTypes = form.programTypes.filter(function (x) { return x !== el.value; });
+        }
+      });
+    }
+
+    function readOwnership() {
+      var inputs = panelEl.querySelectorAll('input, select, textarea');
+      inputs.forEach(function (el) {
+        var n = el.name; if (!n) return;
+        var v = el.type === 'checkbox' ? el.checked : el.value;
+        if (n === 'ctaCompliant') form.ownership.ctaCompliant = v;
+        else if (n === 'confirmedNoForeignAdversary') form.ownership.confirmedNoForeignAdversary = v;
+        else if (n.indexOf('owner.') === 0) {
+          var parts = n.split('.');
+          var i = +parts[1];
+          var field = parts[2];
+          form.ownership.owners[i] = form.ownership.owners[i] || {};
+          if (field === 'ownershipPct') form.ownership.owners[i][field] = +v || 0;
+          else if (el.type === 'checkbox') form.ownership.owners[i][field] = v;
+          else form.ownership.owners[i][field] = v;
+        }
+      });
+    }
+
+    function readFinancial() {
+      var inputs = panelEl.querySelectorAll('input, select, textarea');
+      inputs.forEach(function (el) {
+        var n = el.name; if (!n) return;
+        var v = el.type === 'checkbox' ? el.checked : el.value;
+        if (n === 'liquidCapitalUSD') form.financial.liquidCapitalUSD = +v || 0;
+        else if (n === 'totalAUMUSD') form.financial.totalAUMUSD = +v || 0;
+        else if (n === 'designatedServicerName') form.financial.designatedServicerName = v;
+        else if (n === 'designatedServicerHUDApproved') form.financial.designatedServicerHUDApproved = v;
+        else if (n === 'bankReferenceName') form.financial.bankReferenceName = v;
+        else if (n === 'bankReferenceContact') form.financial.bankReferenceContact = v;
+        else if (n === 'auditedFinancialsAttached') form.financial.auditedFinancialsAttached = v;
+        else if (n === 'priorHUDLoanSalePurchases') form.financial.priorHUDLoanSalePurchases = v;
+      });
+    }
+
+    function readMission() {
+      var inputs = panelEl.querySelectorAll('input, select, textarea');
+      form.mission.commitments = form.mission.commitments || { nsoOutcomes: [] };
+      form.mission.commitments.nsoOutcomes = [];
+      inputs.forEach(function (el) {
+        var n = el.name; if (!n) return;
+        var v = el.type === 'checkbox' ? el.checked : el.value;
+        if (n === 'electMissionEligible') form.mission.electMissionEligible = v;
+        else if (n === 'nonprofitCertNumber') form.mission.nonprofitCertNumber = v;
+        else if (n === 'minHoldingPeriodMonths') form.mission.commitments.minHoldingPeriodMonths = +v || null;
+        else if (n.indexOf('nso.') === 0 && v) form.mission.commitments.nsoOutcomes.push(n.substring(4));
+      });
+    }
+
+    function readRelated() {
+      var inputs = panelEl.querySelectorAll('input, textarea');
+      inputs.forEach(function (el) {
+        var n = el.name; if (!n) return;
+        var v = el.type === 'checkbox' ? el.checked : el.value;
+        if (n === 'priorHUDStaffRelationships') form.related.priorHUDStaffRelationships = v;
+        else if (n === 'commonOwnershipWithOtherBidders') form.related.commonOwnershipWithOtherBidders = v;
+        else if (n === 'relationshipsDisclosed') form.related.relationshipsDisclosed = v;
+      });
+    }
+
+    function readCertify() {
+      var inputs = panelEl.querySelectorAll('input');
+      inputs.forEach(function (el) {
+        var n = el.name; if (!n) return;
+        var v = el.type === 'checkbox' ? el.checked : el.value;
+        if (n === 'certifierName') form.certify.certifierName = v;
+        else if (n === 'certifierTitle') form.certify.certifierTitle = v;
+        else if (n === 'certifierDate') form.certify.certifierDate = v;
+        else if (n === 'certifierSignature') form.certify.certifierSignature = v;
+        else if (n === 'attestNoFalseStatements') form.certify.attestNoFalseStatements = v;
+        else if (n === 'attestComplyWithCAA') form.certify.attestComplyWithCAA = v;
+        else if (n === 'attestUnderstandsBidderResponsibilities') form.certify.attestUnderstandsBidderResponsibilities = v;
+      });
+    }
+
+    function readCurrentStep() {
+      var k = HSG.forms9611.STEPS[stepIdx].key;
+      if (k === 'entity') readEntity();
+      else if (k === 'ownership') readOwnership();
+      else if (k === 'financial') readFinancial();
+      else if (k === 'mission') readMission();
+      else if (k === 'related') readRelated();
+      else if (k === 'certify') readCertify();
+    }
+
+    function validateCurrent() {
+      var k = HSG.forms9611.STEPS[stepIdx].key;
+      var v;
+      if (k === 'entity') {
+        v = HSG.forms9611.validateEntity(form.entity);
+        if (form.programTypes.length === 0) v.errors['programTypes'] = 'Select at least one program';
+        v.valid = Object.keys(v.errors).length === 0;
+      }
+      else if (k === 'ownership') v = HSG.forms9611.validateOwnership(form.ownership);
+      else if (k === 'financial') v = HSG.forms9611.validateFinancial(form.financial);
+      else if (k === 'mission')   v = HSG.forms9611.validateMission(form.mission, form.entity.entityType);
+      else if (k === 'related')   v = HSG.forms9611.validateRelated(form.related);
+      else if (k === 'certify')   v = HSG.forms9611.validateCertify(form.certify);
+      return v;
+    }
+
+    function bind() {
+      panelEl.querySelectorAll('[data-action]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var action = b.getAttribute('data-action');
+          if (action === 'next') {
+            readCurrentStep();
+            var v = validateCurrent();
+            if (!v.valid) { render(v.errors); return; }
+            stepIdx = Math.min(stepIdx + 1, HSG.forms9611.STEPS.length - 1);
+            render();
+          } else if (action === 'back') {
+            readCurrentStep();
+            stepIdx = Math.max(stepIdx - 1, 0);
+            render();
+          } else if (action === 'add-owner') {
+            readCurrentStep();
+            form.ownership.owners.push({ name: '', ownershipPct: 0, address: '', citizenship: '', isControlPerson: false });
+            render();
+          } else if (action === 'remove-owner') {
+            readCurrentStep();
+            var idx = +b.getAttribute('data-idx');
+            form.ownership.owners.splice(idx, 1);
+            render();
+          } else if (action === 'submit') {
+            submit();
+          }
+        });
+      });
+    }
+
+    function submit() {
+      readCertify();
+      var v = HSG.forms9611.validateAll(form);
+      if (!v.valid) {
+        // Jump to first invalid step
+        var stepWithErr = (function () {
+          var keys = Object.keys(v.errors);
+          if (keys.some(function (k) { return k.indexOf('entity.') === 0 || k === 'programTypes'; })) return 0;
+          if (keys.some(function (k) { return k.indexOf('ownership.') === 0; })) return 1;
+          if (keys.some(function (k) { return k.indexOf('financial.') === 0; })) return 2;
+          if (keys.some(function (k) { return k.indexOf('mission.') === 0; })) return 3;
+          if (keys.some(function (k) { return k.indexOf('related.') === 0; })) return 4;
+          return 5;
+        })();
+        stepIdx = stepWithErr;
+        render(v.errors);
+        return;
+      }
+
+      panelEl.innerHTML = '<h2 class="wizard__panel-title">Running pre-submission screening…</h2>' +
+        '<p class="wizard__panel-subtitle">OFAC SDN, SAM.gov, and IRS TIN match. Please wait.</p>' +
+        '<p style="font-family: var(--font-mono); color: var(--color-text-muted);">…</p>';
+
+      HSG.screening.runAll({
+        entityName: form.entity.legalName,
+        uei: form.entity.uei,
+        ein: form.entity.ein
+      }).then(function (results) {
+        form.screening.ofacResult = results.ofac;
+        form.screening.samResult  = results.sam;
+        form.screening.tinResult  = results.tin;
+
+        if (HSG.screening.hasAnyHit(results)) {
+          render({}, results);
+          var notice = document.createElement('div');
+          notice.className = 'auth-error';
+          notice.style.marginTop = 'var(--space-4)';
+          notice.textContent = 'Pre-submission screening flagged a match. Please contact the Transaction Specialist before resubmitting.';
+          panelEl.appendChild(notice);
+          return;
+        }
+        // POST to backend
+        var payload = Object.assign({}, form, {
+          contactEmail: form.entity.contactEmail,
+          contactName: form.entity.contactName,
+          entityName: form.entity.legalName,
+          entityType: form.entity.entityType,
+          ein: form.entity.ein,
+          uei: form.entity.uei,
+          signerName: form.certify.certifierName,
+          signature: form.certify.certifierSignature,
+          screening: form.screening
+        });
+        return HSG.api.bidders.create(payload).then(function (res) {
+          panelEl.innerHTML = '<h2 class="wizard__panel-title">Application received</h2>' +
+            '<p class="wizard__panel-subtitle">Your HUD-9611 has been submitted. The Transaction Specialist will review and contact you within 1–2 business days at <strong>' + esc(form.entity.contactEmail) + '</strong>.</p>' +
+            '<p style="font-family: var(--font-mono); color: var(--color-text-muted);">Bidder ID: ' + esc(res && res.bidder && res.bidder.bidderId || '—') + '</p>' +
+            '<a class="btn-portal" href="login.html" style="margin-top: var(--space-4);">Continue to sign in</a>';
+        });
+      }).catch(function (err) {
+        var notice = document.createElement('div');
+        notice.className = 'auth-error';
+        notice.style.marginTop = 'var(--space-4)';
+        notice.textContent = 'Submission failed: ' + (err.message || 'Unknown error');
+        panelEl.appendChild(notice);
+      });
+    }
+
+    render();
+  })();
+  </script>
+
+</body>
+</html>

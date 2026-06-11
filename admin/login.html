@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in · HUD OAS Admin Console</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    body { display: flex; min-height: 100vh; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--color-portal-soft), #FFFFFF); }
+    .auth-card { width: 100%; max-width: 460px; padding: var(--space-8); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); margin: var(--space-6); }
+    .auth-card__brand { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-portal); letter-spacing: 0.1em; text-transform: uppercase; }
+    .auth-card__brand::before { content: ''; width: 8px; height: 8px; background: var(--color-portal); border-radius: 50%; }
+    .auth-card__title { font-family: var(--font-heading); font-size: var(--text-2xl); margin-bottom: var(--space-2); }
+    .auth-card__sub { color: var(--color-text-muted); margin-bottom: var(--space-6); font-size: var(--text-sm); }
+    .auth-form { display: flex; flex-direction: column; gap: var(--space-4); }
+    .auth-form button[type="submit"] { padding: var(--space-3) var(--space-6); background: var(--color-portal); color: #FFFFFF; border-radius: var(--radius-md); font-weight: 600; transition: background var(--duration-fast); }
+    .auth-form button[type="submit"]:hover:not(:disabled) { background: var(--color-portal-dark); }
+    .auth-form button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+    .auth-error { padding: var(--space-3); background: var(--color-error-bg); color: var(--color-error); border-radius: var(--radius-md); font-size: var(--text-sm); }
+    .auth-info  { padding: var(--space-3); background: var(--color-info-bg); color: var(--color-info); border-radius: var(--radius-md); font-size: var(--text-sm); }
+    .otp-qr { display: block; margin: var(--space-4) auto; padding: var(--space-4); background: #FFF; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body data-portal="admin">
+
+  <main class="auth-card">
+    <div class="auth-card__brand">HUD OAS Admin Console</div>
+
+    <div id="screen-signin">
+      <h1 class="auth-card__title">Admin sign in</h1>
+      <p class="auth-card__sub">Transaction Specialist, OGC, or supervisory access. MFA required.</p>
+      <form class="auth-form" id="form-signin">
+        <div class="wizard__field"><label class="wizard__label" for="email">Email</label><input class="form-input" id="email" type="email" required autocomplete="username" /></div>
+        <div class="wizard__field"><label class="wizard__label" for="password">Password</label><input class="form-input" id="password" type="password" required autocomplete="current-password" /></div>
+        <div id="signin-error" class="auth-error hidden"></div>
+        <button type="submit" id="signin-submit">Sign in →</button>
+      </form>
+    </div>
+
+    <div id="screen-mfa-challenge" class="hidden">
+      <h1 class="auth-card__title">Two-factor verification</h1>
+      <p class="auth-card__sub">Enter the 6-digit code from your authenticator app.</p>
+      <form class="auth-form" id="form-mfa-challenge">
+        <div class="wizard__field"><label class="wizard__label" for="mfa-c-code">Code</label><input class="form-input" id="mfa-c-code" type="text" inputmode="numeric" maxlength="6" pattern="\d{6}" required autocomplete="one-time-code" autofocus /></div>
+        <div id="mfa-challenge-error" class="auth-error hidden"></div>
+        <button type="submit">Verify →</button>
+      </form>
+    </div>
+
+    <div id="screen-newpassword" class="hidden">
+      <h1 class="auth-card__title">Set permanent password</h1>
+      <form class="auth-form" id="form-newpassword">
+        <div class="wizard__field"><label class="wizard__label" for="np">New password</label><input class="form-input" id="np" type="password" required minlength="15" /><p class="wizard__hint">15+ characters · upper + lower + number + symbol</p></div>
+        <div id="newpassword-error" class="auth-error hidden"></div>
+        <button type="submit">Set password →</button>
+      </form>
+    </div>
+
+    <div id="screen-mfa-setup" class="hidden">
+      <h1 class="auth-card__title">Set up MFA</h1>
+      <p class="auth-card__sub">Scan with your authenticator app, then enter the 6-digit code.</p>
+      <div id="mfa-qr" class="otp-qr"></div>
+      <form class="auth-form" id="form-mfa-setup">
+        <div class="wizard__field"><label class="wizard__label" for="mfa-code">Code</label><input class="form-input" id="mfa-code" type="text" inputmode="numeric" maxlength="6" pattern="\d{6}" required /></div>
+        <div id="mfa-setup-error" class="auth-error hidden"></div>
+        <button type="submit">Activate MFA →</button>
+      </form>
+    </div>
+  </main>
+
+  <script src="../shared/cognito.js"></script>
+  <script>
+  (function () {
+    var state = { email: null, session: null };
+    function show(id) { ['screen-signin','screen-mfa-challenge','screen-newpassword','screen-mfa-setup'].forEach(function (s) { document.getElementById(s).classList.add('hidden'); }); document.getElementById(id).classList.remove('hidden'); }
+    function setError(id, msg) { var el = document.getElementById(id); if (msg) { el.textContent = msg; el.classList.remove('hidden'); } else { el.classList.add('hidden'); } }
+    function nextDest() { var qs = new URLSearchParams(window.location.search); return qs.get('next') || 'index.html'; }
+
+    document.getElementById('form-signin').addEventListener('submit', function (e) {
+      e.preventDefault();
+      setError('signin-error', null);
+      var email = document.getElementById('email').value.trim();
+      var pw = document.getElementById('password').value;
+      var btn = document.getElementById('signin-submit'); btn.disabled = true; btn.textContent = 'Signing in…';
+      HSG.cognito.signIn(email, pw).then(function (r) {
+        state.email = email;
+        if (r.challenge === 'NEW_PASSWORD_REQUIRED') { state.session = r.session; show('screen-newpassword'); }
+        else if (r.challenge === 'SOFTWARE_TOKEN_MFA') { state.session = r.session; show('screen-mfa-challenge'); }
+        else if (r.tokens) {
+          // Verify the user is in an admin group; if not, deny
+          var claims = r.claims || {};
+          var groups = (claims['cognito:groups'] || []);
+          if (Array.isArray(groups) ? !groups.some(function (g) { return /^admin/.test(g); }) : !/admin/.test(String(groups))) {
+            setError('signin-error', 'This portal requires an admin role. Use the residential or commercial bidder portal instead.');
+            HSG.cognito.signOut();
+            return;
+          }
+          window.location.href = nextDest();
+        }
+      }).catch(function (err) { setError('signin-error', err.message || 'Sign-in failed'); }).finally(function () { btn.disabled = false; btn.textContent = 'Sign in →'; });
+    });
+
+    document.getElementById('form-newpassword').addEventListener('submit', function (e) {
+      e.preventDefault(); setError('newpassword-error', null);
+      var np = document.getElementById('np').value;
+      HSG.cognito.completeNewPassword(state.email, np, state.session).then(function (r) {
+        if (r.tokens) {
+          HSG.cognito.associateSoftwareToken().then(function (assoc) {
+            var uri = HSG.cognito.buildOtpauthUri(state.email, assoc.SecretCode, 'HSG-HUDOAS-Admin');
+            renderQrCode(uri); show('screen-mfa-setup');
+          });
+        }
+      }).catch(function (err) { setError('newpassword-error', err.message); });
+    });
+
+    document.getElementById('form-mfa-setup').addEventListener('submit', function (e) {
+      e.preventDefault(); setError('mfa-setup-error', null);
+      var code = document.getElementById('mfa-code').value.trim();
+      HSG.cognito.verifySoftwareToken(code, 'HSG Admin Authenticator')
+        .then(function () { return HSG.cognito.setMfaPreference(true); })
+        .then(function () { window.location.href = nextDest(); })
+        .catch(function (err) { setError('mfa-setup-error', err.message); });
+    });
+
+    document.getElementById('form-mfa-challenge').addEventListener('submit', function (e) {
+      e.preventDefault(); setError('mfa-challenge-error', null);
+      var code = document.getElementById('mfa-c-code').value.trim();
+      HSG.cognito.respondMfa(state.email, code, state.session)
+        .then(function (r) { if (r.tokens) window.location.href = nextDest(); })
+        .catch(function (err) { setError('mfa-challenge-error', err.message); });
+    });
+
+    function renderQrCode(otpUri) {
+      var el = document.getElementById('mfa-qr');
+      el.innerHTML = '';
+      var img = document.createElement('img');
+      img.alt = 'Scan with authenticator app';
+      img.style.maxWidth = '180px';
+      img.style.display = 'block';
+      img.style.margin = '0 auto';
+      img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(otpUri);
+      el.appendChild(img);
+    }
+  })();
+  </script>
+</body>
+</html>

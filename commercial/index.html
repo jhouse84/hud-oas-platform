@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HUD Commercial Loan Sales · Bidder Portal</title>
+  <meta name="description" content="Bid on HUD Multifamily (MHLS) and Healthcare (HLS) loan sales. HUD-90092 qualification, deal-level dollar bidding." />
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    .program-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6); margin-top: var(--space-8); }
+    .program-card { padding: var(--space-6); background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--accent, var(--color-portal)); border-radius: var(--radius-lg); transition: transform var(--duration-base), box-shadow var(--duration-base); }
+    .program-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .program-card__code { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--accent, var(--color-portal)); font-weight: 600; }
+    .program-card__title { font-family: var(--font-heading); font-size: var(--text-2xl); margin: var(--space-2) 0 var(--space-3); }
+    .program-card__desc { color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--space-4); }
+    .program-card__metrics { display: flex; gap: var(--space-4); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
+    .program-card--mhls { --accent: var(--color-mhls); }
+    .program-card--hls { --accent: var(--color-hls); }
+
+    .feature-strip { padding: var(--space-12) var(--space-8); background: var(--color-grey-50); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+    .feature-strip__inner { max-width: var(--container-max); margin: 0 auto; }
+    .feature-strip__title { font-family: var(--font-heading); font-size: var(--text-2xl); text-align: center; margin-bottom: var(--space-8); }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-6); }
+    .feature-tile__num { font-family: var(--font-mono); color: var(--color-portal); font-weight: 600; font-size: var(--text-xs); letter-spacing: 0.1em; }
+    .feature-tile__title { font-family: var(--font-heading); font-size: var(--text-lg); margin: var(--space-1) 0 var(--space-2); }
+    .feature-tile__desc { font-size: var(--text-sm); color: var(--color-text-muted); }
+
+    .footer { padding: var(--space-8); text-align: center; color: var(--color-text-muted); font-size: var(--text-sm); }
+
+    /* Live active-sales section */
+    .active-sales { padding: var(--space-10) var(--space-8); background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-grey-50) 100%); border-bottom: 1px solid var(--color-border); }
+    .active-sales__inner { max-width: var(--container-max); margin: 0 auto; }
+    .active-sales__header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-5); flex-wrap: wrap; gap: var(--space-3); }
+    .active-sales__title { font-family: var(--font-heading); font-size: var(--text-2xl); }
+    .active-sales__hint { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.05em; }
+    .active-sales__hint .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); margin-right: 6px; animation: live-pulse 1.5s ease-in-out infinite; }
+    @keyframes live-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+
+    .sale-tile { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 120px; gap: var(--space-4); align-items: center; padding: var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--color-portal); border-radius: var(--radius-md); margin-bottom: var(--space-3); transition: all var(--duration-fast); cursor: pointer; }
+    .sale-tile:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .sale-tile__title { font-family: var(--font-heading); font-size: var(--text-lg); font-weight: 600; }
+    .sale-tile__sub { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; letter-spacing: 0.04em; }
+    .sale-tile__metric-label { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.04em; }
+    .sale-tile__metric-value { font-weight: 600; margin-top: 2px; }
+    .sale-tile__cta { background: var(--color-portal); color: #FFF; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); text-align: center; font-weight: 600; font-size: var(--text-sm); }
+    .sale-tile__state { display: inline-block; padding: 2px 8px; border-radius: var(--radius-full); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; margin-top: 4px; }
+    .sale-tile__state--bid_window { background: var(--color-error); color: #FFF; animation: live-pulse 1.5s ease-in-out infinite; }
+    .sale-tile__state--qualification_open { background: var(--color-success-bg); color: var(--color-success); }
+    .sale-tile__state--go_live { background: var(--color-info-bg); color: var(--color-info); }
+    .sale-tile__state--default { background: var(--color-grey-100); color: var(--color-text-muted); }
+
+    @media (max-width: 768px) {
+      .sale-tile { grid-template-columns: 1fr; }
+      .sale-tile__cta { width: 100%; }
+    }
+  </style>
+</head>
+<body data-portal="commercial">
+
+  <header class="portal-banner">
+    <div>
+      <span class="portal-banner__label">Commercial Loan Sales Portal</span>
+      <span class="portal-banner__programs"> · MHLS · HLS</span>
+    </div>
+    <nav class="portal-banner__nav">
+      <a href="qualify.html">Qualify</a>
+      <a href="login.html">Sign in</a>
+      <a href="../residential/index.html">Residential portal</a>
+    </nav>
+  </header>
+
+  <section class="portal-hero">
+    <div class="portal-hero__content">
+      <span class="portal-hero__eyebrow">U.S. Department of Housing and Urban Development</span>
+      <h1 class="portal-hero__title">HUD commercial loan sales — institutional-grade bidding.</h1>
+      <p class="portal-hero__subtitle">
+        Deal-level dollar bidding for HUD Section 221, 223, and 232 multifamily and healthcare
+        portfolios. HUD-90092 digital qualification, per-unit and cap rate analytics,
+        and full settlement coordination from award through MERS-equivalent transfer.
+      </p>
+      <div class="portal-hero__actions">
+        <a class="btn-portal" href="qualify.html">Begin qualification →</a>
+        <a class="btn-portal btn-portal--ghost" href="login.html">Sign in to existing account</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="active-sales">
+    <div class="active-sales__inner">
+      <div class="active-sales__header">
+        <h2 class="active-sales__title">Active sales</h2>
+        <span class="active-sales__hint"><span class="pulse-dot"></span>LIVE — refreshes on page load</span>
+      </div>
+      <div id="active-sales-list">
+        <div style="padding: var(--space-6); text-align: center; color: var(--color-text-muted);">Loading active sales…</div>
+      </div>
+    </div>
+  </section>
+
+  <main style="max-width: var(--container-max); margin: 0 auto; padding: var(--space-12) var(--space-8);">
+    <div class="program-grid">
+      <article class="program-card program-card--mhls">
+        <div class="program-card__code">MHLS</div>
+        <h2 class="program-card__title">Multifamily Loan Sales</h2>
+        <p class="program-card__desc">Section 221(d)(4) and 223(f) multifamily mortgage notes with FHA insurance. Per-unit pricing analysis, DSCR, occupancy, and cap rate metrics built in.</p>
+        <div class="program-card__metrics">
+          <span>Cycle: ~8 weeks</span>
+          <span>Settlement: 56 days</span>
+        </div>
+      </article>
+
+      <article class="program-card program-card--hls">
+        <div class="program-card__code">HLS</div>
+        <h2 class="program-card__title">Healthcare Loan Sales</h2>
+        <p class="program-card__desc">Section 232 nursing home, assisted living, and intermediate care facility notes. Operator continuity certifications and CMS Change of Ownership tracking required.</p>
+        <div class="program-card__metrics">
+          <span>Cycle: ~10 weeks</span>
+          <span>Settlement: 63 days</span>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <section class="feature-strip">
+    <div class="feature-strip__inner">
+      <h2 class="feature-strip__title">Built for institutional commercial buyers.</h2>
+      <div class="feature-grid">
+        <div class="feature-tile">
+          <span class="feature-tile__num">01 · QUALIFY</span>
+          <h3 class="feature-tile__title">HUD-90092 with operator certifications</h3>
+          <p class="feature-tile__desc">Includes Section 232 healthcare operator track-record disclosures, CMS compliance certification, and HIPAA attestation for HLS bidders.</p>
+        </div>
+        <div class="feature-tile">
+          <span class="feature-tile__num">02 · UNDERWRITE</span>
+          <h3 class="feature-tile__title">Deal-level data room</h3>
+          <p class="feature-tile__desc">Volume 1 (loan files) and Volume 2 (financials, appraisals, rent rolls). Per-unit metrics, DSCR, cap rate calculations served live.</p>
+        </div>
+        <div class="feature-tile">
+          <span class="feature-tile__num">03 · BID</span>
+          <h3 class="feature-tile__title">Dollar bid + derived analytics</h3>
+          <p class="feature-tile__desc">Submit a single $ bid per deal. Platform auto-derives price-per-unit, implied cap rate, % of UPB, and yield-to-purchase before submission.</p>
+        </div>
+        <div class="feature-tile">
+          <span class="feature-tile__num">04 · SETTLE</span>
+          <h3 class="feature-tile__title">56 / 63-day settlement timeline</h3>
+          <p class="feature-tile__desc">LSA execution, deposit + final payment wires, collateral file delivery, CHOW filing for healthcare deals, and full deliverable acknowledgment.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>House Strategies Group LLC · 8(a) Certified · UEI EAE1MJHMN2Z1 · CAGE 7W4Y5</p>
+    <p>Need help? <a href="mailto:hudloansales@housestrategiesgroup.com">hudloansales@housestrategiesgroup.com</a></p>
+  </footer>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/api.js"></script>
+  <script>
+  (function () {
+    var u = HSG.utils;
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+    var listEl = document.getElementById('active-sales-list');
+
+    HSG.api.sales.list({}).then(function (r) {
+      var sales = ((r && r.sales) || []).filter(function (s) {
+        var state = s.state || s.status;
+        return ['archived','draft'].indexOf(state) < 0;
+      });
+      if (sales.length === 0) {
+        listEl.innerHTML = '<div style="padding: var(--space-6); text-align: center; color: var(--color-text-muted); background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: var(--radius-md);">No active commercial sales right now. Begin qualification so you\'re ready when the next sale opens.</div>';
+        return;
+      }
+      listEl.innerHTML = sales.map(function (s) {
+        var saleId = s.saleId || s.sale_id;
+        var name = s.long_name || s.sale_name || s.name || saleId;
+        var program = s.programType || s.program || 'MHLS';
+        var state = s.state || s.status || 'qualification_open';
+        var summary = s.summary || {};
+        var loanCount = summary.loan_count || 0;
+        var aggUpb = summary.aggregate_upb || s.aggregateValue || 0;
+        var bidDay = (s.key_dates && s.key_dates.bid_day) || s.bidDate;
+        var stateMod = ['bid_window','qualification_open','go_live'].indexOf(state) >= 0 ? state : 'default';
+
+        return '<div class="sale-tile" onclick="window.location.href=\'login.html?next=' + encodeURIComponent('portal.html#/sale/' + saleId) + '\'">' +
+          '<div>' +
+            '<div class="sale-tile__title">' + esc(name) + '</div>' +
+            '<div class="sale-tile__sub">' + esc(saleId) + ' · ' + esc(program) + '</div>' +
+            '<div class="sale-tile__state sale-tile__state--' + stateMod + '">' + esc(state.replace(/_/g,' ').toUpperCase()) + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div class="sale-tile__metric-label">LOANS</div>' +
+            '<div class="sale-tile__metric-value">' + esc(u.number(loanCount)) + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div class="sale-tile__metric-label">AGGREGATE UPB</div>' +
+            '<div class="sale-tile__metric-value">' + esc(u.currencyCompact(aggUpb)) + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div class="sale-tile__metric-label">BID DAY</div>' +
+            '<div class="sale-tile__metric-value">' + esc(bidDay ? u.dateShort(bidDay) : 'TBD') + '</div>' +
+          '</div>' +
+          '<div class="sale-tile__cta">View →</div>' +
+        '</div>';
+      }).join('');
+    }).catch(function (err) {
+      listEl.innerHTML = '<div style="padding: var(--space-4); text-align: center; color: var(--color-text-muted); font-size: var(--text-sm);">Sales feed unavailable. Check back soon.</div>';
+    });
+  })();
+  </script>
+
+</body>
+</html>

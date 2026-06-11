@@ -2189,3 +2189,483 @@ a.link:hover,
     background: #EEE !important;
   }
 }
+
+/* ==========================================================================
+   Portal Theming — Two-Portal Architecture (residential / commercial / admin)
+   ==========================================================================
+   Activate by setting <body data-portal="residential|commercial|admin">.
+   Each portal overrides --color-portal-* tokens which cascade into accent
+   colors on cards, buttons, and navigation. Program-level color tokens
+   (--color-hvls, --color-sfls, etc.) remain available for in-portal badges.
+*/
+
+:root {
+  /* Residential portal palette — HUD-9611, pool-% bidding, HVLS+SFLS */
+  --color-portal-residential:        #1F4E79;  /* deep federal blue */
+  --color-portal-residential-soft:   #E5EEF6;
+  --color-portal-residential-bright: #3B82F6;
+  --color-portal-residential-dark:   #143657;
+
+  /* Commercial portal palette — HUD-90092, deal-$ bidding, MHLS+HLS */
+  --color-portal-commercial:        #8C5A00;  /* deep amber/bronze */
+  --color-portal-commercial-soft:   #FBF1DD;
+  --color-portal-commercial-bright: #B8720A;
+  --color-portal-commercial-dark:   #5C3D00;
+
+  /* Admin portal — neutral graphite + program accents per row */
+  --color-portal-admin:        #2E2F33;
+  --color-portal-admin-soft:   #F2F2F4;
+  --color-portal-admin-bright: #57595F;
+  --color-portal-admin-dark:   #1A1B1E;
+
+  /* Active portal aliases (overridden by data-portal selectors below) */
+  --color-portal:        var(--color-primary);
+  --color-portal-soft:   var(--color-primary-bg);
+  --color-portal-bright: var(--color-primary-light);
+  --color-portal-dark:   var(--color-primary-dark);
+}
+
+body[data-portal="residential"] {
+  --color-portal:        var(--color-portal-residential);
+  --color-portal-soft:   var(--color-portal-residential-soft);
+  --color-portal-bright: var(--color-portal-residential-bright);
+  --color-portal-dark:   var(--color-portal-residential-dark);
+  --color-primary:       var(--color-portal-residential);
+  --color-primary-bg:    var(--color-portal-residential-soft);
+  --color-primary-light: var(--color-portal-residential-bright);
+  --color-primary-dark:  var(--color-portal-residential-dark);
+}
+
+body[data-portal="commercial"] {
+  --color-portal:        var(--color-portal-commercial);
+  --color-portal-soft:   var(--color-portal-commercial-soft);
+  --color-portal-bright: var(--color-portal-commercial-bright);
+  --color-portal-dark:   var(--color-portal-commercial-dark);
+  --color-primary:       var(--color-portal-commercial);
+  --color-primary-bg:    var(--color-portal-commercial-soft);
+  --color-primary-light: var(--color-portal-commercial-bright);
+  --color-primary-dark:  var(--color-portal-commercial-dark);
+}
+
+body[data-portal="admin"] {
+  --color-portal:        var(--color-portal-admin);
+  --color-portal-soft:   var(--color-portal-admin-soft);
+  --color-portal-bright: var(--color-portal-admin-bright);
+  --color-portal-dark:   var(--color-portal-admin-dark);
+  --color-primary:       var(--color-portal-admin);
+  --color-primary-bg:    var(--color-portal-admin-soft);
+  --color-primary-light: var(--color-portal-admin-bright);
+  --color-primary-dark:  var(--color-portal-admin-dark);
+}
+
+/* Portal banner — shown on every portal page, indicates which portal you're in */
+.portal-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-6);
+  background: var(--color-portal);
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.portal-banner__label {
+  font-weight: 600;
+}
+
+.portal-banner__programs {
+  opacity: 0.85;
+}
+
+.portal-banner__nav a {
+  color: #FFFFFF;
+  margin-left: var(--space-4);
+  opacity: 0.85;
+  transition: opacity var(--duration-fast) var(--ease-default);
+}
+
+.portal-banner__nav a:hover {
+  opacity: 1;
+}
+
+/* Portal hero — landing page lead block */
+.portal-hero {
+  position: relative;
+  padding: var(--space-16) var(--space-8);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 100%),
+    linear-gradient(135deg, var(--color-portal-soft) 0%, #FFFFFF 100%);
+  border-bottom: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.portal-hero::before {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; width: 60%; height: 100%;
+  background: radial-gradient(ellipse at top right, var(--color-portal-soft) 0%, transparent 60%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.portal-hero__content {
+  position: relative;
+  max-width: var(--container-max);
+  margin: 0 auto;
+}
+
+.portal-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-portal);
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-4);
+}
+
+.portal-hero__title {
+  font-family: var(--font-heading);
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1.05;
+  color: var(--color-text);
+  max-width: 28ch;
+  margin-bottom: var(--space-4);
+}
+
+.portal-hero__subtitle {
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+  max-width: 60ch;
+  margin-bottom: var(--space-8);
+}
+
+.portal-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* Portal CTA buttons */
+.btn-portal {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-portal);
+  color: #FFFFFF;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: var(--text-base);
+  transition: background var(--duration-fast) var(--ease-default), transform var(--duration-fast) var(--ease-default);
+}
+
+.btn-portal:hover {
+  background: var(--color-portal-dark);
+  transform: translateY(-1px);
+}
+
+.btn-portal--ghost {
+  background: transparent;
+  color: var(--color-portal);
+  border: 1px solid var(--color-portal);
+}
+
+.btn-portal--ghost:hover {
+  background: var(--color-portal-soft);
+  color: var(--color-portal-dark);
+  transform: translateY(-1px);
+}
+
+/* Wizard layout — used for HUD-9611 / HUD-90092 qualification */
+.wizard {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+}
+
+.wizard__header {
+  margin-bottom: var(--space-8);
+}
+
+.wizard__steps {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.wizard__step {
+  flex: 1 1 0;
+  min-width: 120px;
+  padding: var(--space-3);
+  border-bottom: 3px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.wizard__step--active {
+  border-color: var(--color-portal);
+  color: var(--color-portal);
+}
+
+.wizard__step--done {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.wizard__panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-md);
+}
+
+.wizard__panel-title {
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-2);
+}
+
+.wizard__panel-subtitle {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-6);
+}
+
+.wizard__field {
+  margin-bottom: var(--space-5);
+}
+
+.wizard__label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+}
+
+.wizard__hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+.wizard__error {
+  font-size: var(--text-sm);
+  color: var(--color-error);
+  margin-top: var(--space-1);
+}
+
+.wizard__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Form controls — production-grade */
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-family: var(--font-body);
+  color: var(--color-text);
+  transition: border-color var(--duration-fast) var(--ease-default), box-shadow var(--duration-fast) var(--ease-default);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-portal);
+  box-shadow: 0 0 0 3px var(--color-portal-soft);
+}
+
+.form-input--error,
+.form-select--error {
+  border-color: var(--color-error);
+}
+
+.form-textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.form-grid {
+  display: grid;
+  gap: var(--space-5);
+}
+.form-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+@media (max-width: 720px) {
+  .form-grid--2,
+  .form-grid--3 { grid-template-columns: 1fr; }
+}
+
+.form-checkbox {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-default);
+}
+
+.form-checkbox:hover {
+  background: var(--color-grey-50);
+}
+
+.form-checkbox input[type="checkbox"] {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.form-checkbox__label {
+  font-weight: 500;
+}
+
+.form-checkbox__desc {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+/* Screening status badges (OFAC / SAM / TIN) */
+.screening {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-grey-50);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-2);
+}
+
+.screening__icon {
+  flex-shrink: 0;
+  width: 18px; height: 18px;
+}
+
+.screening--clear { background: var(--color-success-bg); color: var(--color-success); }
+.screening--hit   { background: var(--color-error-bg);   color: var(--color-error); }
+.screening--pending { background: var(--color-warning-bg); color: var(--color-warning); }
+
+/* Risk flag pills — used on loan rows and pool/deal cards */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-right: 4px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+.pill--critical { background: #FCEBEB; color: #791F1F; border: 1px solid #F09595; }
+.pill--high     { background: #FAEEDA; color: #633806; border: 1px solid #EF9F27; }
+.pill--medium   { background: #F1EFE8; color: #444441; border: 1px solid #B4B2A9; }
+.pill--neutral  { background: transparent; color: #888780; border: 1px solid transparent; }
+.pill--ok       { background: var(--color-success-bg); color: var(--color-success); border: 1px solid #BFE5CC; }
+.pill--info     { background: var(--color-info-bg); color: var(--color-info); border: 1px solid #BFD8F6; }
+
+/* QC verification badge */
+.qc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+.qc-badge__icon { font-size: 13px; line-height: 1; }
+.qc-badge--verified              { background: var(--color-success-bg); color: var(--color-success); }
+.qc-badge--verified-negative-noi { background: var(--color-warning-bg); color: var(--color-warning); }
+.qc-badge--needs-review          { background: var(--color-grey-100); color: var(--color-text-muted); }
+.qc-badge--missing-financials    { background: var(--color-grey-100); color: var(--color-text-muted); border: 1px dashed var(--color-grey-300); }
+
+/* Banners */
+.banner {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+  border-left: 4px solid;
+}
+.banner--info    { background: var(--color-info-bg);    color: var(--color-info);    border-left-color: var(--color-info); }
+.banner--warning { background: var(--color-warning-bg); color: var(--color-warning); border-left-color: var(--color-warning); }
+.banner--error   { background: var(--color-error-bg);   color: var(--color-error);   border-left-color: var(--color-error); }
+.banner--success { background: var(--color-success-bg); color: var(--color-success); border-left-color: var(--color-success); }
+
+/* Healthcare payor mix bar */
+.payor-bar {
+  display: flex;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: var(--space-2) 0;
+  background: var(--color-grey-100);
+}
+.payor-bar__seg {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: #FFFFFF;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.payor-bar__seg--self_pay  { background: #2A7A50; }
+.payor-bar__seg--medicare  { background: #3B82F6; }
+.payor-bar__seg--medicaid  { background: #B8720A; }
+.payor-bar__seg--state_aid { background: #8C5A00; }
+.payor-bar__seg--va_other  { background: #57595F; }
+.payor-bar__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+.payor-bar__legend-item { display: inline-flex; align-items: center; gap: 4px; }
+.payor-bar__legend-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+

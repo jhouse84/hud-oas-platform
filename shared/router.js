@@ -88,12 +88,45 @@ HSG.router = (function() {
     return result ? result.params : {};
   }
 
+  function currentPortal() {
+    var host = (window.location && window.location.hostname) || '';
+    if (host.indexOf('residential') === 0) return 'residential';
+    if (host.indexOf('commercial')  === 0) return 'commercial';
+    if (host.indexOf('admin')       === 0) return 'admin';
+    var path = window.location.pathname || '';
+    if (path.indexOf('/residential') === 0) return 'residential';
+    if (path.indexOf('/commercial')  === 0) return 'commercial';
+    if (path.indexOf('/admin')       === 0) return 'admin';
+    return null;
+  }
+
+  function portalHome(portal) {
+    portal = portal || currentPortal();
+    if (portal === 'residential') return '/residential/index.html';
+    if (portal === 'commercial')  return '/commercial/index.html';
+    if (portal === 'admin')       return '/admin/index.html';
+    return '/';
+  }
+
+  function requireAuth(redirectTo) {
+    if (!HSG.cognito || !HSG.cognito.isAuthenticated()) {
+      var portal = currentPortal();
+      var login = portal ? ('/' + portal + '/login.html') : '/';
+      window.location.href = login + (redirectTo ? ('?next=' + encodeURIComponent(redirectTo)) : '');
+      return false;
+    }
+    return true;
+  }
+
   return {
     on: on,
     onNotFound: onNotFound,
     navigate: navigate,
     start: start,
     getHash: getHash,
-    getParams: getParams
+    getParams: getParams,
+    currentPortal: currentPortal,
+    portalHome: portalHome,
+    requireAuth: requireAuth
   };
 })();

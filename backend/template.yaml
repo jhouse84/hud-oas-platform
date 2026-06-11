@@ -1,0 +1,1630 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  HSG HUD OAS Transaction Platform — backend (DynamoDB, Lambda, API Gateway,
+  S3 VDR, Cognito, SES, CloudFront). Project=HUD-OAS-Platform.
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Deployment stage.
+  DomainName:
+    Type: String
+    Default: hudloansales.housestrategiesgroup.com
+    Description: Fully-qualified custom domain for the platform.
+  HostedZoneName:
+    Type: String
+    Default: housestrategiesgroup.com
+    Description: Route53 hosted zone apex (must already exist).
+  AdminEmail:
+    Type: String
+    Default: jelani.house@housestrategiesgroup.com
+    Description: First admin user (auto-invited to Cognito at stack creation).
+  CertificateArn:
+    Type: String
+    Default: ''
+    Description: >-
+      Existing ACM cert ARN in us-east-1 for the custom domain. Required when
+      UseCustomDomain=true; ignored otherwise.
+  UseCustomDomain:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: >-
+      Set to 'true' once the Route53 hosted zone for the domain exists in this
+      account AND you have an ACM cert ARN. First deploy should be 'false' to
+      let CloudFront issue a default *.cloudfront.net URL.
+
+Conditions:
+  UseCustomDomain: !Equals [!Ref UseCustomDomain, 'true']
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Architectures: [arm64]
+    Timeout: 15
+    MemorySize: 512
+    Tracing: Active
+    LoggingConfig:
+      LogFormat: JSON
+      ApplicationLogLevel: INFO
+      SystemLogLevel: WARN
+    Environment:
+      Variables:
+        STAGE: !Ref Stage
+        REGION: !Ref AWS::Region
+        TBL_BIDDERS:       !Sub 'hsg-${Stage}-bidders'
+        TBL_BIDS:          !Sub 'hsg-${Stage}-bids'
+        TBL_QA:            !Sub 'hsg-${Stage}-qa'
+        TBL_ACCESS:        !Sub 'hsg-${Stage}-access-log'
+        TBL_SALES:         !Sub 'hsg-${Stage}-sales'
+        TBL_SETTLEMENT:    !Sub 'hsg-${Stage}-settlements'
+        TBL_SCENARIOS:     !Sub 'hsg-${Stage}-scenarios'
+        TBL_NOTIFICATIONS: !Sub 'hsg-${Stage}-notifications'
+        TBL_SCREENINGS:    !Sub 'hsg-${Stage}-screenings'
+        TBL_LOANS:         !Sub 'hsg-${Stage}-loans'
+        TBL_QC_FINDINGS:   !Sub 'hsg-${Stage}-qc-findings'
+        BUCKET_DOCS:    !Sub 'hsg-${Stage}-docs-${AWS::AccountId}'
+        BUCKET_STATIC:  !Sub 'hsg-${Stage}-static-${AWS::AccountId}'
+        USER_POOL_ID:   !Ref UserPool
+        USER_POOL_CLIENT_ID: !Ref UserPoolClient
+        SES_FROM:       !Sub 'no-reply@${DomainName}'
+        KMS_KEY_ID:     !Ref KmsKey
+    Tags:
+      Project: HUD-OAS-Platform
+      Managed: SAM
+      Stage: !Ref Stage
+
+Resources:
+
+  # ======================================================================
+  # KMS — customer-managed key for S3 + DynamoDB encryption
+  # ======================================================================
+  KmsKey:
+    Type: AWS::KMS::Key
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: !Sub 'HSG HUD OAS platform CMK (${Stage})'
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EnableRootPermissions
+            Effect: Allow
+            Principal: { AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root' }
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: AllowAccountAccessViaServices
+            Effect: Allow
+            Principal: { AWS: '*' }
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+            Condition:
+              StringEquals:
+                kms:CallerAccount: !Ref AWS::AccountId
+                kms:ViaService:
+                  - !Sub 'dynamodb.${AWS::Region}.amazonaws.com'
+                  - !Sub 's3.${AWS::Region}.amazonaws.com'
+          - Sid: AllowCloudWatchLogs
+            Effect: Allow
+            Principal: { Service: !Sub 'logs.${AWS::Region}.amazonaws.com' }
+            Action:
+              - kms:Encrypt*
+              - kms:Decrypt*
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:Describe*
+            Resource: '*'
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+        - { Key: Stage,   Value: !Ref Stage }
+
+  KmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/hsg-${Stage}'
+      TargetKeyId: !Ref KmsKey
+
+  # ======================================================================
+  # DynamoDB Tables — on-demand, encryption, PITR
+  # ======================================================================
+  BiddersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'hsg-${Stage}-bidders'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: bidderId, AttributeType: S }
+        - { AttributeName: qualificationStatus, AttributeType: S }
+      KeySchema:
+        - { AttributeName: bidderId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: byStatus
+          KeySchema:
+            - { AttributeName: qualificationStatus, KeyType: HASH }
+            - { AttributeName: bidderId, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref KmsKey
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+        - { Key: Stage,   Value: !Ref Stage }
+
+  BidsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'hsg-${Stage}-bids'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: bidId, AttributeType: S }
+        - { AttributeName: saleId, AttributeType: S }
+        - { AttributeName: bidderId, AttributeType: S }
+        - { AttributeName: timestamp, AttributeType: S }
+      KeySchema:
+        - { AttributeName: bidId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: bySale
+          KeySchema:
+            - { AttributeName: saleId, KeyType: HASH }
+            - { AttributeName: timestamp, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+        - IndexName: byBidder
+          KeySchema:
+            - { AttributeName: bidderId, KeyType: HASH }
+            - { AttributeName: timestamp, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref KmsKey
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+
+  QATable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'hsg-${Stage}-qa'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: qaId, AttributeType: S }
+        - { AttributeName: saleId, AttributeType: S }
+        - { AttributeName: askedAt, AttributeType: S }
+      KeySchema:
+        - { AttributeName: qaId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: bySale
+          KeySchema:
+            - { AttributeName: saleId, KeyType: HASH }
+            - { AttributeName: askedAt, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref KmsKey
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+
+  # Append-only access log (append via PutItem, never Delete/Update).
+  # Reviewed quarterly and archived to S3 via TTL + Stream → Firehose (future).
+  AccessLogTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'hsg-${Stage}-access-log'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: accessId, AttributeType: S }
+        - { AttributeName: bidderId, AttributeType: S }
+        - { AttributeName: docId, AttributeType: S }
+        - { AttributeName: timestamp, AttributeType: S }
+      KeySchema:
+        - { AttributeName: accessId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: byBidder
+          KeySchema:
+            - { AttributeName: bidderId, KeyType: HASH }
+            - { AttributeName: timestamp, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+        - IndexName: byDoc
+          KeySchema:
+            - { AttributeName: docId, KeyType: HASH }
+            - { AttributeName: timestamp, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref KmsKey
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+
+  SalesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'hsg-${Stage}-sales'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: saleId, AttributeType: S }
+      KeySchema:
+        - { AttributeName: saleId, KeyType: HASH }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref KmsKey
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+
+  SettlementsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'hsg-${Stage}-settlements'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: awardId, AttributeType: S }
+        - { AttributeName: saleId, AttributeType: S }
+      KeySchema:
+        - { AttributeName: awardId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: bySale
+          KeySchema:
+            - { AttributeName: saleId, KeyType: HASH }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref KmsKey
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+
+  # BEM scenarios (named, save/load, compare). One sale → many scenarios.
+  ScenariosTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'hsg-${Stage}-scenarios'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: scenarioId, AttributeType: S }
+        - { AttributeName: saleId, AttributeType: S }
+        - { AttributeName: createdAt, AttributeType: S }
+      KeySchema:
+        - { AttributeName: scenarioId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: bySale
+          KeySchema:
+            - { AttributeName: saleId, KeyType: HASH }
+            - { AttributeName: createdAt, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref KmsKey
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+
+  # Per-user in-app notification queue. Email is fired separately via SES.
+  NotificationsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'hsg-${Stage}-notifications'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: notifId, AttributeType: S }
+        - { AttributeName: recipientId, AttributeType: S }
+        - { AttributeName: createdAt, AttributeType: S }
+      KeySchema:
+        - { AttributeName: notifId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: byRecipient
+          KeySchema:
+            - { AttributeName: recipientId, KeyType: HASH }
+            - { AttributeName: createdAt, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      TimeToLiveSpecification: { AttributeName: ttl, Enabled: true }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref KmsKey
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+
+  # Loans — top-level table keyed by (saleId, loanId). Holds full SALD records
+  # so we don't push DDB's 400KB-per-item limit by nesting them in sale records.
+  # GSI byPortal supports portal-scoped admin views.
+  LoansTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'hsg-${Stage}-loans'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: saleId, AttributeType: S }
+        - { AttributeName: loanId, AttributeType: S }
+        - { AttributeName: portal, AttributeType: S }
+      KeySchema:
+        - { AttributeName: saleId, KeyType: HASH }
+        - { AttributeName: loanId, KeyType: RANGE }
+      GlobalSecondaryIndexes:
+        - IndexName: byPortal
+          KeySchema:
+            - { AttributeName: portal, KeyType: HASH }
+            - { AttributeName: saleId, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref KmsKey
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+
+  # QC findings — SALD-vs-OPIIS reconciliation evidence per loan per sale.
+  # Drives the bidder-side "Verified" badges and the admin Compliance dashboard.
+  QcFindingsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'hsg-${Stage}-qc-findings'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: saleId, AttributeType: S }
+        - { AttributeName: qcId, AttributeType: S }
+        - { AttributeName: status, AttributeType: S }
+      KeySchema:
+        - { AttributeName: saleId, KeyType: HASH }
+        - { AttributeName: qcId, KeyType: RANGE }
+      GlobalSecondaryIndexes:
+        - IndexName: bySaleAndStatus
+          KeySchema:
+            - { AttributeName: saleId, KeyType: HASH }
+            - { AttributeName: status, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref KmsKey
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+
+  # Screening evidence (OFAC SDN, SAM.gov, IRS TIN). Append-only audit trail.
+  ScreeningsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'hsg-${Stage}-screenings'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: screeningId, AttributeType: S }
+        - { AttributeName: bidderId, AttributeType: S }
+        - { AttributeName: screenedAt, AttributeType: S }
+      KeySchema:
+        - { AttributeName: screeningId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: byBidder
+          KeySchema:
+            - { AttributeName: bidderId, KeyType: HASH }
+            - { AttributeName: screenedAt, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref KmsKey
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+
+  # ======================================================================
+  # S3 — VDR (private) + Static (public via CloudFront)
+  # ======================================================================
+  DocsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    DependsOn: FnDocsWatermarkInvokePermission
+    Properties:
+      BucketName: !Sub 'hsg-${Stage}-docs-${AWS::AccountId}'
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Function: !GetAtt FnDocsWatermark.Arn
+            Filter:
+              S3Key:
+                Rules:
+                  - { Name: prefix, Value: 'originals/' }
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref KmsKey
+      VersioningConfiguration: { Status: Enabled }
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ ObjectOwnership: BucketOwnerEnforced }]
+      LifecycleConfiguration:
+        Rules:
+          - Id: AbortIncompleteMultipartUpload
+            Status: Enabled
+            AbortIncompleteMultipartUpload: { DaysAfterInitiation: 7 }
+          - Id: TransitionOldVersionsToGlacier
+            Status: Enabled
+            NoncurrentVersionTransitions:
+              - { StorageClass: GLACIER_IR, TransitionInDays: 90 }
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, HEAD]
+            AllowedOrigins:
+              - !Sub 'https://${DomainName}'
+              - http://localhost:8765
+            ExposedHeaders: [ETag, x-amz-version-id]
+            MaxAge: 3000
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+        - { Key: Purpose, Value: VDR-Documents }
+
+  DocsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DocsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyNonTLS
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:aws:s3:::${DocsBucket}'
+              - !Sub 'arn:aws:s3:::${DocsBucket}/*'
+            Condition:
+              Bool: { 'aws:SecureTransport': 'false' }
+
+  StaticBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub 'hsg-${Stage}-static-${AWS::AccountId}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ ObjectOwnership: BucketOwnerEnforced }]
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+        - { Key: Purpose, Value: Static-Frontend }
+
+  # ======================================================================
+  # Cognito — user pool for bidders and admins
+  # ======================================================================
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      UserPoolName: !Sub 'hsg-${Stage}-users'
+      AutoVerifiedAttributes: [email]
+      UsernameAttributes: [email]
+      UsernameConfiguration: { CaseSensitive: false }
+      MfaConfiguration: 'OPTIONAL'
+      EnabledMfas: [SOFTWARE_TOKEN_MFA]
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 3
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - { Name: verified_email, Priority: 1 }
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+        InviteMessageTemplate:
+          EmailSubject: 'HUD OAS Platform — Your Account'
+          EmailMessage: >
+            You have been invited to the HUD OAS Transaction Platform.
+            Username: {username}. Temporary password: {####}.
+            Sign in at https://hudloansales.housestrategiesgroup.com to set a permanent password.
+      Schema:
+        - { Name: email,       AttributeDataType: String, Required: true, Mutable: true }
+        - { Name: given_name,  AttributeDataType: String, Required: false, Mutable: true }
+        - { Name: family_name, AttributeDataType: String, Required: false, Mutable: true }
+        - { Name: bidderId, AttributeDataType: String, Required: false, Mutable: true, DeveloperOnlyAttribute: false }
+        - { Name: entityName, AttributeDataType: String, Required: false, Mutable: true, DeveloperOnlyAttribute: false }
+        # portalScope ∈ {residential, commercial, both} — drives portal-level RBAC
+        - { Name: portalScope, AttributeDataType: String, Required: false, Mutable: true, DeveloperOnlyAttribute: false }
+      UserPoolTags:
+        Project: HUD-OAS-Platform
+        Stage:   !Ref Stage
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub 'hsg-${Stage}-web'
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      RefreshTokenValidity: 30
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      TokenValidityUnits:
+        RefreshToken: days
+        AccessToken: minutes
+        IdToken: minutes
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      SupportedIdentityProviders: [COGNITO]
+
+  # Legacy groups retained for backward compatibility during migration. New
+  # signups go to the portal-scoped groups below.
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: admin
+      Description: (Legacy) HUD OAS Transaction Specialist reviewers — superseded by admin-superuser
+      Precedence: 1
+
+  BidderGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: bidder
+      Description: (Legacy) Generic bidder group — superseded by residential-bidder / commercial-bidder
+      Precedence: 10
+
+  AdminSuperuserGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: admin-superuser
+      Description: Cross-portal HUD OAS administrators (full read/write across residential and commercial)
+      Precedence: 1
+
+  AdminResidentialGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: admin-residential
+      Description: Residential portal admins (HVLS / HNVLS / SFLS)
+      Precedence: 5
+
+  AdminCommercialGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: admin-commercial
+      Description: Commercial portal admins (MHLS / HLS)
+      Precedence: 5
+
+  ResidentialBidderGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: residential-bidder
+      Description: Qualified residential bidders (HVLS / HNVLS / SFLS)
+      Precedence: 20
+
+  CommercialBidderGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: commercial-bidder
+      Description: Qualified commercial bidders (MHLS / HLS)
+      Precedence: 20
+
+  OgcReviewerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: ogc-reviewer
+      Description: HUD Office of General Counsel reviewers (sign-off on awards)
+      Precedence: 8
+
+  # Seed the first admin user
+  AdminUser:
+    Type: AWS::Cognito::UserPoolUser
+    Properties:
+      UserPoolId: !Ref UserPool
+      Username: !Ref AdminEmail
+      UserAttributes:
+        - { Name: email, Value: !Ref AdminEmail }
+        - { Name: email_verified, Value: 'true' }
+        - { Name: given_name, Value: Jelani }
+        - { Name: family_name, Value: House }
+      DesiredDeliveryMediums: [EMAIL]
+      ForceAliasCreation: false
+
+  AdminUserGroupAttachment:
+    Type: AWS::Cognito::UserPoolUserToGroupAttachment
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: !Ref AdminSuperuserGroup
+      Username: !Ref AdminUser
+
+  # ======================================================================
+  # SES — transactional email identity
+  # Stage 1: identity is created but unverified (DNS not in this account yet);
+  # MailFromAttributes intentionally omitted to avoid the MX-not-found failure
+  # health alert. Custom MAIL FROM gets re-enabled in stage 2 once DNS is wired.
+  # ======================================================================
+  SesDomainIdentity:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailIdentity: !Ref DomainName
+      DkimAttributes: { SigningEnabled: true }
+
+  # ACM cert + Route53 hosted zone are managed outside this template for
+  # stage-1 deploy. When UseCustomDomain=true in stage 2, pass CertificateArn.
+
+  # ======================================================================
+  # API Gateway HTTP API + Cognito JWT authorizer
+  # ======================================================================
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref Stage
+      CorsConfiguration:
+        AllowOrigins:
+          - !Sub 'https://${DomainName}'
+          - http://localhost:8765
+        AllowMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+        AllowHeaders: [content-type, authorization, x-requested-with]
+        AllowCredentials: true
+        MaxAge: 600
+      Auth:
+        Authorizers:
+          CognitoJwt:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
+              audience:
+                - !Ref UserPoolClient
+        DefaultAuthorizer: CognitoJwt
+      Tags:
+        Project: HUD-OAS-Platform
+        Stage:   !Ref Stage
+
+  # ======================================================================
+  # Lambda: Bidders
+  # ======================================================================
+  FnBiddersList:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bidders-list'
+      CodeUri: src/
+      Handler: handlers/bidders/list.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref BiddersTable }
+      Events:
+        HttpList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /bidders
+            Auth: { Authorizer: CognitoJwt }
+
+  FnBiddersGet:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bidders-get'
+      CodeUri: src/
+      Handler: handlers/bidders/get.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref BiddersTable }
+      Events:
+        HttpGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /bidders/{bidderId}
+            Auth: { Authorizer: CognitoJwt }
+
+  FnBiddersCreate:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bidders-create'
+      CodeUri: src/
+      Handler: handlers/bidders/create.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref BiddersTable }
+        - Statement:
+            - Effect: Allow
+              Action: [ses:SendEmail, ses:SendRawEmail]
+              Resource: '*'
+      Events:
+        HttpCreate:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /bidders
+            # Allow anonymous submission for initial qualification application
+            Auth: { Authorizer: NONE }
+
+  FnBiddersApprove:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bidders-approve'
+      CodeUri: src/
+      Handler: handlers/bidders/approve.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref BiddersTable }
+        - Statement:
+            - Effect: Allow
+              Action: [ses:SendEmail, ses:SendRawEmail]
+              Resource: '*'
+            - Effect: Allow
+              Action: [cognito-idp:AdminCreateUser, cognito-idp:AdminAddUserToGroup]
+              Resource: !GetAtt UserPool.Arn
+      Events:
+        HttpApprove:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /bidders/{bidderId}/approve
+            Auth: { Authorizer: CognitoJwt }
+
+  FnBiddersReject:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bidders-reject'
+      CodeUri: src/
+      Handler: handlers/bidders/reject.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref BiddersTable }
+        - Statement:
+            - Effect: Allow
+              Action: [ses:SendEmail]
+              Resource: '*'
+      Events:
+        HttpReject:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /bidders/{bidderId}/reject
+            Auth: { Authorizer: CognitoJwt }
+
+  FnBiddersRequestInfo:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bidders-request-info'
+      CodeUri: src/
+      Handler: handlers/bidders/requestInfo.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref BiddersTable }
+        - Statement:
+            - Effect: Allow
+              Action: [ses:SendEmail]
+              Resource: '*'
+      Events:
+        HttpRequestInfo:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /bidders/{bidderId}/request-info
+            Auth: { Authorizer: CognitoJwt }
+
+  # ======================================================================
+  # Lambda: VDR / Docs
+  # ======================================================================
+  FnDocsPresignDownload:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-docs-presign-download'
+      CodeUri: src/
+      Handler: handlers/docs/presignDownload.handler
+      Timeout: 10
+      Policies:
+        - S3ReadPolicy: { BucketName: !Ref DocsBucket }
+        - DynamoDBCrudPolicy: { TableName: !Ref AccessLogTable }
+        - DynamoDBReadPolicy: { TableName: !Ref BiddersTable }
+        - Statement:
+            - Effect: Allow
+              Action: [kms:Decrypt, kms:GenerateDataKey]
+              Resource: !GetAtt KmsKey.Arn
+      Events:
+        HttpDownload:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /docs/presign-download
+            Auth: { Authorizer: CognitoJwt }
+
+  FnDocsPresignUpload:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-docs-presign-upload'
+      CodeUri: src/
+      Handler: handlers/docs/presignUpload.handler
+      Timeout: 10
+      Policies:
+        - S3WritePolicy: { BucketName: !Ref DocsBucket }
+        - DynamoDBReadPolicy: { TableName: !Ref BiddersTable }
+        - Statement:
+            - Effect: Allow
+              Action: [kms:Decrypt, kms:GenerateDataKey, kms:Encrypt]
+              Resource: !GetAtt KmsKey.Arn
+      Events:
+        HttpUpload:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /docs/presign-upload
+            Auth: { Authorizer: CognitoJwt }
+
+  FnDocsList:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-docs-list'
+      CodeUri: src/
+      Handler: handlers/docs/list.handler
+      Policies:
+        - S3ReadPolicy: { BucketName: !Ref DocsBucket }
+      Events:
+        HttpList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /sales/{saleId}/docs
+            Auth: { Authorizer: CognitoJwt }
+
+  FnAccessLog:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-access-log'
+      CodeUri: src/
+      Handler: handlers/docs/accessLog.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref AccessLogTable }
+      Events:
+        HttpLog:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /access-log
+            Auth: { Authorizer: CognitoJwt }
+
+  # Watermark Lambda — decoupled from DocsBucket via literal ARN to avoid
+  # CloudFormation circular dependency (bucket → permission → fn → role → bucket).
+  # The S3 NotificationConfiguration is wired by a separate custom resource
+  # (SAM auto-generates it) but using the literal bucket name for policies.
+  FnDocsWatermark:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-docs-watermark'
+      CodeUri: src/
+      Handler: handlers/docs/watermark.handler
+      Timeout: 60
+      MemorySize: 1024
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [s3:GetObject, s3:PutObject, s3:DeleteObject, s3:ListBucket]
+              Resource:
+                - !Sub 'arn:aws:s3:::hsg-${Stage}-docs-${AWS::AccountId}'
+                - !Sub 'arn:aws:s3:::hsg-${Stage}-docs-${AWS::AccountId}/*'
+            - Effect: Allow
+              Action: [kms:Decrypt, kms:GenerateDataKey, kms:Encrypt]
+              Resource: !GetAtt KmsKey.Arn
+
+  FnDocsWatermarkInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt FnDocsWatermark.Arn
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub 'arn:aws:s3:::hsg-${Stage}-docs-${AWS::AccountId}'
+      SourceAccount: !Ref AWS::AccountId
+
+  # ======================================================================
+  # Lambda: Bids
+  # ======================================================================
+  FnBidsSubmit:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bids-submit'
+      CodeUri: src/
+      Handler: handlers/bids/submit.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref BidsTable }
+        - DynamoDBReadPolicy: { TableName: !Ref BiddersTable }
+        - Statement:
+            - Effect: Allow
+              Action: [ses:SendEmail]
+              Resource: '*'
+      Events:
+        HttpSubmit:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /bids
+            Auth: { Authorizer: CognitoJwt }
+
+  FnBidsList:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bids-list'
+      CodeUri: src/
+      Handler: handlers/bids/list.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref BidsTable }
+      Events:
+        HttpList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /bids
+            Auth: { Authorizer: CognitoJwt }
+
+  # ======================================================================
+  # Lambda: Q&A
+  # ======================================================================
+  FnQAAsk:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-qa-ask'
+      CodeUri: src/
+      Handler: handlers/qa/ask.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref QATable }
+      Events:
+        HttpAsk:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /sales/{saleId}/qa
+            Auth: { Authorizer: CognitoJwt }
+
+  FnQAAnswer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-qa-answer'
+      CodeUri: src/
+      Handler: handlers/qa/answer.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref QATable }
+      Events:
+        HttpAnswer:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /qa/{qaId}/answer
+            Auth: { Authorizer: CognitoJwt }
+
+  FnQAList:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-qa-list'
+      CodeUri: src/
+      Handler: handlers/qa/list.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref QATable }
+      Events:
+        HttpList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /sales/{saleId}/qa
+            Auth: { Authorizer: CognitoJwt }
+
+  # ======================================================================
+  # Lambda: Sales (NEW — portal-scoped sale + pool/deal listing)
+  # ======================================================================
+  FnSalesList:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-sales-list'
+      CodeUri: src/
+      Handler: handlers/sales/list.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+      Events:
+        HttpList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /sales
+            Auth: { Authorizer: CognitoJwt }
+
+  FnSalesGet:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-sales-get'
+      CodeUri: src/
+      Handler: handlers/sales/get.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+      Events:
+        HttpGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /sales/{saleId}
+            Auth: { Authorizer: CognitoJwt }
+
+  FnSalesPools:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-sales-pools'
+      CodeUri: src/
+      Handler: handlers/sales/pools.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+      Events:
+        HttpPools:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /sales/{saleId}/pools
+            Auth: { Authorizer: CognitoJwt }
+
+  FnSalesDeals:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-sales-deals'
+      CodeUri: src/
+      Handler: handlers/sales/deals.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+      Events:
+        HttpDeals:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /sales/{saleId}/deals
+            Auth: { Authorizer: CognitoJwt }
+
+  # Top-level Loans (NEW)
+  FnSalesLoans:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-sales-loans'
+      CodeUri: src/
+      Handler: handlers/sales/loans.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref LoansTable }
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+      Events:
+        HttpLoans:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /sales/{saleId}/loans
+            Auth: { Authorizer: CognitoJwt }
+
+  FnLoanGet:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-loans-get'
+      CodeUri: src/
+      Handler: handlers/loans/get.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref LoansTable }
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+      Events:
+        HttpGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /loans/{saleId}/{loanId}
+            Auth: { Authorizer: CognitoJwt }
+
+  # QC findings (NEW)
+  FnQcList:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-qc-list'
+      CodeUri: src/
+      Handler: handlers/qc/list.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref QcFindingsTable }
+      Events:
+        HttpList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /sales/{saleId}/qc
+            Auth: { Authorizer: CognitoJwt }
+
+  FnQcGet:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-qc-get'
+      CodeUri: src/
+      Handler: handlers/qc/get.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref QcFindingsTable }
+      Events:
+        HttpGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /qc/{saleId}/{qcId}
+            Auth: { Authorizer: CognitoJwt }
+
+  # ======================================================================
+  # Lambda: Settlements (NEW)
+  # ======================================================================
+  FnSettlementsList:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-settlements-list'
+      CodeUri: src/
+      Handler: handlers/settlements/list.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref SettlementsTable }
+      Events:
+        HttpList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /settlements
+            Auth: { Authorizer: CognitoJwt }
+
+  FnSettlementsGet:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-settlements-get'
+      CodeUri: src/
+      Handler: handlers/settlements/get.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref SettlementsTable }
+      Events:
+        HttpGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /settlements/{settlementId}
+            Auth: { Authorizer: CognitoJwt }
+
+  FnSettlementsUpdateMilestone:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-settlements-milestone'
+      CodeUri: src/
+      Handler: handlers/settlements/updateMilestone.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref SettlementsTable }
+        - Statement:
+            - Effect: Allow
+              Action: [ses:SendEmail]
+              Resource: '*'
+      Events:
+        HttpMilestone:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /settlements/{settlementId}/milestones/{idx}
+            Auth: { Authorizer: CognitoJwt }
+
+  FnSettlementsUpdateDeliverable:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-settlements-deliverable'
+      CodeUri: src/
+      Handler: handlers/settlements/updateDeliverable.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref SettlementsTable }
+      Events:
+        HttpDeliverable:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /settlements/{settlementId}/deliverables/{deliverableId}
+            Auth: { Authorizer: CognitoJwt }
+
+  # ======================================================================
+  # Lambda: BEM (Bid Evaluation Methodology) (NEW)
+  # ======================================================================
+  FnBemListScenarios:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bem-list'
+      CodeUri: src/
+      Handler: handlers/bem/list.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref ScenariosTable }
+      Events:
+        HttpList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /bem/scenarios
+            Auth: { Authorizer: CognitoJwt }
+
+  FnBemGetScenario:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bem-get'
+      CodeUri: src/
+      Handler: handlers/bem/get.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref ScenariosTable }
+      Events:
+        HttpGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /bem/scenarios/{scenarioId}
+            Auth: { Authorizer: CognitoJwt }
+
+  FnBemSaveScenario:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bem-save'
+      CodeUri: src/
+      Handler: handlers/bem/save.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref ScenariosTable }
+      Events:
+        HttpCreate:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /bem/scenarios
+            Auth: { Authorizer: CognitoJwt }
+        HttpUpdate:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: PUT
+            Path: /bem/scenarios/{scenarioId}
+            Auth: { Authorizer: CognitoJwt }
+
+  FnBemDeleteScenario:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bem-delete'
+      CodeUri: src/
+      Handler: handlers/bem/delete.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref ScenariosTable }
+      Events:
+        HttpDelete:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: DELETE
+            Path: /bem/scenarios/{scenarioId}
+            Auth: { Authorizer: CognitoJwt }
+
+  FnBemRun:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bem-run'
+      CodeUri: src/
+      Handler: handlers/bem/run.handler
+      Timeout: 30
+      MemorySize: 1024
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref ScenariosTable }
+        - DynamoDBReadPolicy: { TableName: !Ref BidsTable }
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+      Events:
+        HttpRun:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /bem/run
+            Auth: { Authorizer: CognitoJwt }
+
+  FnBemApproveAwards:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bem-approve-awards'
+      CodeUri: src/
+      Handler: handlers/bem/approveAwards.handler
+      Timeout: 30
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref ScenariosTable }
+        - DynamoDBReadPolicy: { TableName: !Ref BidsTable }
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+        - DynamoDBCrudPolicy: { TableName: !Ref SettlementsTable }
+        - Statement:
+            - Effect: Allow
+              Action: [ses:SendEmail]
+              Resource: '*'
+      Events:
+        HttpApprove:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /bem/approve-awards
+            Auth: { Authorizer: CognitoJwt }
+
+  # ======================================================================
+  # Lambda: Screening (OFAC SDN, SAM.gov, IRS TIN Match) (NEW)
+  # ======================================================================
+  FnScreeningOfac:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-screening-ofac'
+      CodeUri: src/
+      Handler: handlers/screening/ofac.handler
+      Timeout: 25
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref ScreeningsTable }
+      Events:
+        HttpOfac:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /screenings/ofac
+            Auth: { Authorizer: NONE }
+
+  FnScreeningSam:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-screening-sam'
+      CodeUri: src/
+      Handler: handlers/screening/sam.handler
+      Timeout: 25
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref ScreeningsTable }
+        - Statement:
+            - Effect: Allow
+              Action: [secretsmanager:GetSecretValue]
+              Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:hsg/${Stage}/sam-api-*'
+      Events:
+        HttpSam:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /screenings/sam
+            Auth: { Authorizer: NONE }
+
+  FnScreeningTin:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-screening-tin'
+      CodeUri: src/
+      Handler: handlers/screening/tin.handler
+      Timeout: 15
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref ScreeningsTable }
+      Events:
+        HttpTin:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /screenings/tin
+            Auth: { Authorizer: NONE }
+
+  # ======================================================================
+  # Lambda: Notifications (NEW — in-app feed)
+  # ======================================================================
+  FnNotificationsList:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-notifications-list'
+      CodeUri: src/
+      Handler: handlers/notifications/list.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref NotificationsTable }
+      Events:
+        HttpList:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /notifications
+            Auth: { Authorizer: CognitoJwt }
+
+  FnNotificationsRead:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-notifications-read'
+      CodeUri: src/
+      Handler: handlers/notifications/markRead.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref NotificationsTable }
+      Events:
+        HttpRead:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /notifications/{notifId}/read
+            Auth: { Authorizer: CognitoJwt }
+        HttpReadAll:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /notifications/mark-all-read
+            Auth: { Authorizer: CognitoJwt }
+
+  # ======================================================================
+  # CloudFront distribution (frontend + API under one domain)
+  # ======================================================================
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub 'hsg-${Stage}-oac'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: PriceClass_100   # US + EU only (cheapest)
+        Aliases: !If [UseCustomDomain, [!Ref DomainName], !Ref 'AWS::NoValue']
+        ViewerCertificate: !If
+          - UseCustomDomain
+          - AcmCertificateArn: !Ref CertificateArn
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
+        Origins:
+          - Id: S3Static
+            DomainName: !GetAtt StaticBucket.RegionalDomainName
+            S3OriginConfig: { OriginAccessIdentity: '' }
+            OriginAccessControlId: !GetAtt OriginAccessControl.Id
+          - Id: ApiOrigin
+            DomainName: !Sub '${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: [TLSv1.2]
+        DefaultCacheBehavior:
+          TargetOriginId: S3Static
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6   # CachingOptimized
+          ResponseHeadersPolicyId: 5cc3b908-e619-4b99-88e5-2cf7f45965bd   # SecurityHeadersPolicy (managed)
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachedMethods: [GET, HEAD]
+            Compress: true
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad   # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac   # AllViewerExceptHostHeader
+        CustomErrorResponses:
+          - { ErrorCode: 403, ResponseCode: 200, ResponsePagePath: /index.html, ErrorCachingMinTTL: 60 }
+          - { ErrorCode: 404, ResponseCode: 200, ResponsePagePath: /index.html, ErrorCachingMinTTL: 60 }
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+        - { Key: Stage,   Value: !Ref Stage }
+
+  StaticBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StaticBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontOAC
+            Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${StaticBucket}/*'
+            Condition:
+              StringEquals:
+                'AWS:SourceArn': !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  # DomainRecord managed outside template for stage-1 deploy. Once zone exists
+  # and custom domain is enabled, add a Route53 alias A record pointing to
+  # CloudFrontDistribution.DomainName.
+
+Outputs:
+  ApiEndpoint:
+    Description: HTTP API invoke URL
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+  CloudFrontDomain:
+    Description: CloudFront distribution domain
+    Value: !GetAtt CloudFrontDistribution.DomainName
+  CustomDomain:
+    Description: Custom domain for the platform
+    Value: !Sub 'https://${DomainName}'
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref UserPoolClient
+  DocsBucket:
+    Description: VDR documents bucket
+    Value: !Ref DocsBucket
+  StaticBucket:
+    Description: Frontend static assets bucket
+    Value: !Ref StaticBucket
+  KmsKeyAlias:
+    Description: KMS key alias for CMK encryption
+    Value: !Ref KmsKeyAlias

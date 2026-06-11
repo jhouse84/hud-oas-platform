@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bidders · HUD OAS Admin Console</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <link rel="stylesheet" href="_shell.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-top: var(--space-2); }
+    .pipeline__col { background: var(--color-grey-50); border-radius: var(--radius-md); padding: var(--space-3); min-height: 200px; }
+    .pipeline__col-header { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: var(--space-3); display: flex; justify-content: space-between; }
+    .pipeline__count { background: var(--color-portal); color: #FFFFFF; padding: 0 var(--space-2); border-radius: var(--radius-full); font-size: var(--text-xs); }
+    .bidder-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); margin-bottom: var(--space-2); cursor: pointer; transition: box-shadow var(--duration-fast); }
+    .bidder-card:hover { box-shadow: var(--shadow-md); }
+    .bidder-card__name { font-weight: 600; font-size: var(--text-sm); }
+    .bidder-card__entity { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: var(--space-1); }
+    .bidder-card__meta { display: flex; gap: var(--space-2); margin-top: var(--space-2); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); flex-wrap: wrap; }
+    .screening-row { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); padding: var(--space-2) 0; border-bottom: 1px solid var(--color-grey-100); align-items: center; }
+    .screening-row:last-child { border-bottom: none; }
+    .screening-status { font-family: var(--font-mono); font-size: var(--text-xs); padding: 2px 8px; border-radius: var(--radius-full); }
+    .screening-status--clear              { background: var(--color-success-bg); color: var(--color-success); }
+    .screening-status--needs_clarification { background: var(--color-warning-bg); color: var(--color-warning); }
+    .screening-status--match_found        { background: var(--color-error-bg); color: var(--color-error); }
+    .screening-status--valid              { background: var(--color-success-bg); color: var(--color-success); }
+    .audit-row { padding: var(--space-2) 0; border-bottom: 1px solid var(--color-grey-100); font-size: var(--text-sm); }
+    .audit-row:last-child { border-bottom: none; }
+    .audit-row__action { font-family: var(--font-mono); font-weight: 600; text-transform: uppercase; font-size: var(--text-xs); letter-spacing: 0.05em; }
+  </style>
+</head>
+<body data-portal="admin">
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-label">HUD OAS Admin</div>
+        <div class="sidebar__brand-name">Console</div>
+      </div>
+      <div class="sidebar__section">Overview</div>
+      <a class="sidebar__nav-item" href="index.html">Dashboard</a>
+      <a class="sidebar__nav-item active" href="bidders.html">Bidders</a>
+      <a class="sidebar__nav-item" href="bid-day.html">Bid day ops</a>
+      <a class="sidebar__nav-item" href="bem.html">BEM &amp; awards</a>
+      <div class="sidebar__section">Post-sale</div>
+      <a class="sidebar__nav-item" href="qa.html">Q&amp;A inbox</a>
+      <a class="sidebar__nav-item" href="settlements.html">Settlements</a>
+      <a class="sidebar__nav-item" href="compliance.html">Compliance &amp; QC</a>
+      <div class="sidebar__user">
+        <div id="user-name" style="color: #FFF; font-weight: 600;">…</div>
+        <div id="user-email" style="font-size: var(--text-xs); opacity: 0.7;"></div>
+        <a href="#" id="signout-link" style="display: inline-block; margin-top: var(--space-2); color: var(--color-portal-bright); text-decoration: underline; font-size: var(--text-sm);">Sign out</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="main__header">
+        <h1 class="main__title">Bidder pipeline</h1>
+        <div id="main-actions">
+          <select class="form-select" id="portal-filter" style="width: auto; margin-right: var(--space-2);">
+            <option value="">All portals</option>
+            <option value="residential">Residential</option>
+            <option value="commercial" selected>Commercial</option>
+          </select>
+          <button class="btn-portal btn-portal--ghost" id="refresh-btn" style="font-size: var(--text-sm);">Refresh</button>
+        </div>
+      </header>
+      <div class="main__content" id="app">
+        <p class="empty">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer for bidder detail -->
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer__header">
+      <h2 id="drawer-title" style="font-family: var(--font-heading); font-size: var(--text-xl);">Bidder detail</h2>
+      <button class="drawer__close" id="drawer-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="drawer__content" id="drawer-content"></div>
+  </aside>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/api.js"></script>
+  <script>
+  (function () {
+    var u = HSG.utils;
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      });
+    }
+
+    if (!HSG.cognito.isAuthenticated()) {
+      window.location.href = 'login.html?next=bidders.html';
+      return;
+    }
+    var claims = HSG.api.decodeClaims() || {};
+    document.getElementById('user-name').textContent = claims['custom:entityName'] || claims.email || 'Admin';
+    document.getElementById('user-email').textContent = claims.email || '';
+    document.getElementById('signout-link').addEventListener('click', function (e) {
+      e.preventDefault(); HSG.cognito.signOut(); window.location.href = 'login.html';
+    });
+
+    var $app = document.getElementById('app');
+
+    var STATUS_BUCKETS = {
+      'submitted':         ['Pending - Initial Review', 'Pending - SAM.gov Verification', 'Pending - Financial Review', 'submitted', 'Submitted'],
+      'under-review':      ['Pending - OGC Review', 'under_review', 'Under Review'],
+      'clarifications':    ['Pending - Additional Info Requested', 'needs_clarification', 'Clarifications Requested'],
+      'qualified':         ['Qualified', 'qualified', 'Approved'],
+      'rejected':          ['Declined', 'Rejected', 'rejected']
+    };
+    var COLUMN_ORDER = ['submitted', 'under-review', 'clarifications', 'qualified', 'rejected'];
+    var COLUMN_LABELS = {
+      'submitted': 'Submitted',
+      'under-review': 'Under review',
+      'clarifications': 'Clarifications',
+      'qualified': 'Qualified',
+      'rejected': 'Rejected'
+    };
+
+    function bucketOf(status) {
+      for (var key in STATUS_BUCKETS) {
+        if (STATUS_BUCKETS[key].some(function (s) { return new RegExp(s, 'i').test(status); })) return key;
+      }
+      return 'submitted';
+    }
+
+    function load() {
+      var portal = document.getElementById('portal-filter').value;
+      $app.innerHTML = '<p class="empty">Loading…</p>';
+      HSG.api.bidders.list({ portal: portal || undefined }).then(function (r) {
+        renderPipeline((r && r.bidders) || []);
+      }).catch(function (err) {
+        $app.innerHTML = '<div class="error-box">' + esc(err.message) + '</div>';
+      });
+    }
+
+    function renderPipeline(bidders) {
+      var grouped = {};
+      COLUMN_ORDER.forEach(function (k) { grouped[k] = []; });
+      bidders.forEach(function (b) {
+        var status = b.qualificationStatus || b.status || '';
+        var bucket = bucketOf(status);
+        grouped[bucket].push(b);
+      });
+
+      var stats = '<div class="stat-grid">' +
+        '<div class="stat-card"><div class="stat-card__label">TOTAL BIDDERS</div><div class="stat-card__value">' + bidders.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-card__label">QUALIFIED</div><div class="stat-card__value" style="color: var(--color-success);">' + grouped['qualified'].length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-card__label">PENDING</div><div class="stat-card__value" style="color: var(--color-warning);">' + (grouped['submitted'].length + grouped['under-review'].length + grouped['clarifications'].length) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-card__label">REJECTED</div><div class="stat-card__value" style="color: var(--color-error);">' + grouped['rejected'].length + '</div></div>' +
+      '</div>';
+
+      var cols = COLUMN_ORDER.map(function (k) {
+        var cardsHtml = grouped[k].map(function (b) {
+          return '<div class="bidder-card" data-bidder-id="' + esc(b.bidderId) + '">' +
+            '<div class="bidder-card__name">' + esc(b.entityName) + '</div>' +
+            '<div class="bidder-card__entity">' + esc(b.entityType || '') + '</div>' +
+            '<div class="bidder-card__meta">' +
+              (b.portal ? '<span class="badge badge--' + esc(b.portal) + '">' + esc(b.portal) + '</span>' : '') +
+              (b.qualification_path_90092 ? '<span>90092 §II-' + esc(b.qualification_path_90092) + '</span>' : '') +
+              (b.submittedAt ? '<span>' + esc(u.dateRelative(b.submittedAt)) + '</span>' : '') +
+            '</div>' +
+            (b.screening ? '<div style="margin-top: var(--space-2); display: flex; gap: 4px;">' +
+              renderTinyDot(b.screening.ofac_sdn || b.screening.ofac, 'OFAC') +
+              renderTinyDot(b.screening.sam_debarment || b.screening.sam, 'SAM') +
+              renderTinyDot(b.screening.tin_validation || b.screening.tin, 'TIN') +
+              renderTinyDot(b.screening.related_party_check, 'RP') +
+            '</div>' : '') +
+          '</div>';
+        }).join('');
+        return '<div class="pipeline__col">' +
+          '<div class="pipeline__col-header"><span>' + esc(COLUMN_LABELS[k]) + '</span><span class="pipeline__count">' + grouped[k].length + '</span></div>' +
+          (grouped[k].length === 0 ? '<p style="color: var(--color-text-muted); font-size: var(--text-sm); text-align: center;">—</p>' : cardsHtml) +
+        '</div>';
+      }).join('');
+
+      $app.innerHTML = stats + '<div class="pipeline">' + cols + '</div>';
+      $app.querySelectorAll('.bidder-card').forEach(function (el) {
+        el.addEventListener('click', function () { openDrawer(el.getAttribute('data-bidder-id'), bidders); });
+      });
+    }
+
+    function renderTinyDot(status, label) {
+      var color = '#9b9ea5';
+      if (/clear|valid|verified|^Active/i.test(status || '')) color = 'var(--color-success)';
+      else if (/match_found|hit|fail/i.test(status || '')) color = 'var(--color-error)';
+      else if (/needs|pending|clarification/i.test(status || '')) color = 'var(--color-warning)';
+      return '<span title="' + esc(label) + ': ' + esc(status || '—') + '" style="display: inline-flex; align-items: center; gap: 2px; font-family: var(--font-mono); font-size: 10px; color: ' + color + ';">' +
+        '<span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ' + color + ';"></span>' + esc(label) + '</span>';
+    }
+
+    function openDrawer(bidderId, bidders) {
+      var bidder = bidders.find(function (b) { return b.bidderId === bidderId; });
+      if (!bidder) return;
+      document.getElementById('drawer-title').textContent = bidder.entityName;
+      document.getElementById('drawer-content').innerHTML = renderBidderDetail(bidder);
+      document.getElementById('drawer').classList.add('active');
+      document.getElementById('drawer-overlay').classList.add('active');
+      wireDrawerActions(bidder);
+    }
+    document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+    document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
+    function closeDrawer() {
+      document.getElementById('drawer').classList.remove('active');
+      document.getElementById('drawer-overlay').classList.remove('active');
+    }
+
+    function renderBidderDetail(b) {
+      var s = b.screening || {};
+      var review = b.reviewLog || b.review_notes ? [{ action: 'note', reviewer: '', note: b.review_notes, timestamp: b.submittedAt }] : (b.reviewLog || []);
+      var screeningRows = [
+        ['OFAC SDN', s.ofac_sdn || s.ofac],
+        ['SAM debarment', s.sam_debarment || s.sam],
+        ['TIN validation', s.tin_validation || s.tin],
+        ['HUD program default', s.hud_program_default_check],
+        ['Related party', s.related_party_check]
+      ].filter(function (r) { return r[1] != null; });
+      var screeningHtml = screeningRows.map(function (r) {
+        return '<div class="screening-row">' +
+          '<span>' + esc(r[0]) + '</span>' +
+          '<span class="screening-status screening-status--' + esc(String(r[1]).replace(/[^a-z_]/gi, '')) + '">' + esc(r[1]) + '</span>' +
+        '</div>';
+      }).join('');
+
+      return '<section style="margin-bottom: var(--space-6);">' +
+        '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-3);">Entity</h3>' +
+        '<div style="display: grid; grid-template-columns: max-content 1fr; gap: var(--space-2) var(--space-4); font-size: var(--text-sm);">' +
+          row('Legal name', b.entityName) +
+          row('Entity type', b.entityType) +
+          row('State of formation', b.stateOfFormation || b.state_of_formation) +
+          row('Tax ID', b.tax_id_masked || (b.ein ? '••' + String(b.ein).slice(-4) : '—')) +
+          row('Net worth', b.claimed_net_worth ? u.currency(b.claimed_net_worth) : (b.aum ? u.currency(b.aum) : '—')) +
+          row('Qualification basis', b.qualification_basis || ('§II-' + (b.qualification_path_90092 || '?'))) +
+          row('Prior HUD purchases', b.prior_hud_purchases ? 'Yes' : 'No') +
+          row('Submitted', b.submittedAt ? u.date(b.submittedAt) : '—') +
+        '</div>' +
+        '<h4 style="font-family: var(--font-heading); margin: var(--space-5) 0 var(--space-2);">Primary contact</h4>' +
+        '<div style="font-size: var(--text-sm); color: var(--color-text-muted);">' +
+          esc(b.contactName || '') + (b.contactTitle ? ' · ' + esc(b.contactTitle) : '') + '<br />' +
+          esc(b.contactEmail || '') + (b.contactPhone ? ' · ' + esc(b.contactPhone) : '') +
+        '</div>' +
+      '</section>' +
+
+      '<section style="margin-bottom: var(--space-6);">' +
+        '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-3);">Screening results</h3>' +
+        (screeningHtml || '<p style="color: var(--color-text-muted); font-size: var(--text-sm);">No screening recorded yet.</p>') +
+        (s.hud_program_match_detail ? '<div class="banner banner--warning" style="margin-top: var(--space-3);"><strong>HUD program match:</strong> ' + esc(s.hud_program_match_detail) + '</div>' : '') +
+      '</section>' +
+
+      (b.declineReason || b.rejection_reason ? '<section style="margin-bottom: var(--space-6);"><h3 style="font-family: var(--font-heading); margin-bottom: var(--space-2);">Rejection reason</h3><div class="banner banner--error">' + esc(b.declineReason || b.rejection_reason) + '</div></section>' : '') +
+
+      (b.review_notes ? '<section style="margin-bottom: var(--space-6);"><h3 style="font-family: var(--font-heading); margin-bottom: var(--space-2);">Review notes</h3><p style="font-size: var(--text-sm);">' + esc(b.review_notes) + '</p></section>' : '') +
+
+      '<section style="margin-bottom: var(--space-6);">' +
+        '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-3);">Decision</h3>' +
+        renderDecisionPanel(b) +
+      '</section>' +
+
+      '<section>' +
+        '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-3);">Audit trail</h3>' +
+        (review.length === 0 ? '<p style="color: var(--color-text-muted); font-size: var(--text-sm);">No actions logged.</p>' :
+          review.map(function (r) {
+            return '<div class="audit-row">' +
+              '<span class="audit-row__action">' + esc(r.action || 'note') + '</span>' +
+              ' · ' + esc(r.reviewer || '') +
+              ' · ' + esc(r.timestamp ? u.dateRelative(r.timestamp) : '') +
+              (r.note ? '<div style="margin-top: 2px; color: var(--color-text-muted);">' + esc(r.note) + '</div>' : '') +
+            '</div>';
+          }).join('')
+        ) +
+      '</section>';
+    }
+
+    function row(label, value) {
+      return '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.04em;">' + esc(label) + '</div>' +
+             '<div>' + esc(value || '—') + '</div>';
+    }
+
+    function renderDecisionPanel(b) {
+      var status = (b.qualificationStatus || b.status || '').toLowerCase();
+      var isFinal = /qualified|declined|rejected|approved/.test(status);
+      if (isFinal) {
+        return '<p style="color: var(--color-text-muted); font-size: var(--text-sm);">This bidder has a final decision (' + esc(b.qualificationStatus || b.status) + '). Use the Q&amp;A inbox or post-sale flow for further interaction.</p>';
+      }
+      return '<div class="form-grid">' +
+        '<textarea class="form-textarea" id="decision-note" placeholder="Decision note, rationale, or clarification request…" rows="3"></textarea>' +
+        '<div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">' +
+          '<button class="btn-portal" data-decision="approve">Approve / qualify →</button>' +
+          '<button class="btn-portal btn-portal--ghost" data-decision="request-info">Request clarification</button>' +
+          '<button class="btn-portal btn-portal--ghost" data-decision="reject" style="color: var(--color-error); border-color: var(--color-error);">Reject</button>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function wireDrawerActions(b) {
+      document.querySelectorAll('[data-decision]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var decision = btn.getAttribute('data-decision');
+          var note = (document.getElementById('decision-note') && document.getElementById('decision-note').value) || '';
+          var endpoint = null;
+          if (decision === 'approve') endpoint = HSG.api.bidders.approve(b.bidderId, { note: note });
+          else if (decision === 'reject') endpoint = HSG.api.bidders.reject(b.bidderId, { reason: note || 'Rejected via admin console' });
+          else if (decision === 'request-info') endpoint = HSG.api.bidders.requestInfo(b.bidderId, { note: note || 'Please provide additional information' });
+          if (!endpoint) return;
+          btn.disabled = true; btn.textContent = '…';
+          endpoint.then(function () { closeDrawer(); load(); })
+                  .catch(function (err) { alert('Action failed: ' + (err.message || err)); btn.disabled = false; });
+        });
+      });
+    }
+
+    document.getElementById('refresh-btn').addEventListener('click', load);
+    document.getElementById('portal-filter').addEventListener('change', load);
+    load();
+  })();
+  </script>
+</body>
+</html>

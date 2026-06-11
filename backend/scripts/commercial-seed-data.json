@@ -1,0 +1,3562 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-04-30T13:02:45.824684Z",
+  "portal": "commercial",
+  "tables": {
+    "sales": [
+      {
+        "sale_id": "MHLS-2026-DEMO",
+        "portal": "commercial",
+        "program": "MHLS",
+        "sale_name": "MHLS 2026-DEMO",
+        "long_name": "HUD-Held Multifamily and Healthcare Loan Sale 2026-DEMO",
+        "sale_type": "Sealed Bid, Competitive",
+        "qualification_form": "HUD-90092",
+        "transaction_specialist": "House Strategies Group, LLC",
+        "state": "qualification_open",
+        "summary": {
+          "loan_count": 20,
+          "aggregate_upb": 95780782.88,
+          "asset_classes": [
+            "Multifamily",
+            "Healthcare"
+          ],
+          "pool_count": 4,
+          "geographic_footprint": [
+            "CO",
+            "GA",
+            "ID",
+            "IL",
+            "MI",
+            "MN",
+            "ND",
+            "NY",
+            "OH",
+            "OK",
+            "RI",
+            "TN",
+            "TX",
+            "WI"
+          ]
+        },
+        "key_dates": {
+          "federal_register_published": "2026-04-16",
+          "qualification_opens": "2026-04-20",
+          "qualification_closes": "2026-05-10",
+          "go_live_data_room": "2026-05-12",
+          "qa_deadline": "2026-05-24",
+          "bid_day": "2026-05-28",
+          "bid_window_open_eastern": "10:00 AM",
+          "bid_window_close_eastern": "12:00 PM",
+          "award_date": "2026-05-29",
+          "expected_settlement": "2026-06-18"
+        },
+        "deposit_terms": {
+          "minimum_deposit_floor": 100000,
+          "deposit_pct_of_aggregate_bid": 0.1,
+          "small_bid_minimum_pct": 0.5,
+          "wire_instructions_available": true
+        },
+        "post_sale_terms": {
+          "first_look": false,
+          "mission_outcome_required": false,
+          "servicing_released": true,
+          "fha_insurance": false,
+          "loan_sale_agreement_negotiable": false
+        },
+        "ineligibility_summary": [
+          "Mortgagor or healthcare operator with respect to any Loan in this sale, or Active Shareholder",
+          "Mortgagor/operator with default or violation on any other HUD multifamily/healthcare loan",
+          "Debarred or suspended from doing business with HUD",
+          "Federal employee or member of household",
+          "Person who performed services for HUD on these loans within 24 months prior"
+        ],
+        "pools": [
+          {
+            "pool_id": "MHLS-2026-DEMO-P1",
+            "pool_name": "Pool 1 \u2014 National Multifamily Large",
+            "pool_number": 1,
+            "stratification_basis": "Asset class: Multifamily; UPB tier: Large (>= $5M); Geography: National",
+            "loan_ids": [
+              "073-35578",
+              "101-35536A",
+              "101-35511A",
+              "071-11149",
+              "101-35538",
+              "114-11219",
+              "042-35450"
+            ],
+            "summary": {
+              "loan_count": 7,
+              "aggregate_upb": 58234732.49,
+              "states": [
+                "CO",
+                "ID",
+                "IL",
+                "OH",
+                "TX"
+              ],
+              "avg_dscr": 2.329785831123587
+            },
+            "minimum_bid_basis": "Aggregate UPB",
+            "eligible_bidder_types": [
+              "all"
+            ]
+          },
+          {
+            "pool_id": "MHLS-2026-DEMO-P2",
+            "pool_name": "Pool 2 \u2014 National Multifamily Mid",
+            "pool_number": 2,
+            "stratification_basis": "Asset class: Multifamily; UPB tier: Mid ($1M-$5M); Geography: National",
+            "loan_ids": [
+              "014-11107A",
+              "047-35213",
+              "075-35333",
+              "092-23127",
+              "044-11090",
+              "061-35515A",
+              "113-11106",
+              "047-11020"
+            ],
+            "summary": {
+              "loan_count": 8,
+              "aggregate_upb": 26406784.83,
+              "states": [
+                "GA",
+                "MI",
+                "MN",
+                "NY",
+                "TX",
+                "WI"
+              ],
+              "avg_dscr": 0.17180440971864622
+            },
+            "minimum_bid_basis": "Aggregate UPB",
+            "eligible_bidder_types": [
+              "all"
+            ]
+          },
+          {
+            "pool_id": "MHLS-2026-DEMO-P3",
+            "pool_name": "Pool 3 \u2014 Small Balance / Cross-Collateralized",
+            "pool_number": 3,
+            "stratification_basis": "Asset class: Multifamily; UPB tier: Small (<$1M); Includes cross-collateralized loans",
+            "loan_ids": [
+              "094-38008S",
+              "094-38009S"
+            ],
+            "summary": {
+              "loan_count": 2,
+              "aggregate_upb": 419142.18,
+              "states": [
+                "ND"
+              ],
+              "avg_dscr": null
+            },
+            "minimum_bid_basis": "Aggregate UPB",
+            "eligible_bidder_types": [
+              "all"
+            ],
+            "notes": "Pool contains cross-collateralized loans (Cando Apartments + Sheyenne Apartments). Loans must be acquired together."
+          },
+          {
+            "pool_id": "MHLS-2026-DEMO-P4",
+            "pool_name": "Pool 4 \u2014 Healthcare",
+            "pool_number": 4,
+            "stratification_basis": "Asset class: Healthcare (Nursing Home + Assisted Living)",
+            "loan_ids": [
+              "117-22010",
+              "016-43090",
+              "081-43035"
+            ],
+            "summary": {
+              "loan_count": 3,
+              "aggregate_upb": 10720123.379999999,
+              "states": [
+                "OK",
+                "RI",
+                "TN"
+              ],
+              "avg_dscr": 0.09026961118414471
+            },
+            "minimum_bid_basis": "Aggregate UPB",
+            "eligible_bidder_types": [
+              "all"
+            ],
+            "notes": "Healthcare-experienced bidder strongly recommended. Properties include nursing home and assisted living facilities."
+          }
+        ]
+      }
+    ],
+    "loans": [
+      {
+        "loan_id": "094-38008S",
+        "fha_case_number": "094-38008S",
+        "fha_root": "094-38008",
+        "property_name": "Cando Apartments",
+        "asset_class": "Multifamily",
+        "section_of_act": "231 Elderly Housing",
+        "property_type": "MF Apartments",
+        "property_subtype": "Low Rise/Garden Apartment",
+        "current_upb": 260638.83,
+        "original_principal_balance": 266702.83,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.0,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Available Net Cash",
+        "current_monthly_pi": 0.0,
+        "remaining_term_months": 107.23333333333333,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Cando Partners",
+          "address1": "6640 Lyndale Ave. S. Suite 100",
+          "address2": null,
+          "city": "Richfield",
+          "state": "MN",
+          "zip": "55423",
+          "tax_id_masked": "XX-XXX3132",
+          "general_partner": null,
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "808 E. 6th Street",
+          "street2": null,
+          "city": "Cando",
+          "state": "ND",
+          "zip": "58324",
+          "year_built": 1977.0,
+          "year_renovated": null,
+          "buildings": 3.0,
+          "gross_sf": null,
+          "net_rentable_sf": null,
+          "land_acres": 1.13,
+          "covered_parking": null,
+          "uncovered_parking": null,
+          "occupancy_opiis_pct": null,
+          "units_total": 20.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 0.0,
+            "br2_1ba": 0.0,
+            "br2_2ba": 0.0,
+            "br3_2ba": 0.0,
+            "other": 0.0,
+            "total_units": 20.0,
+            "avg_rent_psf": null
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": null,
+            "total_revenue": null,
+            "total_expenses": null,
+            "noi": null
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": null,
+            "total_revenue": null,
+            "total_expenses": null,
+            "noi": null
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": null,
+            "total_revenue": null,
+            "total_expenses": null,
+            "noi": null
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 0.0,
+          "delinquent_principal": 0.0,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 266702.83,
+            "status": "Performing"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [],
+        "metrics": {
+          "annual_debt_service": null,
+          "dscr_latest_year": null,
+          "debt_yield_latest_year": null,
+          "noi_to_upb_latest_year": null,
+          "noi_3yr_trend_pct": null
+        },
+        "related_loans": {
+          "has_related": true,
+          "related_fha": "09438009S",
+          "related_name": "Sheyenne Apartments"
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "N",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": null,
+          "site_inspection_firm": null,
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "073-35578",
+        "fha_case_number": "073-35578",
+        "fha_root": "073-35578",
+        "property_name": "Creekside At Meadowbrook",
+        "asset_class": "Multifamily",
+        "section_of_act": "221(d)(4) Mkt. Rate Mod Inc/ Disp Fams",
+        "property_type": "MF Apartments",
+        "property_subtype": "Low Rise/Garden Apartment",
+        "current_upb": 6051929.31,
+        "original_principal_balance": 6200000.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.05,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 2996.19,
+        "remaining_term_months": 430.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Creekside of Meadowbrook,LLC",
+          "address1": "310 S Nichols St",
+          "address2": null,
+          "city": "Lowell",
+          "state": "IN",
+          "zip": "46356",
+          "tax_id_masked": "XX-XXX2038",
+          "general_partner": "James Prange, Inc.",
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "510 South Creekside and Meadowbrook Dr",
+          "street2": null,
+          "city": "Lowel",
+          "state": "ID",
+          "zip": "46356",
+          "year_built": 2005.0,
+          "year_renovated": 2008.0,
+          "buildings": 9.0,
+          "gross_sf": null,
+          "net_rentable_sf": 75315.0,
+          "land_acres": 5.75,
+          "covered_parking": 48.0,
+          "uncovered_parking": 319.0,
+          "occupancy_opiis_pct": 0.5,
+          "units_total": 72.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 21.0,
+            "br2_1ba": 0.0,
+            "br2_2ba": 0.0,
+            "br3_2ba": 15.0,
+            "other": 0.0,
+            "total_units": 72.0,
+            "avg_rent_psf": null
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 791652.0,
+            "total_expenses": 515927.0,
+            "noi": 275725.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 814825.0,
+            "total_expenses": 603396.0,
+            "noi": 211429.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 495786.0,
+            "total_expenses": 492663.0,
+            "noi": 3123.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 327812.81,
+          "delinquent_principal": 62381.46,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 6200000.0,
+            "status": "Defaulted"
+          },
+          {
+            "position": 2,
+            "lender": "The Courtyards of Meadowbrook Owners",
+            "balance": 19533.62,
+            "status": null
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal"
+        ],
+        "metrics": {
+          "annual_debt_service": 35954.28,
+          "dscr_latest_year": 7.6687671120100305,
+          "debt_yield_latest_year": 0.04555985139224966,
+          "noi_to_upb_latest_year": 0.04555985139224966,
+          "noi_3yr_trend_pct": 87.2885046429715
+        },
+        "related_loans": {
+          "has_related": true,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "101-35536A",
+        "fha_case_number": "101-35536A",
+        "fha_root": "101-35536",
+        "property_name": "Crestone Apts",
+        "asset_class": "Multifamily",
+        "section_of_act": "221(d)(4) Mkt. Rate Mod Inc/ Disp Fams",
+        "property_type": "MF Apartments",
+        "property_subtype": "Low Rise/Garden Apartment",
+        "current_upb": 5115710.35,
+        "original_principal_balance": 5115710.35,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.05,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Available Cashflow",
+        "current_monthly_pi": 0.0,
+        "remaining_term_months": 407.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Legacy Village LLC",
+          "address1": "650 S. Cherry St.",
+          "address2": "Suite 825",
+          "city": "Denver",
+          "state": "CO",
+          "zip": "80246",
+          "tax_id_masked": "XX-XXX3927",
+          "general_partner": "Legacy Partners 2346 L.P.",
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "10550 E. Iowa Avenue",
+          "street2": null,
+          "city": "Aurora",
+          "state": "CO",
+          "zip": "80012",
+          "year_built": 2002.0,
+          "year_renovated": null,
+          "buildings": 15.0,
+          "gross_sf": null,
+          "net_rentable_sf": 213311.0,
+          "land_acres": 13.701,
+          "covered_parking": null,
+          "uncovered_parking": null,
+          "occupancy_opiis_pct": 0.974,
+          "units_total": 234.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 111.0,
+            "br2_1ba": 55.0,
+            "br2_2ba": 56.0,
+            "br3_2ba": 12.0,
+            "other": 0.0,
+            "total_units": 234.0,
+            "avg_rent_psf": 1.09
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 2473220.0,
+            "total_expenses": 984380.0,
+            "noi": 1488840.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 2412561.0,
+            "total_expenses": 949525.0,
+            "noi": 1463036.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 2226612.0,
+            "total_expenses": 939000.0,
+            "noi": 1287612.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 0.0,
+          "delinquent_principal": 0.0,
+          "deferred_interest": 92552.72,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 102839.0,
+          "pi_pct_of_upb": 0.02010258458045812
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "Prudential Huntoon Paige Assoc.  LTD",
+            "balance": 16005698.45,
+            "status": "Performing"
+          },
+          {
+            "position": 2,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 5115710.35,
+            "status": "Performing"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [],
+        "metrics": {
+          "annual_debt_service": null,
+          "dscr_latest_year": null,
+          "debt_yield_latest_year": 0.2910328963405835,
+          "noi_to_upb_latest_year": 0.2910328963405835,
+          "noi_3yr_trend_pct": 0.15627999739051826
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "117-22010",
+        "fha_case_number": "117-22010",
+        "fha_root": "117-22010",
+        "property_name": "Crystal Wood Village",
+        "asset_class": "Healthcare",
+        "section_of_act": "232/ 223(f)/Pur/Refin/ Nursing Hms",
+        "property_type": "Nursing Home",
+        "property_subtype": "Low Rise/Garden Apartment",
+        "current_upb": 2521259.79,
+        "original_principal_balance": 2677800.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.0725,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 18267.32,
+        "remaining_term_months": 286.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "NH Investments Inc.",
+          "address1": "1800 S Baltimore, Suite 500",
+          "address2": null,
+          "city": "Tulsa",
+          "state": "OK",
+          "zip": "74119",
+          "tax_id_masked": "XX-XXX4568",
+          "general_partner": null,
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "2608-2610 Reardon Road",
+          "street2": null,
+          "city": "Woodward",
+          "state": "OK",
+          "zip": "73801",
+          "year_built": null,
+          "year_renovated": null,
+          "buildings": 1.0,
+          "gross_sf": null,
+          "net_rentable_sf": 24300.0,
+          "land_acres": 2.0,
+          "covered_parking": 0.0,
+          "uncovered_parking": 20.0,
+          "occupancy_opiis_pct": 0.0,
+          "units_total": 82.0,
+          "mf_unit_mix": null,
+          "hc_unit_mix": {
+            "total_units": 54.0,
+            "total_beds": 82.0,
+            "congregate_units": null,
+            "congregate_beds": null,
+            "total_sf": 24300.0
+          },
+          "hc_payor_mix": {
+            "self_pay_pct": 0.5,
+            "medicare_pct": null,
+            "medicaid_pct": 0.5,
+            "state_aid_pct": null,
+            "va_other_pct": null,
+            "occupancy_pct": 0.0
+          }
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 2028414.0,
+            "total_expenses": 1934083.0,
+            "noi": 94331.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1917929.0,
+            "total_expenses": 1910733.0,
+            "noi": 7196.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 2162465.0,
+            "total_expenses": 1919012.0,
+            "noi": 243453.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 137093.49,
+          "delinquent_principal": 24797.29,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 2677800.0,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal",
+          "dscr_below_1x"
+        ],
+        "metrics": {
+          "annual_debt_service": 219207.84,
+          "dscr_latest_year": 0.43032676203551845,
+          "debt_yield_latest_year": 0.03741423250953445,
+          "noi_to_upb_latest_year": 0.03741423250953445,
+          "noi_3yr_trend_pct": -0.6125289070169602
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "2009-02-09 00:00:00",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "014-11107A",
+        "fha_case_number": "014-11107A",
+        "fha_root": "014-11107",
+        "property_name": "Gleason Estates",
+        "asset_class": "Multifamily",
+        "section_of_act": "207/ 223(f) Pur/ Refin Hsg.",
+        "property_type": "MF Apartments",
+        "property_subtype": "Row/Town Houses",
+        "current_upb": 3011514.69,
+        "original_principal_balance": 2310000.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.05,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Available Cashflow",
+        "current_monthly_pi": 0.0,
+        "remaining_term_months": 277.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": true,
+        "borrower": {
+          "name": "Gleason Estates Associates LP",
+          "address1": "3 Townline Circle",
+          "address2": null,
+          "city": "Rochester",
+          "state": "NY",
+          "zip": "14623",
+          "tax_id_masked": "XX-XXX7490",
+          "general_partner": "Gleason Estates Management Corp.",
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "340 Gleason Circle",
+          "street2": null,
+          "city": "East Rochester",
+          "state": "NY",
+          "zip": "14445",
+          "year_built": 1973.0,
+          "year_renovated": null,
+          "buildings": null,
+          "gross_sf": null,
+          "net_rentable_sf": null,
+          "land_acres": 30.0,
+          "covered_parking": null,
+          "uncovered_parking": null,
+          "occupancy_opiis_pct": 0.96377,
+          "units_total": 300.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 0.0,
+            "br2_1ba": 0.0,
+            "br2_2ba": 0.0,
+            "br3_2ba": 0.0,
+            "other": 0.0,
+            "total_units": 300.0,
+            "avg_rent_psf": null
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 2400722.0,
+            "total_expenses": 1282115.0,
+            "noi": 1118607.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 2249535.0,
+            "total_expenses": 1269579.0,
+            "noi": 979956.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1893363.0,
+            "total_expenses": 1463492.0,
+            "noi": 429871.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 0.0,
+          "delinquent_principal": 0.0,
+          "deferred_interest": 56802.78,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 148969.1,
+          "pi_pct_of_upb": 0.06556421037409003
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "Capmark Finance Inc.",
+            "balance": 7119867.78,
+            "status": "Performing"
+          },
+          {
+            "position": 2,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 2310000.0,
+            "status": "Performing"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "modified_loan"
+        ],
+        "metrics": {
+          "annual_debt_service": null,
+          "dscr_latest_year": null,
+          "debt_yield_latest_year": 0.37144331512458933,
+          "noi_to_upb_latest_year": 0.37144331512458933,
+          "noi_3yr_trend_pct": 1.6021922855926545
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": null,
+          "site_inspection_firm": null,
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "101-35511A",
+        "fha_case_number": "101-35511A",
+        "fha_root": "101-35511",
+        "property_name": "Grand Lowry Lofts",
+        "asset_class": "Multifamily",
+        "section_of_act": "221(d)(4) Mkt. Rate Mod Inc/ Disp Fams",
+        "property_type": "MF Apartments",
+        "property_subtype": "Mid/High Rise Apartments",
+        "current_upb": 10526382.23,
+        "original_principal_balance": 10526382.23,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.0432,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Available Cashflow",
+        "current_monthly_pi": 0.0,
+        "remaining_term_months": 379.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "National Grand Lowry Lofts Associates, LP",
+          "address1": "50 Public Sq Ste 1200",
+          "address2": null,
+          "city": "Cleveland",
+          "state": "OH",
+          "zip": "44113",
+          "tax_id_masked": "XX-XXX3936",
+          "general_partner": "National Grand Lowry Lofts Partners, GP",
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "200 Rampart Way",
+          "street2": null,
+          "city": "Denver",
+          "state": "CO",
+          "zip": "80230",
+          "year_built": 1939.0,
+          "year_renovated": 1999.0,
+          "buildings": 1.0,
+          "gross_sf": null,
+          "net_rentable_sf": 183904.0,
+          "land_acres": 6.795,
+          "covered_parking": 203.0,
+          "uncovered_parking": 203.0,
+          "occupancy_opiis_pct": 0.83555,
+          "units_total": 261.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 151.0,
+            "br2_1ba": 58.0,
+            "br2_2ba": 52.0,
+            "br3_2ba": 0.0,
+            "other": 0.0,
+            "total_units": 261.0,
+            "avg_rent_psf": 1.03
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 2213903.0,
+            "total_expenses": 1430730.0,
+            "noi": 783173.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 13.0,
+            "total_revenue": 2213877.0,
+            "total_expenses": 1560348.0,
+            "noi": 653529.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 2029246.0,
+            "total_expenses": 1443925.0,
+            "noi": 585321.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 0.0,
+          "delinquent_principal": 0.0,
+          "deferred_interest": 140578.15,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "Colorado Housing and Finance Authority",
+            "balance": 7303468.0,
+            "status": "Performing"
+          },
+          {
+            "position": 2,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 10525661.82,
+            "status": "Performing"
+          },
+          {
+            "position": 3,
+            "lender": "Colorado Housing and Finance Authority",
+            "balance": 763000.0,
+            "status": null
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [],
+        "metrics": {
+          "annual_debt_service": null,
+          "dscr_latest_year": null,
+          "debt_yield_latest_year": 0.07440096539226658,
+          "noi_to_upb_latest_year": 0.07440096539226658,
+          "noi_3yr_trend_pct": 0.33802306768422796
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": null,
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "016-43090",
+        "fha_case_number": "016-43090",
+        "fha_root": "016-43090",
+        "property_name": "Highland Court",
+        "asset_class": "Healthcare",
+        "section_of_act": "223(a)(7)/232 Refi/ Assisted Living",
+        "property_type": "Assisted Living",
+        "property_subtype": "Mid/High Rise Apartments",
+        "current_upb": 4061412.19,
+        "original_principal_balance": 4335000.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.076,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 28848.24,
+        "remaining_term_months": 339.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Highland Court Associates",
+          "address1": "101 Highland Ave",
+          "address2": null,
+          "city": "Providence",
+          "state": "RI",
+          "zip": "2906",
+          "tax_id_masked": "XX-XXX8922",
+          "general_partner": "Highland Court Associates",
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "101 Highland Ave.",
+          "street2": null,
+          "city": "Providence",
+          "state": "RI",
+          "zip": "02906",
+          "year_built": 1987.0,
+          "year_renovated": null,
+          "buildings": 1.0,
+          "gross_sf": null,
+          "net_rentable_sf": 83400.0,
+          "land_acres": 1.95,
+          "covered_parking": null,
+          "uncovered_parking": 100.0,
+          "occupancy_opiis_pct": 0.696,
+          "units_total": 79.0,
+          "mf_unit_mix": null,
+          "hc_unit_mix": {
+            "total_units": 79.0,
+            "total_beds": null,
+            "congregate_units": null,
+            "congregate_beds": null,
+            "total_sf": 83400.0
+          },
+          "hc_payor_mix": {
+            "self_pay_pct": null,
+            "medicare_pct": null,
+            "medicaid_pct": null,
+            "state_aid_pct": null,
+            "va_other_pct": null,
+            "occupancy_pct": null
+          }
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 600796.0,
+            "total_expenses": 365450.0,
+            "noi": 235346.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 603813.0,
+            "total_expenses": 194967.0,
+            "noi": 408846.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 600484.0,
+            "total_expenses": 281975.0,
+            "noi": 318509.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 257222.8,
+          "delinquent_principal": 32165.73,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 4335000.0,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal",
+          "dscr_below_1x"
+        ],
+        "metrics": {
+          "annual_debt_service": 346178.88,
+          "dscr_latest_year": 0.6798392784678257,
+          "debt_yield_latest_year": 0.05794683942188099,
+          "noi_to_upb_latest_year": 0.05794683942188099,
+          "noi_3yr_trend_pct": -0.2611009422025751
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "2008-11-08 00:00:00",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "071-11149",
+        "fha_case_number": "071-11149",
+        "fha_root": "071-11149",
+        "property_name": "Lakeview Sheridan Apartments",
+        "asset_class": "Multifamily",
+        "section_of_act": "207/ 223(f) Pur/ Refin Hsg.",
+        "property_type": "MF Apartments",
+        "property_subtype": "Mid/High Rise Apartments",
+        "current_upb": 12880293.62,
+        "original_principal_balance": 13098000.0,
+        "appraised_value": 15613000.0,
+        "appraisal_date": null,
+        "loan_to_value": 0.8249723704605136,
+        "current_interest_rate": 0.0545,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 69909.86,
+        "remaining_term_months": 384.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Lakeview Sheridan, LLC",
+          "address1": "5050 N Sheridan Rd",
+          "address2": null,
+          "city": "Chicago",
+          "state": "IL",
+          "zip": "60640",
+          "tax_id_masked": "XX-XXX5997",
+          "general_partner": null,
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "5050 North Sheridan",
+          "street2": null,
+          "city": "Chicago",
+          "state": "IL",
+          "zip": "60640",
+          "year_built": 1930.0,
+          "year_renovated": 2007.0,
+          "buildings": 1.0,
+          "gross_sf": null,
+          "net_rentable_sf": 54010.0,
+          "land_acres": 0.33,
+          "covered_parking": 0.0,
+          "uncovered_parking": 0.0,
+          "occupancy_opiis_pct": 0.83,
+          "units_total": 165.0,
+          "mf_unit_mix": {
+            "efficiency": 77.0,
+            "br1_1ba": 88.0,
+            "br2_1ba": 0.0,
+            "br2_2ba": 0.0,
+            "br3_2ba": 0.0,
+            "other": 0.0,
+            "total_units": 165.0,
+            "avg_rent_psf": 1.72
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1408791.0,
+            "total_expenses": 976247.0,
+            "noi": 432544.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 688451.0,
+            "total_expenses": 500953.0,
+            "noi": 187498.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": null,
+            "total_revenue": null,
+            "total_expenses": null,
+            "noi": null
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 760474.0,
+          "delinquent_principal": 152464.91,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": -85928.2,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 12880293.62,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal",
+          "dscr_below_1x"
+        ],
+        "metrics": {
+          "annual_debt_service": 838918.3200000001,
+          "dscr_latest_year": 0.5155972753104259,
+          "debt_yield_latest_year": 0.03358184314434907,
+          "noi_to_upb_latest_year": 0.03358184314434907,
+          "noi_3yr_trend_pct": null
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "047-35213",
+        "fha_case_number": "047-35213",
+        "fha_root": "047-35213",
+        "property_name": "Le Grande Vue II",
+        "asset_class": "Multifamily",
+        "section_of_act": "223(a)(7)/221(d)(4) MKT  Refi/ Moderate Income",
+        "property_type": "MF Apartments",
+        "property_subtype": "Low Rise/Garden Apartment",
+        "current_upb": 2585947.55,
+        "original_principal_balance": 2835200.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.0525,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 16341.62,
+        "remaining_term_months": 258.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Le Grande Vue II Limited Partnership",
+          "address1": "540 East Glenmoor",
+          "address2": null,
+          "city": "East Lansing",
+          "state": "MI",
+          "zip": "48823",
+          "tax_id_masked": "XX-XXX2038",
+          "general_partner": "Lawrence Mannausa",
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "2692 Harbor Hill",
+          "street2": null,
+          "city": "Traverse City",
+          "state": "MI",
+          "zip": "49684",
+          "year_built": 1981.0,
+          "year_renovated": null,
+          "buildings": 11.0,
+          "gross_sf": null,
+          "net_rentable_sf": 86300.0,
+          "land_acres": 10.79,
+          "covered_parking": 100.0,
+          "uncovered_parking": 75.0,
+          "occupancy_opiis_pct": 0.73929,
+          "units_total": 100.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 41.0,
+            "br2_1ba": 47.0,
+            "br2_2ba": 0.0,
+            "br3_2ba": 0.0,
+            "other": 0.0,
+            "total_units": 100.0,
+            "avg_rent_psf": 0.61
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 494288.0,
+            "total_expenses": 367805.0,
+            "noi": 126483.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 594698.0,
+            "total_expenses": 463084.0,
+            "noi": 131614.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 660471.0,
+            "total_expenses": 494438.0,
+            "noi": 166033.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 79392.82,
+          "delinquent_principal": 46052.96,
+          "deferred_interest": null,
+          "tax_escrow": -19861.01,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 33643.29,
+          "pi_pct_of_upb": 0.013010043455831115
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 2835200.0,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal",
+          "dscr_below_1x"
+        ],
+        "metrics": {
+          "annual_debt_service": 196099.44,
+          "dscr_latest_year": 0.6449941927422128,
+          "debt_yield_latest_year": 0.04891166489436339,
+          "noi_to_upb_latest_year": 0.04891166489436339,
+          "noi_3yr_trend_pct": -0.23820565791137907
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Limited",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "075-35333",
+        "fha_case_number": "075-35333",
+        "fha_root": "075-35333",
+        "property_name": "Moraine Ridge Apts.",
+        "asset_class": "Multifamily",
+        "section_of_act": "221(d)(4) Mkt. Rate Mod Inc/ Disp Fams",
+        "property_type": "MF Apartments",
+        "property_subtype": "Walk Up/Garden",
+        "current_upb": 4238939.56,
+        "original_principal_balance": 5029000.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.0671,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 30609.44,
+        "remaining_term_months": 257.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": true,
+        "borrower": {
+          "name": "Moraine Ridge Limited Partnership",
+          "address1": "8100 W 47th Street",
+          "address2": null,
+          "city": "Lyons",
+          "state": "IL",
+          "zip": "60534",
+          "tax_id_masked": "XX-XXX8584",
+          "general_partner": "Moraine Ridge LP",
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "2929 St. Anthony Dr.",
+          "street2": null,
+          "city": "Green Bay",
+          "state": "WI",
+          "zip": "54311",
+          "year_built": 1988.0,
+          "year_renovated": null,
+          "buildings": 1.0,
+          "gross_sf": null,
+          "net_rentable_sf": 62926.0,
+          "land_acres": 5.42,
+          "covered_parking": 61.0,
+          "uncovered_parking": 35.0,
+          "occupancy_opiis_pct": 0.66842,
+          "units_total": 101.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 28.0,
+            "br2_1ba": 17.0,
+            "br2_2ba": 55.0,
+            "br3_2ba": 0.0,
+            "other": 1.0,
+            "total_units": 101.0,
+            "avg_rent_psf": 1.28
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 700196.0,
+            "total_expenses": 704771.0,
+            "noi": -4575.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 766699.0,
+            "total_expenses": 716611.0,
+            "noi": 50088.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 899081.0,
+            "total_expenses": 763044.0,
+            "noi": 136037.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 165919.18,
+          "delinquent_principal": 49165.79,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": -252.55,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 4238939.56,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "modified_loan",
+          "delinquent_interest",
+          "delinquent_principal",
+          "negative_noi",
+          "dscr_below_1x"
+        ],
+        "metrics": {
+          "annual_debt_service": 367313.27999999997,
+          "dscr_latest_year": -0.01245530790501231,
+          "debt_yield_latest_year": -0.0010792793658044042,
+          "noi_to_upb_latest_year": -0.0010792793658044042,
+          "noi_3yr_trend_pct": -1.0336305563927461
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "092-23127",
+        "fha_case_number": "092-23127",
+        "fha_root": "092-23127",
+        "property_name": "Nicollet Cooperative Association",
+        "asset_class": "Multifamily",
+        "section_of_act": "213(i) Consumer Cooperative",
+        "property_type": "MF Apartments",
+        "property_subtype": "Mid/High Rise Apartments",
+        "current_upb": 2664151.2,
+        "original_principal_balance": 2755000.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.0584,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 14852.24,
+        "remaining_term_months": 414.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Nicollet Cooperative Association",
+          "address1": "c/o Northcountry Cooperative Development Fund",
+          "address2": "219 Main St. S.E., Suite 500",
+          "city": "Minneapolis",
+          "state": "MN",
+          "zip": "55402",
+          "tax_id_masked": "XX-XXX1725",
+          "general_partner": null,
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "4429 Nicollet Avenue",
+          "street2": null,
+          "city": "Minneapolis",
+          "state": "MN",
+          "zip": "55409",
+          "year_built": 1921.0,
+          "year_renovated": 2003.0,
+          "buildings": 1.0,
+          "gross_sf": 36956.0,
+          "net_rentable_sf": 23635.0,
+          "land_acres": 0.8097,
+          "covered_parking": 0.0,
+          "uncovered_parking": 29.0,
+          "occupancy_opiis_pct": 0.971,
+          "units_total": 29.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 2.0,
+            "br2_1ba": 7.0,
+            "br2_2ba": 0.0,
+            "br3_2ba": 0.0,
+            "other": 101.0,
+            "total_units": 29.0,
+            "avg_rent_psf": 1.08
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 305644.0,
+            "total_expenses": 225704.0,
+            "noi": 79940.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 163781.0,
+            "total_expenses": 202959.0,
+            "noi": -39178.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 264750.0,
+            "total_expenses": 215980.0,
+            "noi": 48770.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 103724.32,
+          "delinquent_principal": 15353.23,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": -3.4,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 2664151.2,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal",
+          "dscr_below_1x"
+        ],
+        "metrics": {
+          "annual_debt_service": 178226.88,
+          "dscr_latest_year": 0.4485294249666492,
+          "debt_yield_latest_year": 0.030005804475361608,
+          "noi_to_upb_latest_year": 0.030005804475361608,
+          "noi_3yr_trend_pct": 0.6391224113184335
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Limited",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "101-35538",
+        "fha_case_number": "101-35538",
+        "fha_root": "101-35538",
+        "property_name": "North Creek Apts",
+        "asset_class": "Multifamily",
+        "section_of_act": "221(d)(4) Mkt. Rate Mod Inc/ Disp Fams",
+        "property_type": "MF Apartments",
+        "property_subtype": "Mid/High Rise Apartments",
+        "current_upb": 13175589.21,
+        "original_principal_balance": 13538500.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.0675,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 81685.47,
+        "remaining_term_months": 406.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "North Creek Investors, LLC",
+          "address1": "10800 E Bethany Dr #400",
+          "address2": null,
+          "city": "Aurora",
+          "state": "CO",
+          "zip": "80014",
+          "tax_id_masked": "XX-XXX5645",
+          "general_partner": null,
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "500 West 91st Avenue",
+          "street2": null,
+          "city": "Thorton",
+          "state": "CO",
+          "zip": "80221",
+          "year_built": 2003.0,
+          "year_renovated": null,
+          "buildings": 8.0,
+          "gross_sf": null,
+          "net_rentable_sf": 150150.0,
+          "land_acres": 7.078,
+          "covered_parking": 328.0,
+          "uncovered_parking": 0.0,
+          "occupancy_opiis_pct": 0.815,
+          "units_total": 168.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 70.0,
+            "br2_1ba": 42.0,
+            "br2_2ba": 28.0,
+            "br3_2ba": 0.0,
+            "other": 0.0,
+            "total_units": 168.0,
+            "avg_rent_psf": 0.86
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1293512.0,
+            "total_expenses": 744521.0,
+            "noi": 548991.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1397299.0,
+            "total_expenses": 753627.0,
+            "noi": 643672.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1234445.0,
+            "total_expenses": 642775.0,
+            "noi": 591670.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 798104.59,
+          "delinquent_principal": 118174.34,
+          "deferred_interest": null,
+          "tax_escrow": -30074.8,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 313585.76,
+          "pi_pct_of_upb": 0.023800511309353428
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 13175589.21,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal",
+          "dscr_below_1x"
+        ],
+        "metrics": {
+          "annual_debt_service": 980225.64,
+          "dscr_latest_year": 0.5600659456326811,
+          "debt_yield_latest_year": 0.041667282673273326,
+          "noi_to_upb_latest_year": 0.041667282673273326,
+          "noi_3yr_trend_pct": -0.07213311474301554
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "2009-01-11 00:00:00",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "114-11219",
+        "fha_case_number": "114-11219",
+        "fha_root": "114-11219",
+        "property_name": "Park at Belle Aire",
+        "asset_class": "Multifamily",
+        "section_of_act": "207/ 223(f) Pur/ Refin Hsg.",
+        "property_type": "MF Apartments",
+        "property_subtype": "Low Rise/Garden Apartment",
+        "current_upb": 5479725.73,
+        "original_principal_balance": 5682200.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.0584,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 31791.09,
+        "remaining_term_months": 367.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Leisure Life Senior Apartment Housing, LTD",
+          "address1": "6333 Chimney Rock, Suite 128",
+          "address2": null,
+          "city": "Houston",
+          "state": "TX",
+          "zip": "77081",
+          "tax_id_masked": "XX-XXX6702",
+          "general_partner": "Leisure Life-Chimney Rock, Inc.",
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "6333 Chimney Rock Rd",
+          "street2": null,
+          "city": "Houston",
+          "state": "TX",
+          "zip": "77081",
+          "year_built": 1966.0,
+          "year_renovated": 1998.0,
+          "buildings": 2.0,
+          "gross_sf": null,
+          "net_rentable_sf": null,
+          "land_acres": 5.0,
+          "covered_parking": 90.0,
+          "uncovered_parking": 170.0,
+          "occupancy_opiis_pct": 0.83389,
+          "units_total": 223.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 173.0,
+            "br2_1ba": 26.0,
+            "br2_2ba": 17.0,
+            "br3_2ba": 7.0,
+            "other": 0.0,
+            "total_units": 223.0,
+            "avg_rent_psf": null
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1494155.0,
+            "total_expenses": 932993.0,
+            "noi": 561162.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1614778.0,
+            "total_expenses": 953992.0,
+            "noi": 660786.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1471391.0,
+            "total_expenses": 952165.0,
+            "noi": 519226.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 105846.0,
+          "delinquent_principal": 31114.96,
+          "deferred_interest": null,
+          "tax_escrow": -47300.47,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": -212910.55,
+          "misc_escrow": -94434.89,
+          "pi_collected_12mo": 163265.15,
+          "pi_pct_of_upb": 0.029794401772002554
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 5479725.73,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal"
+        ],
+        "metrics": {
+          "annual_debt_service": 381493.08,
+          "dscr_latest_year": 1.4709624614947143,
+          "debt_yield_latest_year": 0.10240695021062668,
+          "noi_to_upb_latest_year": 0.10240695021062668,
+          "noi_3yr_trend_pct": 0.08076637148370844
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "2009-02-01 00:00:00",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "044-11090",
+        "fha_case_number": "044-11090",
+        "fha_root": "044-11090",
+        "property_name": "Pinewood Townhomes",
+        "asset_class": "Multifamily",
+        "section_of_act": "207/ 223(f) Pur/ Refin Hsg.",
+        "property_type": "MF Apartments",
+        "property_subtype": "Low Rise/Garden Apartment",
+        "current_upb": 4749038.82,
+        "original_principal_balance": 5057500.0,
+        "appraised_value": 5950000.0,
+        "appraisal_date": null,
+        "loan_to_value": 0.7981577848739496,
+        "current_interest_rate": 0.054,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 28399.42,
+        "remaining_term_months": 297.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Pinewood Townhomes Limited Partnership",
+          "address1": "4230 Orchard Lake Road",
+          "address2": null,
+          "city": "Orchard Lake",
+          "state": "MI",
+          "zip": "48323",
+          "tax_id_masked": "XX-XXX9526",
+          "general_partner": "Pinewood Townhomes LP",
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "957 North Perry Street",
+          "street2": null,
+          "city": "Pontiac",
+          "state": "MI",
+          "zip": "48340",
+          "year_built": 1968.0,
+          "year_renovated": null,
+          "buildings": 14.0,
+          "gross_sf": null,
+          "net_rentable_sf": 207660.0,
+          "land_acres": 10.0,
+          "covered_parking": 0.0,
+          "uncovered_parking": 397.0,
+          "occupancy_opiis_pct": 0.54,
+          "units_total": 252.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 54.0,
+            "br2_1ba": 159.0,
+            "br2_2ba": 0.0,
+            "br3_2ba": 0.0,
+            "other": 0.0,
+            "total_units": 252.0,
+            "avg_rent_psf": 0.63
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1498799.0,
+            "total_expenses": 1539356.0,
+            "noi": -40557.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1597864.0,
+            "total_expenses": 1446226.0,
+            "noi": 151638.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1684831.0,
+            "total_expenses": 1425532.0,
+            "noi": 259299.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 235077.37,
+          "delinquent_principal": 79079.51,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": -276050.15,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 4749038.82,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal",
+          "negative_noi",
+          "dscr_below_1x"
+        ],
+        "metrics": {
+          "annual_debt_service": 340793.04,
+          "dscr_latest_year": -0.11900771212933223,
+          "debt_yield_latest_year": -0.008540043898819929,
+          "noi_to_upb_latest_year": -0.008540043898819929,
+          "noi_3yr_trend_pct": -1.1564101674129095
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "081-43035",
+        "fha_case_number": "081-43035",
+        "fha_root": "081-43035",
+        "property_name": "Riverdale Estates Senior Living",
+        "asset_class": "Healthcare",
+        "section_of_act": "223(a)(7)/232 Refi/ Assisted Living",
+        "property_type": "Assisted Living",
+        "property_subtype": "Low Rise/Garden Apartment",
+        "current_upb": 4137451.4,
+        "original_principal_balance": 4320000.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.0582,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 23796.98,
+        "remaining_term_months": 372.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "The Atrium at Germantown, LLC",
+          "address1": "3723 Fairview Industrial Dr SE",
+          "address2": null,
+          "city": "Salem",
+          "state": "OR",
+          "zip": "97302",
+          "tax_id_masked": "XX-XXX6270",
+          "general_partner": null,
+          "loan_assumed": true
+        },
+        "property": {
+          "street1": "6880 East Raines Road",
+          "street2": null,
+          "city": "Memphis",
+          "state": "TN",
+          "zip": "38115",
+          "year_built": 1996.0,
+          "year_renovated": null,
+          "buildings": 1.0,
+          "gross_sf": 45062.0,
+          "net_rentable_sf": null,
+          "land_acres": 4.75,
+          "covered_parking": 0.0,
+          "uncovered_parking": 51.0,
+          "occupancy_opiis_pct": 0.0,
+          "units_total": 90.0,
+          "mf_unit_mix": null,
+          "hc_unit_mix": {
+            "total_units": 96.0,
+            "total_beds": 90.0,
+            "congregate_units": null,
+            "congregate_beds": null,
+            "total_sf": null
+          },
+          "hc_payor_mix": {
+            "self_pay_pct": null,
+            "medicare_pct": null,
+            "medicaid_pct": null,
+            "state_aid_pct": null,
+            "va_other_pct": null,
+            "occupancy_pct": 0.0
+          }
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1187880.0,
+            "total_expenses": 1427570.0,
+            "noi": -239690.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1242189.0,
+            "total_expenses": 1537217.0,
+            "noi": -295028.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 895504.0,
+            "total_expenses": 940867.0,
+            "noi": -45363.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 160533.12,
+          "delinquent_principal": 30354.24,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 4137451.4,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal",
+          "negative_noi",
+          "dscr_below_1x"
+        ],
+        "metrics": {
+          "annual_debt_service": 285563.76,
+          "dscr_latest_year": -0.83935720695091,
+          "debt_yield_latest_year": -0.05793179830462782,
+          "noi_to_upb_latest_year": -0.05793179830462782,
+          "noi_3yr_trend_pct": -4.283821616736106
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "094-38009S",
+        "fha_case_number": "094-38009S",
+        "fha_root": "094-38009",
+        "property_name": "Sheyenne Apartments",
+        "asset_class": "Multifamily",
+        "section_of_act": "231 Elderly Housing",
+        "property_type": "MF Apartments",
+        "property_subtype": "Low Rise/Garden Apartment",
+        "current_upb": 158503.35,
+        "original_principal_balance": 163858.35,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.0,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Available Net Cash",
+        "current_monthly_pi": 0.0,
+        "remaining_term_months": 107.23333333333333,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Sheynne Partners of Minneapolis",
+          "address1": "6640 Lyndale Ave. S. Suite 100",
+          "address2": null,
+          "city": "Richfield",
+          "state": "MN",
+          "zip": "55423",
+          "tax_id_masked": "XX-XXX3131",
+          "general_partner": null,
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "400 2nd Street",
+          "street2": null,
+          "city": "Sheyenne",
+          "state": "ND",
+          "zip": "58374",
+          "year_built": 1977.0,
+          "year_renovated": null,
+          "buildings": 1.0,
+          "gross_sf": null,
+          "net_rentable_sf": null,
+          "land_acres": 1.25,
+          "covered_parking": null,
+          "uncovered_parking": null,
+          "occupancy_opiis_pct": null,
+          "units_total": 15.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 0.0,
+            "br2_1ba": 0.0,
+            "br2_2ba": 0.0,
+            "br3_2ba": 0.0,
+            "other": 0.0,
+            "total_units": 15.0,
+            "avg_rent_psf": null
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": null,
+            "total_revenue": null,
+            "total_expenses": null,
+            "noi": null
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": null,
+            "total_revenue": null,
+            "total_expenses": null,
+            "noi": null
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": null,
+            "total_revenue": null,
+            "total_expenses": null,
+            "noi": null
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 0.0,
+          "delinquent_principal": 0.0,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 163858.35,
+            "status": "Performing"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [],
+        "metrics": {
+          "annual_debt_service": null,
+          "dscr_latest_year": null,
+          "debt_yield_latest_year": null,
+          "noi_to_upb_latest_year": null,
+          "noi_3yr_trend_pct": null
+        },
+        "related_loans": {
+          "has_related": true,
+          "related_fha": "09438008S",
+          "related_name": "Cando Apartments"
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": null,
+          "evidence_of_insurance": "N",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": null,
+          "site_inspection_firm": null,
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "061-35515A",
+        "fha_case_number": "061-35515A",
+        "fha_root": "061-35515",
+        "property_name": "Snapwoods Apartments",
+        "asset_class": "Multifamily",
+        "section_of_act": "221(d)(3) Mkt. Rate Moderate Inc/ Disp Fams",
+        "property_type": "MF Apartments",
+        "property_subtype": "Row/Town Houses",
+        "current_upb": 1363381.26,
+        "original_principal_balance": 1363947.28,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.0525,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Available Cashflow",
+        "current_monthly_pi": 0.0,
+        "remaining_term_months": 282.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Alternative Housing Snapwoods, L. L. C.",
+          "address1": "2405 Satellite Blvd.",
+          "address2": "Suite 100",
+          "city": "Duluth",
+          "state": "GA",
+          "zip": "30096",
+          "tax_id_masked": "XX-XXX6624",
+          "general_partner": null,
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "4521 Snapfinger Woods Drive",
+          "street2": null,
+          "city": "Decatur",
+          "state": "GA",
+          "zip": "30035",
+          "year_built": 1983.0,
+          "year_renovated": null,
+          "buildings": 14.0,
+          "gross_sf": null,
+          "net_rentable_sf": null,
+          "land_acres": 5.52,
+          "covered_parking": null,
+          "uncovered_parking": null,
+          "occupancy_opiis_pct": 0.95198,
+          "units_total": 56.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 0.0,
+            "br2_1ba": 56.0,
+            "br2_2ba": 0.0,
+            "br3_2ba": 0.0,
+            "other": 0.0,
+            "total_units": 56.0,
+            "avg_rent_psf": null
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 525762.0,
+            "total_expenses": 283085.0,
+            "noi": 242677.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 480742.0,
+            "total_expenses": 271000.0,
+            "noi": 209742.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 466760.0,
+            "total_expenses": 229195.0,
+            "noi": 237565.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 0.0,
+          "delinquent_principal": 0.0,
+          "deferred_interest": 101786.26,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "Greystone Servicing Corp.",
+            "balance": 2266263.01,
+            "status": "Performing"
+          },
+          {
+            "position": 2,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 1363381.26,
+            "status": "Performing"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [],
+        "metrics": {
+          "annual_debt_service": null,
+          "dscr_latest_year": null,
+          "debt_yield_latest_year": 0.17799643219388245,
+          "noi_to_upb_latest_year": 0.17799643219388245,
+          "noi_3yr_trend_pct": 0.021518321301538527
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": null,
+          "site_inspection_firm": null,
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "113-11106",
+        "fha_case_number": "113-11106",
+        "fha_root": "113-11106",
+        "property_name": "Spring Ridge Apts",
+        "asset_class": "Multifamily",
+        "section_of_act": "207/ 223(f) Pur/ Refin Hsg.",
+        "property_type": "MF Apartments",
+        "property_subtype": "Low Rise/Garden Apartment",
+        "current_upb": 4694583.52,
+        "original_principal_balance": 4760000.0,
+        "appraised_value": 6232400.0,
+        "appraisal_date": null,
+        "loan_to_value": 0.8343495282716129,
+        "current_interest_rate": 0.0625,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 29308.14,
+        "remaining_term_months": 330.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "Legendary Lane, LP",
+          "address1": "101 N. Acacia Ave.",
+          "address2": "Suite 15",
+          "city": "Solana Beach",
+          "state": "CA",
+          "zip": "92075",
+          "tax_id_masked": "XX-XXX9989",
+          "general_partner": "Legendary Lane, GP LLC",
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "3525 South Polk St.",
+          "street2": "3604 Legendary Lane",
+          "city": "Dallas",
+          "state": "TX",
+          "zip": "75224",
+          "year_built": 1963.0,
+          "year_renovated": null,
+          "buildings": 18.0,
+          "gross_sf": 188647.0,
+          "net_rentable_sf": 178743.0,
+          "land_acres": 7.411,
+          "covered_parking": 42.0,
+          "uncovered_parking": 267.0,
+          "occupancy_opiis_pct": 0.8878,
+          "units_total": 196.0,
+          "mf_unit_mix": {
+            "efficiency": 2.0,
+            "br1_1ba": 77.0,
+            "br2_1ba": 82.0,
+            "br2_2ba": 23.0,
+            "br3_2ba": 12.0,
+            "other": 0.0,
+            "total_units": 196.0,
+            "avg_rent_psf": null
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 95475.0,
+            "total_expenses": 137281.0,
+            "noi": -41806.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 938936.0,
+            "total_expenses": 639062.0,
+            "noi": 299874.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": null,
+            "total_revenue": null,
+            "total_expenses": null,
+            "noi": null
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 317862.48,
+          "delinquent_principal": 65154.79,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": -101098.01,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 4694583.52,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal",
+          "negative_noi",
+          "dscr_below_1x"
+        ],
+        "metrics": {
+          "annual_debt_service": 351697.68,
+          "dscr_latest_year": -0.11886913783451743,
+          "debt_yield_latest_year": -0.008905156298082008,
+          "noi_to_upb_latest_year": -0.008905156298082008,
+          "noi_3yr_trend_pct": null
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "047-11020",
+        "fha_case_number": "047-11020",
+        "fha_root": "047-11020",
+        "property_name": "Stone Crest Townhomes Aka Sunnyridge",
+        "asset_class": "Multifamily",
+        "section_of_act": "207/ 223(f) Pur/ Refin Hsg.",
+        "property_type": "MF Apartments",
+        "property_subtype": "Row/Town Houses",
+        "current_upb": 3099228.23,
+        "original_principal_balance": 3280000.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.08,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 23296.56,
+        "remaining_term_months": 316.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "SUNNYRIDGE TOWNHOMES LLC",
+          "address1": "32500 Telegraph Rd Ste 100",
+          "address2": null,
+          "city": "Bingham Farms",
+          "state": "MI",
+          "zip": "48025",
+          "tax_id_masked": "XX-XXX2302",
+          "general_partner": null,
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "2411 Risdale",
+          "street2": null,
+          "city": "Lansing",
+          "state": "MI",
+          "zip": "48911",
+          "year_built": 1968.0,
+          "year_renovated": null,
+          "buildings": 15.0,
+          "gross_sf": null,
+          "net_rentable_sf": 86038.0,
+          "land_acres": 6.4,
+          "covered_parking": 190.0,
+          "uncovered_parking": 0.0,
+          "occupancy_opiis_pct": 0.573,
+          "units_total": 117.0,
+          "mf_unit_mix": {
+            "efficiency": 0.0,
+            "br1_1ba": 23.0,
+            "br2_1ba": 71.0,
+            "br2_2ba": 0.0,
+            "br3_2ba": 0.0,
+            "other": 0.0,
+            "total_units": 117.0,
+            "avg_rent_psf": 0.83
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 680201.0,
+            "total_expenses": 627746.0,
+            "noi": 52455.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 658094.0,
+            "total_expenses": 745140.0,
+            "noi": -87046.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 731904.0,
+            "total_expenses": 736109.0,
+            "noi": -4205.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 185953.68,
+          "delinquent_principal": 24357.69,
+          "deferred_interest": null,
+          "tax_escrow": -10368.19,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": 0.0,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 3099228.23,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal",
+          "dscr_below_1x"
+        ],
+        "metrics": {
+          "annual_debt_service": 279558.72000000003,
+          "dscr_latest_year": 0.18763499847187737,
+          "debt_yield_latest_year": 0.016925181402338996,
+          "noi_to_upb_latest_year": 0.016925181402338996,
+          "noi_3yr_trend_pct": 13.474435196195007
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Fee Simple",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Limited",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      },
+      {
+        "loan_id": "042-35450",
+        "fha_case_number": "042-35450",
+        "fha_root": "042-35450",
+        "property_name": "The YMCA Of Cleveland",
+        "asset_class": "Multifamily",
+        "section_of_act": "221(d)(4) Mkt. Rate Mod Inc/ Disp Fams",
+        "property_type": "SRO Apartments",
+        "property_subtype": "Mid/High Rise Apartments",
+        "current_upb": 5005102.04,
+        "original_principal_balance": 5281900.0,
+        "appraised_value": null,
+        "appraisal_date": null,
+        "loan_to_value": null,
+        "current_interest_rate": 0.08,
+        "current_interest_rate_type": "Fixed",
+        "current_payment_type": "Fully Amortizing",
+        "current_monthly_pi": 36725.67,
+        "remaining_term_months": 349.3666666666667,
+        "current_maturity_date": null,
+        "modified_loan": false,
+        "borrower": {
+          "name": "2200 Prospect Apartments Limited",
+          "address1": "8075 Leavitt Rd",
+          "address2": null,
+          "city": "Amherst",
+          "state": "OH",
+          "zip": "44001",
+          "tax_id_masked": "XX-XXX1612",
+          "general_partner": "YMCA  Apartments, Inc",
+          "loan_assumed": false
+        },
+        "property": {
+          "street1": "2200 Prospect Ave E",
+          "street2": null,
+          "city": "Cleveland",
+          "state": "OH",
+          "zip": "44115",
+          "year_built": 1912.0,
+          "year_renovated": 1997.0,
+          "buildings": 1.0,
+          "gross_sf": null,
+          "net_rentable_sf": 33010.0,
+          "land_acres": 0.18,
+          "covered_parking": null,
+          "uncovered_parking": null,
+          "occupancy_opiis_pct": 0.946,
+          "units_total": 148.0,
+          "mf_unit_mix": {
+            "efficiency": 133.0,
+            "br1_1ba": 7.0,
+            "br2_1ba": 8.0,
+            "br2_2ba": 0.0,
+            "br3_2ba": 0.0,
+            "other": 0.0,
+            "total_units": 148.0,
+            "avg_rent_psf": 1.86
+          },
+          "hc_unit_mix": null,
+          "hc_payor_mix": null
+        },
+        "financials": {
+          "latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1201645.0,
+            "total_expenses": 569874.0,
+            "noi": 631771.0
+          },
+          "second_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1158463.0,
+            "total_expenses": 556702.0,
+            "noi": 601761.0
+          },
+          "third_latest_year": {
+            "afs_date": null,
+            "months_reported": 12.0,
+            "total_revenue": 1132792.0,
+            "total_expenses": 536356.0,
+            "noi": 596436.0
+          }
+        },
+        "delinquencies_escrows": {
+          "delinquent_interest": 266938.8,
+          "delinquent_principal": 27501.88,
+          "deferred_interest": null,
+          "tax_escrow": 0.0,
+          "hazard_escrow": 0.0,
+          "replacement_reserve_escrow": 0.0,
+          "misc_escrow": -257674.98,
+          "pi_collected_12mo": 0.0,
+          "pi_pct_of_upb": 0.0
+        },
+        "lien_stack": [
+          {
+            "position": 1,
+            "lender": "US Department of Housing and Urban Development",
+            "balance": 5005102.04,
+            "status": "Defaulted"
+          }
+        ],
+        "section_8": null,
+        "risk_flags": [
+          "delinquent_interest",
+          "delinquent_principal"
+        ],
+        "metrics": {
+          "annual_debt_service": 440708.04,
+          "dscr_latest_year": 1.4335363611700844,
+          "debt_yield_latest_year": 0.12622539859347204,
+          "noi_to_upb_latest_year": 0.12622539859347204,
+          "noi_3yr_trend_pct": 0.05924357349321637
+        },
+        "related_loans": {
+          "has_related": false,
+          "related_fha": null,
+          "related_name": null
+        },
+        "compliance": {
+          "lien_position": 1,
+          "estate_type": "Leasehold",
+          "evidence_of_insurance": "Y",
+          "environmental_firm": "EMG",
+          "environmental_report_type": "Phase I",
+          "pna_firm": "EMG",
+          "site_inspection_firm": "NOVOGRADAC",
+          "court_receiver": null,
+          "borrower_bankruptcy": false,
+          "pwa_active": false,
+          "pwa_expiration": null
+        }
+      }
+    ],
+    "bidders": [
+      {
+        "bidder_id": "BID-COM-001",
+        "portal": "commercial",
+        "entity_name": "Northpoint Distressed Credit Partners, LP",
+        "entity_type": "Limited Partnership",
+        "state_of_formation": "Delaware",
+        "tax_id_masked": "XX-XXX1234",
+        "primary_contact": {
+          "name": "Margaret Chen",
+          "title": "Managing Director, Acquisitions",
+          "email": "mchen@northpointdcp-test.com",
+          "phone": "(212) 555-0142"
+        },
+        "qualification_path_90092": 1,
+        "qualification_basis": "Corporation/partnership with GAAP net worth >$5M",
+        "claimed_net_worth": 285000000,
+        "interest_areas": [
+          "Multifamily",
+          "Distressed",
+          "Value-add"
+        ],
+        "prior_hud_purchases": true,
+        "submitted_at": "2026-04-22",
+        "status": "qualified",
+        "screening": {
+          "ofac_sdn": "clear",
+          "sam_debarment": "clear",
+          "tin_validation": "valid",
+          "hud_program_default_check": "clear",
+          "related_party_check": "clear",
+          "screened_at": "2026-04-23"
+        },
+        "test_scenario": "Strong institutional bidder; should pass all checks; expected to bid Pools 1 and 2"
+      },
+      {
+        "bidder_id": "BID-COM-002",
+        "portal": "commercial",
+        "entity_name": "Sage Healthcare Real Estate Trust, Inc.",
+        "entity_type": "REIT (Inc.)",
+        "state_of_formation": "Maryland",
+        "tax_id_masked": "XX-XXX5678",
+        "primary_contact": {
+          "name": "David Reinhardt",
+          "title": "VP Investments",
+          "email": "dreinhardt@sagehcre-test.com",
+          "phone": "(415) 555-0188"
+        },
+        "qualification_path_90092": 2,
+        "qualification_basis": "Investment company / REIT under Investment Company Act 1940",
+        "claimed_net_worth": 1200000000,
+        "interest_areas": [
+          "Healthcare",
+          "Skilled Nursing",
+          "Assisted Living"
+        ],
+        "prior_hud_purchases": true,
+        "submitted_at": "2026-04-23",
+        "status": "qualified",
+        "screening": {
+          "ofac_sdn": "clear",
+          "sam_debarment": "clear",
+          "tin_validation": "valid",
+          "hud_program_default_check": "clear",
+          "related_party_check": "clear",
+          "screened_at": "2026-04-24"
+        },
+        "test_scenario": "Healthcare specialist; expected to bid Pool 4 only"
+      },
+      {
+        "bidder_id": "BID-COM-003",
+        "portal": "commercial",
+        "entity_name": "Meridian Workout Capital, LLC",
+        "entity_type": "Limited Liability Company",
+        "state_of_formation": "Texas",
+        "tax_id_masked": "XX-XXX9012",
+        "primary_contact": {
+          "name": "Anita Krishnan",
+          "title": "Principal",
+          "email": "akrishnan@meridianwc-test.com",
+          "phone": "(713) 555-0166"
+        },
+        "qualification_path_90092": 1,
+        "qualification_basis": "LLC with GAAP net worth >$5M",
+        "claimed_net_worth": 47500000,
+        "interest_areas": [
+          "Distressed",
+          "Workout",
+          "Multifamily Mid-Balance"
+        ],
+        "prior_hud_purchases": false,
+        "submitted_at": "2026-04-25",
+        "status": "under_review",
+        "screening": {
+          "ofac_sdn": "clear",
+          "sam_debarment": "clear",
+          "tin_validation": "valid",
+          "hud_program_default_check": "clear",
+          "related_party_check": "needs_clarification",
+          "screened_at": "2026-04-26"
+        },
+        "review_notes": "Related-party screening flagged a possible match on principal's prior LP interest in HUD multifamily property. Awaiting clarification from bidder.",
+        "test_scenario": "First-time HUD bidder; clarification request workflow; expected to bid Pool 2"
+      },
+      {
+        "bidder_id": "BID-COM-004",
+        "portal": "commercial",
+        "entity_name": "First Continental Mortgage Bank, N.A.",
+        "entity_type": "National Bank",
+        "state_of_formation": "Federal Charter",
+        "tax_id_masked": "XX-XXX3456",
+        "primary_contact": {
+          "name": "Robert Hayes",
+          "title": "SVP, Asset Management",
+          "email": "rhayes@firstcontinental-test.com",
+          "phone": "(312) 555-0119"
+        },
+        "qualification_path_90092": 2,
+        "qualification_basis": "Bank as defined in Section 3(a)(2) of the Securities Act of 1933",
+        "claimed_net_worth": 4800000000,
+        "interest_areas": [
+          "All asset classes",
+          "Whole loan acquisition"
+        ],
+        "prior_hud_purchases": true,
+        "submitted_at": "2026-04-21",
+        "status": "qualified",
+        "screening": {
+          "ofac_sdn": "clear",
+          "sam_debarment": "clear",
+          "tin_validation": "valid",
+          "hud_program_default_check": "clear",
+          "related_party_check": "clear",
+          "screened_at": "2026-04-22"
+        },
+        "test_scenario": "Large bank bidder; broad pool interest; expected aggressive bidding across pools"
+      },
+      {
+        "bidder_id": "BID-COM-005",
+        "portal": "commercial",
+        "entity_name": "Cando Partners Reorganization, LLC",
+        "entity_type": "Limited Liability Company",
+        "state_of_formation": "Minnesota",
+        "tax_id_masked": "XX-XXX3132",
+        "primary_contact": {
+          "name": "James Walden",
+          "title": "Manager",
+          "email": "jwalden@candopartners-test.com",
+          "phone": "(612) 555-0177"
+        },
+        "qualification_path_90092": 1,
+        "qualification_basis": "LLC with claimed net worth >$5M (unverified)",
+        "claimed_net_worth": 7200000,
+        "interest_areas": [
+          "Multifamily Small Balance"
+        ],
+        "prior_hud_purchases": false,
+        "submitted_at": "2026-04-27",
+        "status": "rejected",
+        "rejection_reason": "Mortgagor in Loan Sale: Bidder is identified as Related Party to Cando Apartments (FHA #094-38008S), included in Pool 3. Per Qualification Statement Section II, mortgagors of loans in this sale are ineligible.",
+        "screening": {
+          "ofac_sdn": "clear",
+          "sam_debarment": "clear",
+          "tin_validation": "valid",
+          "hud_program_default_check": "match_found",
+          "hud_program_match_detail": "Tax ID matches current borrower of FHA #094-38008S (Cando Apartments) included in this sale",
+          "related_party_check": "match_found",
+          "screened_at": "2026-04-28"
+        },
+        "test_scenario": "Disqualified bidder (mortgagor in sale); tests rejection workflow and screening engine match logic"
+      }
+    ],
+    "qc_findings": [
+      {
+        "qc_id": "QC-094-38008S",
+        "loan_id": "094-38008S",
+        "property_name": "Cando Apartments",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "missing_financials",
+        "severity": "high",
+        "finding": "No financial statements on file for latest year",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-073-35578",
+        "loan_id": "073-35578",
+        "property_name": "Creekside At Meadowbrook",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-101-35536A",
+        "loan_id": "101-35536A",
+        "property_name": "Crestone Apts",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-117-22010",
+        "loan_id": "117-22010",
+        "property_name": "Crystal Wood Village",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-014-11107A",
+        "loan_id": "014-11107A",
+        "property_name": "Gleason Estates",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-101-35511A",
+        "loan_id": "101-35511A",
+        "property_name": "Grand Lowry Lofts",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-016-43090",
+        "loan_id": "016-43090",
+        "property_name": "Highland Court",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-071-11149",
+        "loan_id": "071-11149",
+        "property_name": "Lakeview Sheridan Apartments",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-047-35213",
+        "loan_id": "047-35213",
+        "property_name": "Le Grande Vue II",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-075-35333",
+        "loan_id": "075-35333",
+        "property_name": "Moraine Ridge Apts.",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified_negative_noi",
+        "severity": "high",
+        "finding": "Latest year NOI of $-4,575 confirmed negative; verify against OPIIS",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-092-23127",
+        "loan_id": "092-23127",
+        "property_name": "Nicollet Cooperative Association",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-101-35538",
+        "loan_id": "101-35538",
+        "property_name": "North Creek Apts",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-114-11219",
+        "loan_id": "114-11219",
+        "property_name": "Park at Belle Aire",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-044-11090",
+        "loan_id": "044-11090",
+        "property_name": "Pinewood Townhomes",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified_negative_noi",
+        "severity": "high",
+        "finding": "Latest year NOI of $-40,557 confirmed negative; verify against OPIIS",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-081-43035",
+        "loan_id": "081-43035",
+        "property_name": "Riverdale Estates Senior Living",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified_negative_noi",
+        "severity": "high",
+        "finding": "Latest year NOI of $-239,690 confirmed negative; verify against OPIIS",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-094-38009S",
+        "loan_id": "094-38009S",
+        "property_name": "Sheyenne Apartments",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "missing_financials",
+        "severity": "high",
+        "finding": "No financial statements on file for latest year",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-061-35515A",
+        "loan_id": "061-35515A",
+        "property_name": "Snapwoods Apartments",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-113-11106",
+        "loan_id": "113-11106",
+        "property_name": "Spring Ridge Apts",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified_negative_noi",
+        "severity": "high",
+        "finding": "Latest year NOI of $-41,806 confirmed negative; verify against OPIIS",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-047-11020",
+        "loan_id": "047-11020",
+        "property_name": "Stone Crest Townhomes Aka Sunnyridge",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      },
+      {
+        "qc_id": "QC-042-35450",
+        "loan_id": "042-35450",
+        "property_name": "The YMCA Of Cleveland",
+        "reconciliation_target": "SALD vs OPIIS Profit and Loss",
+        "fields_checked": [
+          "Latest Year Total Revenue",
+          "Latest Year Total Expenses",
+          "Latest Year NOI",
+          "Second Latest Year Total Revenue",
+          "Second Latest Year Total Expenses",
+          "Second Latest Year NOI",
+          "Third Latest Year Total Revenue",
+          "Third Latest Year Total Expenses",
+          "Third Latest Year NOI"
+        ],
+        "status": "verified",
+        "severity": "low",
+        "finding": "SALD values reconcile to OPIIS source within tolerance",
+        "checked_at": "2026-04-28",
+        "checked_by": "qc-engine-v1"
+      }
+    ]
+  },
+  "stats": {
+    "total_loans": 20,
+    "aggregate_upb": 95780782.88,
+    "by_asset_class": {
+      "Multifamily": {
+        "count": 17,
+        "upb": 85060659.5
+      },
+      "Healthcare": {
+        "count": 3,
+        "upb": 10720123.379999999
+      }
+    },
+    "pool_count": 4,
+    "bidder_statuses": {
+      "qualified": 3,
+      "under_review": 1,
+      "rejected": 1
+    },
+    "qc_statuses": {
+      "verified": 14,
+      "verified_negative_noi": 4,
+      "missing_financials": 2,
+      "needs_review": 0
+    }
+  }
+}

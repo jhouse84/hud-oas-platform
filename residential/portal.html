@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bidder Portal · HUD Residential Loan Sales</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    .app-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+    .sidebar { background: var(--color-portal-dark); color: rgba(255,255,255,0.85); padding: var(--space-6) 0; }
+    .sidebar__brand { padding: 0 var(--space-6) var(--space-6); border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: var(--space-4); }
+    .sidebar__brand-label { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; color: rgba(255,255,255,0.6); }
+    .sidebar__brand-name { font-family: var(--font-heading); font-size: var(--text-lg); color: #FFF; margin-top: var(--space-1); }
+    .sidebar__nav-item { display: block; padding: var(--space-3) var(--space-6); color: rgba(255,255,255,0.8); cursor: pointer; transition: background var(--duration-fast), color var(--duration-fast); border-left: 3px solid transparent; }
+    .sidebar__nav-item:hover { background: rgba(255,255,255,0.05); color: #FFF; }
+    .sidebar__nav-item.active { background: rgba(255,255,255,0.1); color: #FFF; border-left-color: var(--color-portal-bright); }
+    .sidebar__user { padding: var(--space-4) var(--space-6); margin-top: var(--space-8); border-top: 1px solid rgba(255,255,255,0.1); font-size: var(--text-sm); }
+    .main { padding: 0; overflow-y: auto; }
+    .main__header { padding: var(--space-4) var(--space-8); border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; background: var(--color-surface); }
+    .main__title { font-family: var(--font-heading); font-size: var(--text-2xl); }
+    .main__content { padding: var(--space-6) var(--space-8); }
+    .data-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .data-table th { text-align: left; padding: var(--space-2) var(--space-3); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); text-transform: uppercase; letter-spacing: 0.05em; }
+    .data-table td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-grey-100); }
+    .badge { padding: var(--space-1) var(--space-2); border-radius: var(--radius-full); font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.06em; background: var(--color-grey-100); }
+    .badge--active { background: var(--color-info-bg); color: var(--color-info); }
+    .badge--closed { background: var(--color-grey-200); color: var(--color-text-muted); }
+    .tabs { display: flex; gap: var(--space-2); border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-6); }
+    .tabs__item { padding: var(--space-3) var(--space-4); cursor: pointer; border-bottom: 2px solid transparent; font-family: var(--font-mono); font-size: var(--text-sm); letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); }
+    .tabs__item.active { border-color: var(--color-portal); color: var(--color-portal); }
+    .empty { padding: var(--space-12); text-align: center; color: var(--color-text-muted); }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-6); }
+    .stat-card { padding: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+    .stat-card__label { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.06em; }
+    .stat-card__value { font-family: var(--font-heading); font-size: var(--text-2xl); margin-top: var(--space-1); }
+    .sale-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-4); }
+  </style>
+</head>
+<body data-portal="residential">
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-label">Residential</div>
+        <div class="sidebar__brand-name">Bidder Portal</div>
+      </div>
+      <nav>
+        <a class="sidebar__nav-item" data-route="#/sales">Sales</a>
+        <a class="sidebar__nav-item" data-route="#/my-bids">My bids</a>
+        <a class="sidebar__nav-item" data-route="#/settlements">Settlements</a>
+        <a class="sidebar__nav-item" data-route="#/notifications">Notifications <span id="notif-count" style="float: right; background: var(--color-error); color: #FFF; padding: 0 var(--space-2); border-radius: var(--radius-full); font-size: var(--text-xs); display: none;"></span></a>
+      </nav>
+      <div class="sidebar__user">
+        <div id="user-name" style="color: #FFF; font-weight: 600;">…</div>
+        <div id="user-email" style="font-size: var(--text-xs); opacity: 0.7;"></div>
+        <a href="#" id="signout-link" style="display: inline-block; margin-top: var(--space-2); color: var(--color-portal-bright); text-decoration: underline; font-size: var(--text-sm);">Sign out</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="main__header">
+        <h1 class="main__title" id="main-title">Sales</h1>
+        <div id="main-actions"></div>
+      </header>
+      <div class="main__content" id="app">
+        <p class="empty">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/router.js"></script>
+  <script src="../shared/notifications.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="../shared/state.js"></script>
+  <script src="../shared/bidding-pool.js"></script>
+  <script src="components.js"></script>
+
+  <script>
+  (function () {
+    var c = HSG.residential.components;
+    var u = HSG.utils;
+    var $app = document.getElementById('app');
+    var $title = document.getElementById('main-title');
+    var $actions = document.getElementById('main-actions');
+
+    // Auth gate
+    if (!HSG.cognito.isAuthenticated()) {
+      window.location.href = 'login.html?next=portal.html';
+      return;
+    }
+
+    // Hydrate user info
+    var claims = HSG.api.decodeClaims() || {};
+    document.getElementById('user-name').textContent = claims['custom:entityName'] || claims.email || 'Bidder';
+    document.getElementById('user-email').textContent = claims.email || '';
+    document.getElementById('signout-link').addEventListener('click', function (e) {
+      e.preventDefault();
+      HSG.cognito.signOut();
+      window.location.href = 'login.html';
+    });
+
+    // Notifications badge
+    HSG.api.notifications.list().then(function (r) {
+      var unread = (r.unread || 0);
+      if (unread > 0) {
+        var el = document.getElementById('notif-count');
+        el.textContent = unread;
+        el.style.display = 'inline-block';
+      }
+    }).catch(function () { /* ignore */ });
+
+    // Track bidder identity for slip
+    var bidderId = claims['custom:bidderId'] || null;
+    var slip = {}; // saleId → [{ poolId, bidPct, bidAmountUSD, missionBid }]
+
+    // ========================== Routes ==========================
+    HSG.router.on('/', renderSales)
+              .on('/sales', renderSales)
+              .on('/sale/:saleId', renderSaleDetail)
+              .on('/my-bids', renderMyBids)
+              .on('/settlements', renderSettlements)
+              .on('/settlement/:settlementId', renderSettlementDetail)
+              .on('/notifications', renderNotifications)
+              .onNotFound(function () { $app.innerHTML = '<p class="empty">Page not found.</p>'; })
+              .start();
+
+    function setTitle(title, actions) {
+      $title.textContent = title;
+      $actions.innerHTML = actions || '';
+    }
+
+    function setLoading() {
+      $app.innerHTML = '<p class="empty">Loading…</p>';
+    }
+
+    function setError(err) {
+      $app.innerHTML = '<div class="auth-error">' + c.esc(err.message || String(err)) + '</div>';
+    }
+
+    function setActiveNav() {
+      var path = HSG.router.getHash();
+      document.querySelectorAll('.sidebar__nav-item').forEach(function (el) {
+        var route = el.getAttribute('data-route') || '';
+        var match = route === '#' + path || (route !== '#/' && path.indexOf(route.replace('#', '')) === 0);
+        el.classList.toggle('active', match);
+      });
+    }
+
+    // ========================== Views ==========================
+    function renderSales() {
+      setTitle('Active sales');
+      setLoading();
+      setActiveNav();
+      // Backend scopes by caller's portal; we only hide draft/archived states from bidders
+      HSG.api.sales.list({}).then(function (r) {
+        var sales = (r && r.sales) || [];
+        sales = sales.filter(function (s) {
+          var st = (s.state || s.status || '').toLowerCase();
+          return st !== 'draft' && st !== 'archived';
+        });
+        if (sales.length === 0) {
+          $app.innerHTML = '<div class="empty"><p>No active residential sales right now.</p><p style="font-size: var(--text-sm); margin-top: var(--space-3);">Check back when the next HVLS or SFLS Federal Register Notice publishes.</p></div>';
+          return;
+        }
+        $app.innerHTML = '<div class="sale-grid">' + sales.map(c.renderSaleCard).join('') + '</div>';
+        $app.querySelectorAll('[data-route]').forEach(function (el) {
+          el.addEventListener('click', function () { HSG.router.navigate(el.getAttribute('data-route').replace('#', '')); });
+        });
+      }).catch(setError);
+    }
+
+    function renderSaleDetail(params) {
+      setLoading();
+      setActiveNav();
+      var saleId = params.saleId;
+      Promise.all([HSG.api.sales.get(saleId), HSG.api.sales.pools(saleId)]).then(function (results) {
+        var sale = results[0].sale;
+        var pools = (results[1].pools) || sale.pools || [];
+        setTitle(sale.name || saleId, '<a href="#/sales" class="btn-portal btn-portal--ghost" style="font-size: var(--text-sm);">← All sales</a>');
+        var stats = '<div class="stat-grid">' +
+          '<div class="stat-card"><div class="stat-card__label">PROGRAM</div><div class="stat-card__value">' + c.esc(sale.programType) + '</div></div>' +
+          '<div class="stat-card"><div class="stat-card__label">POOLS</div><div class="stat-card__value">' + pools.length + '</div></div>' +
+          '<div class="stat-card"><div class="stat-card__label">AGGREGATE</div><div class="stat-card__value">' + c.esc(u.currencyCompact(sale.aggregateValue)) + '</div></div>' +
+          '<div class="stat-card"><div class="stat-card__label">BID DATE</div><div class="stat-card__value" style="font-size: var(--text-lg);">' + c.esc(u.dateShort(sale.bidDate)) + '</div></div>' +
+        '</div>';
+        var tabs = '<div class="tabs">' +
+          '<div class="tabs__item active" data-tab="pools">Bidding</div>' +
+          '<div class="tabs__item" data-tab="dataroom">Data room</div>' +
+          '<div class="tabs__item" data-tab="qa">Q&amp;A</div>' +
+        '</div><div id="tab-content"></div>';
+        $app.innerHTML = stats + tabs;
+        $app.querySelectorAll('.tabs__item').forEach(function (t) {
+          t.addEventListener('click', function () {
+            $app.querySelectorAll('.tabs__item').forEach(function (x) { x.classList.remove('active'); });
+            t.classList.add('active');
+            renderTab(t.getAttribute('data-tab'), sale, pools);
+          });
+        });
+        renderTab('pools', sale, pools);
+      }).catch(setError);
+    }
+
+    function renderTab(tab, sale, pools) {
+      var content = document.getElementById('tab-content');
+      if (tab === 'pools') {
+        var bids = slip[sale.saleId] || [];
+        var poolsHtml = pools.map(function (p) {
+          var existing = bids.find(function (b) { return b.poolId === p.poolId; });
+          return c.renderPoolCard(p, sale, existing);
+        }).join('');
+        content.innerHTML = '<div class="form-grid" style="grid-template-columns: 2fr 1fr; gap: var(--space-6); align-items: flex-start;">' +
+          '<div>' + (poolsHtml || '<p class="empty">No pools defined for this sale.</p>') + '<button id="submit-bids" class="btn-portal" style="margin-top: var(--space-4);" disabled>Review &amp; submit slip</button></div>' +
+          '<div id="slip-container">' + c.renderBidSlip(bids, sale) + '</div>' +
+        '</div>';
+        wireBidInputs(sale, pools);
+      } else if (tab === 'dataroom') {
+        renderDataRoom(content, sale);
+      } else if (tab === 'qa') {
+        renderQa(content, sale);
+      }
+    }
+
+    function wireBidInputs(sale, pools) {
+      var content = document.getElementById('tab-content');
+      content.querySelectorAll('input[name="bid-pct"]').forEach(function (input) {
+        input.addEventListener('input', function () {
+          var poolId = input.getAttribute('data-pool-id');
+          var pool = pools.find(function (p) { return p.poolId === poolId; });
+          var pct = parseFloat(input.value);
+          if (!pool || isNaN(pct)) {
+            removeFromSlip(sale.saleId, poolId);
+            updateUsdDisplay(content, poolId, 0);
+            updateSlipPanel(sale);
+            return;
+          }
+          var basis = HSG.bidding.pool.valuationBasis(sale.programType);
+          var usd = HSG.bidding.pool.pctToUsd(pct, pool, basis);
+          updateUsdDisplay(content, poolId, usd);
+          var existing = (slip[sale.saleId] = slip[sale.saleId] || []).find(function (b) { return b.poolId === poolId; });
+          var bid = existing || {};
+          bid.bidderId = bidderId;
+          bid.saleId = sale.saleId;
+          bid.poolId = poolId;
+          bid.programType = sale.programType;
+          bid.bidPct = pct;
+          bid.bidAmountUSD = usd;
+          bid.valuationBasis = basis;
+          bid.missionBid = bid.missionBid || false;
+          if (!existing) slip[sale.saleId].push(bid);
+          updateSlipPanel(sale);
+        });
+      });
+      content.querySelectorAll('input[name="mission-bid"]').forEach(function (input) {
+        input.addEventListener('change', function () {
+          var poolId = input.getAttribute('data-pool-id');
+          var bid = (slip[sale.saleId] || []).find(function (b) { return b.poolId === poolId; });
+          if (bid) { bid.missionBid = input.checked; updateSlipPanel(sale); }
+        });
+      });
+      var submitBtn = document.getElementById('submit-bids');
+      if (submitBtn) submitBtn.addEventListener('click', function () { submitSlip(sale, pools); });
+    }
+
+    function updateUsdDisplay(container, poolId, usd) {
+      var el = container.querySelector('input[data-role="usd-display"][data-pool-id="' + poolId + '"]');
+      if (el) el.value = HSG.utils.currency(usd);
+    }
+
+    function removeFromSlip(saleId, poolId) {
+      slip[saleId] = (slip[saleId] || []).filter(function (b) { return b.poolId !== poolId; });
+    }
+
+    function updateSlipPanel(sale) {
+      var bids = slip[sale.saleId] || [];
+      var slipEl = document.getElementById('slip-container');
+      if (slipEl) slipEl.innerHTML = c.renderBidSlip(bids, sale);
+      var btn = document.getElementById('submit-bids');
+      if (btn) btn.disabled = bids.length === 0;
+    }
+
+    function submitSlip(sale, pools) {
+      var bids = slip[sale.saleId] || [];
+      if (bids.length === 0) return;
+      // Validate every bid
+      var errors = [];
+      bids.forEach(function (b) {
+        var pool = pools.find(function (p) { return p.poolId === b.poolId; });
+        var v = HSG.bidding.pool.validate(b, pool);
+        if (!v.valid) v.errors.forEach(function (e) { errors.push(b.poolId + ': ' + e.message); });
+      });
+      if (errors.length) {
+        alert('Please correct the following before submitting:\n\n' + errors.join('\n'));
+        return;
+      }
+      var summary = HSG.bidding.pool.slipTotal(bids);
+      var msg = 'Submit ' + bids.length + ' bid(s)?\n\nTotal: ' + HSG.utils.currency(summary.totalUSD) + '\nDeposit (10%): ' + HSG.utils.currency(summary.depositUSD) + '\n\nType "SUBMIT" to confirm:';
+      var resp = prompt(msg);
+      if (resp !== 'SUBMIT') return;
+      var confirmation = HSG.bidding.pool.confirmationCode();
+      Promise.all(bids.map(function (b) {
+        b.confirmationCode = confirmation;
+        b.submittedAt = new Date().toISOString();
+        return HSG.api.bids.submit(b);
+      })).then(function () {
+        alert('Bids submitted. Confirmation: ' + confirmation);
+        slip[sale.saleId] = [];
+        renderSaleDetail({ saleId: sale.saleId });
+      }).catch(function (err) {
+        alert('Submission failed: ' + (err.message || 'Unknown error'));
+      });
+    }
+
+    function renderDataRoom(container, sale) {
+      container.innerHTML = '<p class="empty">Loading data room…</p>';
+      HSG.api.docs.listForSale(sale.saleId).then(function (r) {
+        var docs = (r && r.docs) || [];
+        if (docs.length === 0) {
+          container.innerHTML = '<div class="empty"><p>No documents published yet for this sale.</p></div>';
+          return;
+        }
+        // Group by folder
+        var folders = {};
+        docs.forEach(function (d) {
+          var f = d.folder || 'Other';
+          (folders[f] = folders[f] || []).push(d);
+        });
+        var html = '<input class="form-input" placeholder="Search documents…" id="doc-search" style="margin-bottom: var(--space-4);" />';
+        Object.keys(folders).sort().forEach(function (f) {
+          html += '<details open style="margin-bottom: var(--space-3);"><summary style="font-family: var(--font-mono); font-size: var(--text-sm); padding: var(--space-2); cursor: pointer; background: var(--color-grey-50); border-radius: var(--radius-sm);">' + c.esc(f) + ' (' + folders[f].length + ')</summary>';
+          html += '<table class="data-table" style="margin-top: var(--space-2);"><thead><tr><th>Document</th><th>Type</th><th>Size</th><th></th></tr></thead><tbody>';
+          html += folders[f].map(function (d) {
+            return '<tr data-doc="' + c.esc(d.docId || d.key) + '">' +
+              '<td>' + c.esc(d.title || d.name || d.key) + '</td>' +
+              '<td>' + c.esc(d.contentType || d.category || '—') + '</td>' +
+              '<td>' + c.esc(d.size ? (Math.round(d.size / 1024) + ' KB') : '—') + '</td>' +
+              '<td><a href="#" data-action="download" data-key="' + c.esc(d.key) + '" data-name="' + c.esc(d.name || d.title || d.key) + '">Download</a></td>' +
+            '</tr>';
+          }).join('');
+          html += '</tbody></table></details>';
+        });
+        container.innerHTML = html;
+        container.querySelectorAll('[data-action="download"]').forEach(function (a) {
+          a.addEventListener('click', function (e) {
+            e.preventDefault();
+            var key = a.getAttribute('data-key');
+            HSG.api.docs.presignDownload(sale.saleId, key).then(function (r) {
+              if (r && r.url) {
+                HSG.api.docs.logAccess({ saleId: sale.saleId, docKey: key, action: 'download', actor: claims.email });
+                window.open(r.url, '_blank');
+              } else {
+                alert('Document not available.');
+              }
+            }).catch(function (err) { alert(err.message); });
+          });
+        });
+        var search = document.getElementById('doc-search');
+        if (search) {
+          search.addEventListener('input', HSG.utils.debounce(function () {
+            var q = search.value.toLowerCase();
+            container.querySelectorAll('tr[data-doc]').forEach(function (row) {
+              row.style.display = row.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+            });
+          }));
+        }
+      }).catch(function (err) {
+        container.innerHTML = '<div class="auth-error">' + c.esc(err.message) + '</div>';
+      });
+    }
+
+    function renderQa(container, sale) {
+      container.innerHTML = '<p class="empty">Loading Q&amp;A…</p>';
+      HSG.api.qa.listForSale(sale.saleId).then(function (r) {
+        var threads = (r && r.qa) || [];
+        var threadsHtml = threads.length
+          ? threads.map(function (q) {
+              return '<article class="card" style="padding: var(--space-4); margin-bottom: var(--space-3);">' +
+                '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">Asked ' + c.esc(u.dateRelative(q.askedAt)) + '</div>' +
+                '<p style="margin: var(--space-2) 0; font-weight: 500;">' + c.esc(q.question) + '</p>' +
+                (q.answer ? '<div style="padding: var(--space-3); background: var(--color-portal-soft); border-radius: var(--radius-sm); font-size: var(--text-sm);"><strong>Answer:</strong> ' + c.esc(q.answer) + '</div>' : '<div style="font-size: var(--text-sm); color: var(--color-warning); font-style: italic;">Awaiting answer</div>') +
+              '</article>';
+            }).join('')
+          : '<p class="empty" style="padding: var(--space-6);">No questions yet — be the first to ask.</p>';
+        container.innerHTML = threadsHtml +
+          '<form id="ask-form" style="margin-top: var(--space-6);">' +
+            '<div class="wizard__field">' +
+              '<label class="wizard__label">Ask a question (visible to TS only until answered)</label>' +
+              '<textarea class="form-textarea" id="ask-text" required></textarea>' +
+            '</div>' +
+            '<button type="submit" class="btn-portal">Submit question</button>' +
+          '</form>';
+        document.getElementById('ask-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          var t = document.getElementById('ask-text').value.trim();
+          if (!t) return;
+          HSG.api.qa.ask(sale.saleId, { question: t, bidderId: bidderId, bidderName: claims['custom:entityName'] || claims.email })
+            .then(function () { renderQa(container, sale); })
+            .catch(function (err) { alert(err.message); });
+        });
+      }).catch(function (err) {
+        container.innerHTML = '<div class="auth-error">' + c.esc(err.message) + '</div>';
+      });
+    }
+
+    function renderMyBids() {
+      setTitle('My bids');
+      setLoading();
+      setActiveNav();
+      HSG.api.bids.list({ bidderId: bidderId }).then(function (r) {
+        var bids = (r && r.bids) || [];
+        if (bids.length === 0) {
+          $app.innerHTML = '<div class="empty">You have not submitted any bids yet.</div>';
+          return;
+        }
+        var html = '<table class="data-table"><thead><tr><th>Sale</th><th>Pool</th><th>%</th><th style="text-align:right;">$</th><th>Mission</th><th>Status</th><th>Submitted</th><th></th></tr></thead><tbody>';
+        html += bids.map(function (b) {
+          return '<tr>' +
+            '<td>' + c.esc(b.saleId) + '</td>' +
+            '<td>' + c.esc(b.poolId) + '</td>' +
+            '<td>' + c.esc(b.bidPct || '') + '%</td>' +
+            '<td style="text-align:right;">' + c.esc(u.currency(b.bidAmountUSD)) + '</td>' +
+            '<td>' + (b.missionBid ? '✓' : '') + '</td>' +
+            '<td><span class="badge">' + c.esc((b.status || 'live').toUpperCase()) + '</span></td>' +
+            '<td>' + c.esc(u.dateShort(b.submittedAt)) + '</td>' +
+            '<td>' + (b.status === 'live' || !b.status ? '<a href="#" data-action="withdraw" data-bid-id="' + c.esc(b.bidId) + '">Withdraw</a>' : '') + '</td>' +
+          '</tr>';
+        }).join('');
+        html += '</tbody></table>';
+        $app.innerHTML = html;
+        $app.querySelectorAll('[data-action="withdraw"]').forEach(function (a) {
+          a.addEventListener('click', function (e) {
+            e.preventDefault();
+            var reason = prompt('Reason for withdrawal:');
+            if (!reason) return;
+            HSG.api.bids.withdraw(a.getAttribute('data-bid-id'), reason).then(renderMyBids).catch(function (err) { alert(err.message); });
+          });
+        });
+      }).catch(setError);
+    }
+
+    function renderSettlements() {
+      setTitle('My settlements');
+      setLoading();
+      setActiveNav();
+      HSG.api.settlements.list({ bidderId: bidderId }).then(function (r) {
+        var settlements = (r && r.settlements) || [];
+        if (settlements.length === 0) {
+          $app.innerHTML = '<div class="empty">No settlements yet. Awarded bids appear here automatically.</div>';
+          return;
+        }
+        $app.innerHTML = '<div class="sale-grid">' + settlements.map(function (s) {
+          var done = (s.milestones || []).filter(function (m) { return m.status === 'done'; }).length;
+          var total = (s.milestones || []).length;
+          return '<article class="card" style="padding: var(--space-5); cursor: pointer; border-left: 4px solid var(--color-' + c.esc((s.programType || '').toLowerCase()) + ');" data-route="#/settlement/' + c.esc(s.awardId) + '">' +
+            '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">' + c.esc(s.programType) + ' · ' + c.esc(s.saleId) + '</div>' +
+            '<h3 style="font-family: var(--font-heading); font-size: var(--text-lg); margin: var(--space-2) 0;">' + c.esc(s.poolOrDealId) + '</h3>' +
+            '<div style="font-size: var(--text-sm); color: var(--color-text-muted);">' + c.esc(u.currency(s.awardAmountUSD)) + '</div>' +
+            '<div style="margin-top: var(--space-3); font-family: var(--font-mono); font-size: var(--text-xs);">' + done + ' / ' + total + ' milestones</div>' +
+            '<div style="height: 6px; background: var(--color-grey-200); border-radius: var(--radius-full); margin-top: var(--space-2);"><div style="height: 100%; width: ' + (total ? (done / total * 100) : 0) + '%; background: var(--color-portal); border-radius: var(--radius-full);"></div></div>' +
+          '</article>';
+        }).join('') + '</div>';
+        $app.querySelectorAll('[data-route]').forEach(function (el) {
+          el.addEventListener('click', function () { HSG.router.navigate(el.getAttribute('data-route').replace('#', '')); });
+        });
+      }).catch(setError);
+    }
+
+    function renderSettlementDetail(params) {
+      setLoading();
+      setActiveNav();
+      HSG.api.settlements.get(params.settlementId).then(function (r) {
+        var s = r.settlement;
+        setTitle(s.poolOrDealId + ' · ' + s.saleId, '<a href="#/settlements" class="btn-portal btn-portal--ghost">← All settlements</a>');
+        var milestones = (s.milestones || []).map(function (m, i) {
+          var icon = m.status === 'done' ? '✓' : (m.status === 'active' ? '●' : '○');
+          var color = m.status === 'done' ? 'var(--color-success)' : (m.status === 'active' ? 'var(--color-portal)' : 'var(--color-grey-400)');
+          return '<div style="display: flex; gap: var(--space-3); padding: var(--space-3); border-left: 2px solid ' + color + ';">' +
+            '<span style="color: ' + color + '; font-size: var(--text-lg);">' + icon + '</span>' +
+            '<div><div style="font-weight: 600;">' + c.esc(m.label) + '</div>' +
+            (m.dueOffsetDays != null ? '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">Due day +' + m.dueOffsetDays + '</div>' : '') +
+            '</div>' +
+          '</div>';
+        }).join('');
+        var deliverables = (s.deliverables || []).map(function (d) {
+          return '<tr><td>' + (d.completed ? '✓' : '○') + '</td><td>' + c.esc(d.label) + '</td><td>' + c.esc(d.category) + '</td><td>' + (d.required ? '<span class="badge">REQ</span>' : '') + '</td></tr>';
+        }).join('');
+        $app.innerHTML = '<div class="stat-grid">' +
+          '<div class="stat-card"><div class="stat-card__label">AWARD</div><div class="stat-card__value">' + c.esc(u.currency(s.awardAmountUSD)) + '</div></div>' +
+          '<div class="stat-card"><div class="stat-card__label">SETTLEMENT BY</div><div class="stat-card__value" style="font-size: var(--text-lg);">' + c.esc(u.dateShort(s.expectedSettlementDate)) + '</div></div>' +
+          '<div class="stat-card"><div class="stat-card__label">STATUS</div><div class="stat-card__value" style="font-size: var(--text-lg);">' + c.esc(s.status) + '</div></div>' +
+        '</div>' +
+        '<h3 style="font-family: var(--font-heading); margin: var(--space-6) 0 var(--space-3);">Milestones</h3>' + milestones +
+        '<h3 style="font-family: var(--font-heading); margin: var(--space-6) 0 var(--space-3);">Deliverables</h3>' +
+        '<table class="data-table"><thead><tr><th></th><th>Item</th><th>Category</th><th></th></tr></thead><tbody>' + deliverables + '</tbody></table>';
+      }).catch(setError);
+    }
+
+    function renderNotifications() {
+      setTitle('Notifications');
+      setLoading();
+      setActiveNav();
+      HSG.api.notifications.list().then(function (r) {
+        var notifs = (r && r.notifications) || [];
+        if (notifs.length === 0) {
+          $app.innerHTML = '<div class="empty">No notifications.</div>';
+          return;
+        }
+        $app.innerHTML = notifs.map(function (n) {
+          return '<article class="card" style="padding: var(--space-4); margin-bottom: var(--space-2); ' + (n.readAt ? 'opacity: 0.7;' : 'border-left: 3px solid var(--color-portal);') + '">' +
+            '<div style="display: flex; justify-content: space-between;">' +
+              '<strong>' + c.esc(n.title || n.type) + '</strong>' +
+              '<span style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">' + c.esc(u.dateRelative(n.createdAt)) + '</span>' +
+            '</div>' +
+            '<p style="font-size: var(--text-sm); margin-top: var(--space-1);">' + c.esc(n.message) + '</p>' +
+          '</article>';
+        }).join('');
+      }).catch(setError);
+    }
+  })();
+  </script>
+</body>
+</html>

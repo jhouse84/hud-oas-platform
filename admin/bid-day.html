@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bid Day Ops · HUD OAS Admin</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <link rel="stylesheet" href="_shell.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    /* Bid-day cinematic top strip */
+    .bidday-hero { background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); color: #FFF; padding: var(--space-6) var(--space-8); margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-8)) var(--space-6); position: relative; overflow: hidden; }
+    .bidday-hero::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle at 20% 30%, rgba(59,130,246,0.15) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(220,38,38,0.12) 0%, transparent 40%); pointer-events: none; }
+    .bidday-hero__inner { position: relative; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: var(--space-6); align-items: center; }
+    .bidday-hero__title { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; color: rgba(255,255,255,0.6); }
+    .bidday-hero__sale { font-family: var(--font-heading); font-size: var(--text-2xl); margin-top: var(--space-1); }
+    .bidday-hero__state { font-family: var(--font-mono); font-size: var(--text-xs); padding: 4px 10px; border-radius: var(--radius-full); display: inline-block; margin-top: var(--space-2); letter-spacing: 0.05em; }
+    .bidday-hero__state--bid_window { background: var(--color-error); }
+    .bidday-hero__state--under_evaluation { background: var(--color-warning); }
+    .bidday-hero__state--awarded { background: var(--color-success); }
+    .bidday-hero__state--default { background: rgba(255,255,255,0.15); }
+
+    .clock { text-align: center; }
+    .clock__label { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.08em; color: rgba(255,255,255,0.5); }
+    .clock__value { font-family: var(--font-heading); font-size: var(--text-3xl); font-feature-settings: 'tnum'; line-height: 1; margin-top: 4px; }
+    .clock--countdown .clock__value { color: #F59E0B; }
+    .clock--imminent .clock__value { color: #EF4444; animation: blink 1s ease-in-out infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+    .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10B981; margin-right: 6px; animation: pulse 1.5s ease-in-out infinite; }
+
+    /* Bid-day grid */
+    .bd-grid { display: grid; grid-template-columns: 280px 1fr 320px; gap: var(--space-5); align-items: flex-start; }
+    @media (max-width: 1280px) { .bd-grid { grid-template-columns: 1fr; } }
+
+    /* 10-step workspace (mirrors HUD Bid Day folder taxonomy) */
+    .step-list { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+    .step-row { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-grey-100); display: grid; grid-template-columns: 24px 1fr; gap: var(--space-2); align-items: center; cursor: pointer; }
+    .step-row:hover { background: var(--color-grey-50); }
+    .step-row.active { background: var(--color-portal-soft); border-left: 3px solid var(--color-portal); padding-left: calc(var(--space-3) - 3px); }
+    .step-row__num { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: var(--color-grey-100); }
+    .step-row.done .step-row__num { background: var(--color-success); color: #FFF; }
+    .step-row.active .step-row__num { background: var(--color-portal); color: #FFF; }
+    .step-row__label { font-size: var(--text-sm); }
+
+    /* Live feed */
+    .feed-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+    .feed-card__header { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; }
+    .feed-card__title { font-family: var(--font-heading); }
+    .feed-card__live { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-success); }
+
+    .feed-row { display: grid; grid-template-columns: 100px 1fr 100px 120px 80px; gap: var(--space-3); padding: var(--space-3); border-bottom: 1px solid var(--color-grey-100); align-items: center; font-size: var(--text-sm); }
+    .feed-row:hover { background: var(--color-grey-50); }
+    .feed-row__code { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-portal); }
+    .feed-row__bidder { font-weight: 600; }
+    .feed-row__pool { color: var(--color-text-muted); font-family: var(--font-mono); font-size: var(--text-xs); }
+    .feed-row__amt { text-align: right; font-feature-settings: 'tnum'; font-weight: 600; }
+    .feed-row__pct { text-align: right; font-feature-settings: 'tnum'; color: var(--color-text-muted); font-size: var(--text-xs); }
+    .feed-row.new { animation: highlight 2s ease-out; }
+    @keyframes highlight { 0% { background: var(--color-portal-soft); } 100% { background: transparent; } }
+    .feed-row.non-conforming { background: var(--color-error-bg); }
+
+    .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); margin-bottom: var(--space-4); }
+    .stat-strip__cell { padding: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); text-align: center; }
+    .stat-strip__label { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.05em; }
+    .stat-strip__value { font-family: var(--font-heading); font-size: var(--text-2xl); margin-top: 4px; line-height: 1; }
+    .stat-strip__value--success { color: var(--color-success); }
+    .stat-strip__value--alert { color: var(--color-error); }
+
+    .pool-summary { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); margin-bottom: var(--space-3); }
+    .pool-summary__name { font-weight: 600; font-size: var(--text-sm); }
+    .pool-summary__bar { height: 6px; background: var(--color-grey-200); border-radius: 3px; margin: var(--space-2) 0; overflow: hidden; }
+    .pool-summary__fill { height: 100%; background: var(--color-portal); transition: width 0.5s ease-out; }
+    .pool-summary__meta { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
+
+    .ai-card { background: linear-gradient(135deg, var(--color-portal) 0%, var(--color-portal-dark) 100%); color: #FFF; border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-4); }
+    .ai-card__label { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.08em; opacity: 0.7; }
+    .ai-card__title { font-family: var(--font-heading); margin: var(--space-1) 0; }
+    .ai-card__body { font-size: var(--text-sm); line-height: 1.5; opacity: 0.95; }
+
+    .issues-list { list-style: none; padding: 0; margin: 0; }
+    .issues-list li { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-grey-100); font-size: var(--text-sm); }
+    .issues-list li:last-child { border-bottom: none; }
+    .issues-list__sev { display: inline-block; padding: 0 6px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 10px; margin-right: 8px; }
+    .issues-list__sev--high { background: var(--color-error-bg); color: var(--color-error); }
+    .issues-list__sev--medium { background: var(--color-warning-bg); color: var(--color-warning); }
+  </style>
+</head>
+<body data-portal="admin">
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-label">HUD OAS Admin</div>
+        <div class="sidebar__brand-name">Console</div>
+      </div>
+      <div class="sidebar__section">Overview</div>
+      <a class="sidebar__nav-item" href="index.html">Dashboard</a>
+      <a class="sidebar__nav-item" href="bidders.html">Bidders</a>
+      <a class="sidebar__nav-item active" href="bid-day.html">Bid day ops</a>
+      <a class="sidebar__nav-item" href="bem.html">BEM &amp; awards</a>
+      <div class="sidebar__section">Post-sale</div>
+      <a class="sidebar__nav-item" href="qa.html">Q&amp;A inbox</a>
+      <a class="sidebar__nav-item" href="settlements.html">Settlements</a>
+      <a class="sidebar__nav-item" href="compliance.html">Compliance &amp; QC</a>
+      <div class="sidebar__user">
+        <div id="user-name" style="color: #FFF; font-weight: 600;">…</div>
+        <div id="user-email" style="font-size: var(--text-xs); opacity: 0.7;"></div>
+        <a href="#" id="signout-link" style="display: inline-block; margin-top: var(--space-2); color: var(--color-portal-bright); text-decoration: underline; font-size: var(--text-sm);">Sign out</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="main__header">
+        <h1 class="main__title">Bid Day Ops</h1>
+        <div>
+          <select class="form-select" id="sale-select" style="width: auto; margin-right: var(--space-2);"></select>
+        </div>
+      </header>
+      <div class="main__content" id="app">
+        <p class="empty">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="../shared/bidding-pool.js"></script>
+  <script src="../shared/bidding-deal.js"></script>
+  <script>
+  (function () {
+    var u = HSG.utils;
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+    if (!HSG.cognito.isAuthenticated()) { window.location.href = 'login.html?next=bid-day.html'; return; }
+    var claims = HSG.api.decodeClaims() || {};
+    document.getElementById('user-name').textContent = claims['custom:entityName'] || claims.email || 'Admin';
+    document.getElementById('user-email').textContent = claims.email || '';
+    document.getElementById('signout-link').addEventListener('click', function (e) {
+      e.preventDefault(); HSG.cognito.signOut(); window.location.href = 'login.html';
+    });
+
+    var $app = document.getElementById('app');
+    var currentSale = null;
+    var loans = [];
+    var bids = [];
+    var prevBidIds = new Set();
+    var pollHandle = null;
+    var clockHandle = null;
+
+    // 10-step Bid Day workspace (matches HUD's actual folder taxonomy)
+    var STEPS = [
+      { id: 'deposits',   num: '01', label: 'Deposits',           desc: 'Wire confirmations, bid deposit forms' },
+      { id: 'issues',     num: '02', label: 'Issues Log',         desc: 'TS-tracked issues during the window' },
+      { id: 'comms',      num: '03', label: 'Communications Log', desc: 'Bidder calls, technical resolution' },
+      { id: 'bem-cert',   num: '04', label: 'BEM Certification',  desc: 'OGC sign-off on methodology' },
+      { id: 'exhibits',   num: '05', label: 'Exhibits',           desc: 'Pool maps, asset summaries pulled live' },
+      { id: 'floor',      num: '06', label: 'Floor Price',        desc: 'Reserve thresholds (sealed)' },
+      { id: 'bem',        num: '07', label: 'BEM Run',            desc: 'Allocation solver execution' },
+      { id: 'slides-bb',  num: '08', label: 'BBSS Slides',        desc: 'Bid-by-bid summary slides' },
+      { id: 'slides-cmp', num: '09', label: 'Complete Slides',    desc: 'Full presentation deck' },
+      { id: 'awards',     num: '10', label: 'Award Letters',      desc: 'Generation + execution' }
+    ];
+
+    function load() {
+      $app.innerHTML = '<p class="empty">Loading sales…</p>';
+      HSG.api.sales.list({}).then(function (r) {
+        var sales = (r && r.sales) || [];
+        var sel = document.getElementById('sale-select');
+        sel.innerHTML = sales.length === 0
+          ? '<option value="">No sales</option>'
+          : sales.map(function (s) {
+              var sid = s.saleId || s.sale_id;
+              var name = s.long_name || s.sale_name || s.name || sid;
+              return '<option value="' + esc(sid) + '">' + esc(name) + '</option>';
+            }).join('');
+        sel.addEventListener('change', function () { selectSale(sel.value); });
+        var qsId = new URLSearchParams(window.location.search).get('saleId');
+        var initial = qsId || (sales[0] && (sales[0].saleId || sales[0].sale_id));
+        if (initial) { sel.value = initial; selectSale(initial); }
+      }).catch(function (err) {
+        $app.innerHTML = '<div class="error-box">' + esc(err.message) + '</div>';
+      });
+    }
+
+    function selectSale(saleId) {
+      if (!saleId) return;
+      $app.innerHTML = '<p class="empty">Loading bid-day workspace…</p>';
+      Promise.all([
+        HSG.api.sales.get(saleId),
+        HSG.api.sales.loans(saleId).catch(function () { return { loans: [] }; }),
+        HSG.api.bids.list({ saleId: saleId }).catch(function () { return { bids: [] }; })
+      ]).then(function (r) {
+        currentSale = (r[0] && r[0].sale) || {};
+        loans = (r[1] && r[1].loans) || [];
+        bids = (r[2] && r[2].bids) || [];
+        prevBidIds = new Set(bids.map(function (b) { return b.bidId; }));
+        render();
+        startClock();
+        startPolling(saleId);
+      }).catch(function (err) {
+        $app.innerHTML = '<div class="error-box">' + esc(err.message) + '</div>';
+      });
+    }
+
+    function bidWindow() {
+      var kd = (currentSale && currentSale.key_dates) || {};
+      var bidDay = kd.bid_day;
+      if (!bidDay) return null;
+      var openTime = kd.bid_window_open_eastern || '10:00 AM';
+      var closeTime = kd.bid_window_close_eastern || '12:00 PM';
+      // Construct ISO datetimes assuming Eastern (-04:00 EDT). For demo purposes a rough parse is fine.
+      var open = parseEt(bidDay, openTime);
+      var close = parseEt(bidDay, closeTime);
+      return { open: open, close: close };
+    }
+
+    function parseEt(date, time) {
+      // date is YYYY-MM-DD, time is "10:00 AM"
+      var match = String(time).match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (!match) return new Date(date);
+      var h = parseInt(match[1], 10);
+      var m = parseInt(match[2], 10);
+      if (/PM/i.test(match[3]) && h < 12) h += 12;
+      if (/AM/i.test(match[3]) && h === 12) h = 0;
+      var iso = date + 'T' + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':00-04:00';
+      return new Date(iso);
+    }
+
+    function render() {
+      var sale = currentSale || {};
+      var saleId = sale.saleId || sale.sale_id;
+      var program = sale.programType || sale.program;
+      var state = sale.state || sale.status || 'qualification_open';
+      var win = bidWindow();
+      var stateMod = ['bid_window','under_evaluation','awarded'].indexOf(state) >= 0 ? state : 'default';
+
+      var conforming = bids.filter(function (b) { return /Conforming|conforming/i.test(b.conformingStatus || 'Conforming') && !b.withdrawn; });
+      var nonConforming = bids.filter(function (b) { return /Non-Conforming|non.conforming/i.test(b.conformingStatus || ''); });
+      var uniqueBidders = new Set(bids.filter(function (b) { return !b.sandbox; }).map(function (b) { return b.bidderId; }));
+      var totalAmt = bids.reduce(function (s, b) { return s + Number(b.bidAmount || b.bidAmountUSD || 0); }, 0);
+
+      var html = '';
+
+      // Hero strip
+      html += '<div class="bidday-hero"><div class="bidday-hero__inner">';
+      html += '<div>' +
+        '<div class="bidday-hero__title"><span class="pulse-dot"></span>BID DAY OPERATIONS — LIVE</div>' +
+        '<div class="bidday-hero__sale">' + esc(sale.long_name || sale.sale_name || saleId) + '</div>' +
+        '<div class="bidday-hero__state bidday-hero__state--' + stateMod + '">' + esc(state.replace(/_/g,' ').toUpperCase()) + '</div>' +
+      '</div>';
+      html += '<div class="clock" id="clock-bid"><div class="clock__label">' + (state === 'bid_window' ? 'BID WINDOW CLOSES IN' : 'BID DAY') + '</div><div class="clock__value">—</div></div>';
+      html += '<div class="clock"><div class="clock__label">PROGRAM</div><div class="clock__value" style="font-size: var(--text-2xl);">' + esc(program || '—') + '</div></div>';
+      html += '<div class="clock"><div class="clock__label">SCHEDULED</div><div class="clock__value" style="font-size: var(--text-md);">' + esc(win ? u.dateShort(win.open) : '—') + '</div></div>';
+      html += '</div></div>';
+
+      // 4-stat strip
+      html += '<div class="stat-strip">' +
+        '<div class="stat-strip__cell"><div class="stat-strip__label">TOTAL BIDS</div><div class="stat-strip__value">' + bids.length + '</div></div>' +
+        '<div class="stat-strip__cell"><div class="stat-strip__label">CONFORMING</div><div class="stat-strip__value stat-strip__value--success">' + conforming.length + '</div></div>' +
+        '<div class="stat-strip__cell"><div class="stat-strip__label">NON-CONFORMING</div><div class="stat-strip__value ' + (nonConforming.length > 0 ? 'stat-strip__value--alert' : '') + '">' + nonConforming.length + '</div></div>' +
+        '<div class="stat-strip__cell"><div class="stat-strip__label">UNIQUE BIDDERS</div><div class="stat-strip__value">' + uniqueBidders.size + '</div></div>' +
+      '</div>';
+
+      // 3-column workspace
+      html += '<div class="bd-grid">';
+
+      // LEFT — 10-step workspace
+      html += '<div>';
+      html += '<h3 style="font-family: var(--font-heading); font-size: var(--text-lg); margin-bottom: var(--space-3);">Bid Day workspace</h3>';
+      html += '<div class="step-list">' + STEPS.map(function (s, i) {
+        var status = i < 4 ? 'done' : (i === 4 ? 'active' : '');
+        return '<div class="step-row ' + status + '" data-step="' + s.id + '">' +
+          '<div class="step-row__num">' + s.num + '</div>' +
+          '<div><div class="step-row__label">' + esc(s.label) + '</div>' +
+          '<div style="font-size: var(--text-xs); color: var(--color-text-muted);">' + esc(s.desc) + '</div></div>' +
+        '</div>';
+      }).join('') + '</div>';
+      html += '</div>';
+
+      // CENTER — live bid feed
+      html += '<div>';
+      html += '<div class="feed-card">' +
+        '<div class="feed-card__header">' +
+          '<div class="feed-card__title">Live bid feed</div>' +
+          '<div class="feed-card__live"><span class="pulse-dot"></span>Polling every 8s</div>' +
+        '</div>' +
+        '<div id="feed-body">' +
+          (bids.length === 0 ? '<div class="empty">No bids submitted yet.</div>' : bids.slice().reverse().map(renderFeedRow).join('')) +
+        '</div>' +
+      '</div>';
+      html += '</div>';
+
+      // RIGHT — pool summary, AI insight, issues
+      html += '<div>';
+
+      // AI summary
+      html += '<div class="ai-card">' +
+        '<div class="ai-card__label">AI SUMMARY · UPDATED LIVE</div>' +
+        '<div class="ai-card__title">' + (bids.length === 0 ? 'No bids yet' : (bids.length + ' bids · ' + u.currencyCompact(totalAmt) + ' aggregate')) + '</div>' +
+        '<div class="ai-card__body">' + aiNarrative(currentSale, loans, bids) + '</div>' +
+      '</div>';
+
+      // Pool summary
+      html += '<h4 style="font-family: var(--font-heading); margin-bottom: var(--space-2);">Pool coverage</h4>';
+      html += renderPoolSummaries();
+
+      // Issues log
+      html += '<h4 style="font-family: var(--font-heading); margin: var(--space-4) 0 var(--space-2);">Issues log</h4>';
+      html += renderIssuesLog(nonConforming);
+
+      html += '</div>';
+      html += '</div>'; // bd-grid
+
+      $app.innerHTML = html;
+
+      $app.querySelectorAll('.step-row').forEach(function (row) {
+        row.addEventListener('click', function () {
+          $app.querySelectorAll('.step-row').forEach(function (r) { r.classList.remove('active'); });
+          row.classList.add('active');
+        });
+      });
+    }
+
+    function renderFeedRow(b) {
+      var conforming = /Conforming|conforming/i.test(b.conformingStatus || 'Conforming') && !/Non/i.test(b.conformingStatus || '');
+      var amount = b.bidAmount || b.bidAmountUSD || 0;
+      var pct = b.bidAmountUnit && /%/.test(b.bidAmountUnit) ? b.bidAmount + '%' : (b.pctOfUPB != null ? b.pctOfUPB.toFixed(2) + '%' : '—');
+      var newClass = prevBidIds.has(b.bidId) ? '' : ' new';
+      var ncClass = conforming ? '' : ' non-conforming';
+      return '<div class="feed-row' + newClass + ncClass + '">' +
+        '<div class="feed-row__code">' + esc(b.confirmationCode || b.bidId.slice(0,12)) + '</div>' +
+        '<div><div class="feed-row__bidder">' + esc(b.bidderName || b.bidderId) + '</div>' +
+          '<div class="feed-row__pool">' + esc(b.poolId || b.dealId) + (b.sandbox ? ' · SANDBOX' : '') + '</div>' +
+        '</div>' +
+        '<div class="feed-row__amt">' + esc(u.currency(amount)) + '</div>' +
+        '<div class="feed-row__pct">' + esc(pct) + '</div>' +
+        '<div style="text-align: right; font-family: var(--font-mono); font-size: var(--text-xs); color: ' + (conforming ? 'var(--color-success)' : 'var(--color-error)') + ';">' + (conforming ? '✓ CONF' : '⚠ N/C') + '</div>' +
+      '</div>';
+    }
+
+    function renderPoolSummaries() {
+      var pools = (currentSale && currentSale.pools) || [];
+      if (pools.length === 0) return '<div class="empty" style="padding: var(--space-4);">No pools defined.</div>';
+      return pools.map(function (p) {
+        var pid = p.pool_id || p.poolId;
+        var poolBids = bids.filter(function (b) { return b.poolId === pid; });
+        var top = poolBids.reduce(function (max, b) {
+          var amt = Number(b.bidAmountUSD || b.bidAmount || 0);
+          return amt > max ? amt : max;
+        }, 0);
+        var aggUpb = (p.summary && p.summary.aggregate_upb) || 0;
+        var coverage = aggUpb > 0 ? Math.min(100, (top / aggUpb) * 100) : 0;
+        return '<div class="pool-summary">' +
+          '<div class="pool-summary__name">' + esc(p.pool_name || pid) + '</div>' +
+          '<div class="pool-summary__bar"><div class="pool-summary__fill" style="width: ' + coverage.toFixed(0) + '%;"></div></div>' +
+          '<div class="pool-summary__meta">' +
+            '<span>' + poolBids.length + ' bid' + (poolBids.length === 1 ? '' : 's') + '</span>' +
+            '<span>top ' + (top > 0 ? u.currencyCompact(top) : '—') + '</span>' +
+            '<span>' + (aggUpb > 0 ? coverage.toFixed(0) + '% UPB' : '—') + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function renderIssuesLog(nonConforming) {
+      if (nonConforming.length === 0) return '<div style="font-size: var(--text-sm); color: var(--color-text-muted);">No issues.</div>';
+      return '<ul class="issues-list">' + nonConforming.slice(0, 8).map(function (b) {
+        return '<li>' +
+          '<span class="issues-list__sev issues-list__sev--high">NON-CONF</span>' +
+          esc(b.bidderName) + ' · ' + esc(b.poolId || b.dealId) + ' · ' + esc(u.currency(b.bidAmount || b.bidAmountUSD || 0)) +
+          (b.conformingReason ? '<div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px;">' + esc(b.conformingReason) + '</div>' : '') +
+        '</li>';
+      }).join('') + '</ul>';
+    }
+
+    function aiNarrative(sale, loans, bids) {
+      if (bids.length === 0) {
+        return 'Bid window has not opened yet. ' + ((sale && sale.summary && sale.summary.loan_count) || 0) + ' loans across ' + ((sale && sale.pools) || []).length + ' pools queued for bidding. Floor pricing review and OGC BEM certification complete.';
+      }
+      var top = bids.slice().sort(function (a, b) { return Number(b.bidAmountUSD || b.bidAmount || 0) - Number(a.bidAmountUSD || a.bidAmount || 0); })[0];
+      var poolCount = new Set(bids.map(function (b) { return b.poolId || b.dealId; })).size;
+      return 'Strongest single bid: <strong>' + esc(top.bidderName) + '</strong> at ' + esc(u.currency(top.bidAmountUSD || top.bidAmount || 0)) +
+        ' on ' + esc(top.poolId || top.dealId) + '. ' + poolCount + ' of ' + ((sale && sale.pools) || []).length + ' pools have at least one bid. Cross-collat enforcement holding.';
+    }
+
+    function startClock() {
+      stopClock();
+      clockHandle = setInterval(function () {
+        var win = bidWindow();
+        var clk = document.getElementById('clock-bid');
+        if (!clk) { stopClock(); return; }
+        if (!win) { clk.querySelector('.clock__value').textContent = '—'; return; }
+        var now = new Date();
+        var diffMs = win.close - now;
+        if (diffMs < 0) {
+          clk.querySelector('.clock__label').textContent = 'BID WINDOW CLOSED';
+          clk.querySelector('.clock__value').textContent = 'CLOSED';
+          clk.classList.remove('clock--countdown', 'clock--imminent');
+          return;
+        }
+        var hrs = Math.floor(diffMs / 3600000);
+        var mins = Math.floor((diffMs % 3600000) / 60000);
+        var secs = Math.floor((diffMs % 60000) / 1000);
+        clk.querySelector('.clock__value').textContent =
+          String(hrs).padStart(2, '0') + ':' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+        clk.classList.add('clock--countdown');
+        if (diffMs < 5 * 60 * 1000) clk.classList.add('clock--imminent');
+      }, 1000);
+    }
+    function stopClock() { if (clockHandle) clearInterval(clockHandle); clockHandle = null; }
+
+    function startPolling(saleId) {
+      stopPolling();
+      pollHandle = setInterval(function () {
+        HSG.api.bids.list({ saleId: saleId }).then(function (r) {
+          var newBids = (r && r.bids) || [];
+          var addedAny = newBids.some(function (b) { return !prevBidIds.has(b.bidId); });
+          bids = newBids;
+          if (addedAny) {
+            render();
+          }
+          newBids.forEach(function (b) { prevBidIds.add(b.bidId); });
+        }).catch(function () {});
+      }, 8000);
+    }
+    function stopPolling() { if (pollHandle) clearInterval(pollHandle); pollHandle = null; }
+
+    window.addEventListener('beforeunload', function () { stopClock(); stopPolling(); });
+
+    load();
+  })();
+  </script>
+</body>
+</html>

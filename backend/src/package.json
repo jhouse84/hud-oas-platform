@@ -1,0 +1,10 @@
+{
+  "name": "hsg-hudoas-handlers",
+  "version": "0.1.0",
+  "description": "Lambda handlers — runtime deps only (AWS SDK v3 is provided by the Node 20 runtime)",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
+  }
+}

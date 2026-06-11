@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Q&amp;A Inbox · HUD OAS Admin</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <link rel="stylesheet" href="_shell.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    .qa-grid { display: grid; grid-template-columns: 380px 1fr; gap: var(--space-5); align-items: flex-start; height: calc(100vh - 200px); }
+    @media (max-width: 1024px) { .qa-grid { grid-template-columns: 1fr; height: auto; } }
+
+    .qa-list { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow-y: auto; max-height: 100%; }
+    .qa-row { padding: var(--space-3); border-bottom: 1px solid var(--color-grey-100); cursor: pointer; transition: background var(--duration-fast); }
+    .qa-row:hover { background: var(--color-grey-50); }
+    .qa-row.active { background: var(--color-portal-soft); border-left: 3px solid var(--color-portal); padding-left: calc(var(--space-3) - 3px); }
+    .qa-row__question { font-weight: 600; font-size: var(--text-sm); line-height: 1.4; }
+    .qa-row__meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px; display: flex; gap: var(--space-2); flex-wrap: wrap; }
+    .qa-row__sale { padding: 1px 6px; border-radius: var(--radius-sm); background: var(--color-grey-100); }
+    .qa-row__status { padding: 1px 6px; border-radius: var(--radius-sm); }
+    .qa-row__status--pending { background: var(--color-warning-bg); color: var(--color-warning); }
+    .qa-row__status--answered { background: var(--color-success-bg); color: var(--color-success); }
+
+    .qa-detail { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-5); overflow-y: auto; max-height: 100%; }
+    .qa-detail__question { font-family: var(--font-heading); font-size: var(--text-xl); margin-bottom: var(--space-3); line-height: 1.3; }
+    .qa-detail__meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-4); display: flex; gap: var(--space-4); flex-wrap: wrap; }
+    .qa-detail__answer { background: var(--color-success-bg); border-left: 4px solid var(--color-success); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); margin: var(--space-3) 0; }
+
+    .template-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-2); margin-bottom: var(--space-3); }
+    .template-card { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; font-size: var(--text-sm); transition: all var(--duration-fast); }
+    .template-card:hover { border-color: var(--color-portal); background: var(--color-portal-soft); }
+    .template-card__name { font-weight: 600; margin-bottom: 2px; }
+    .template-card__preview { font-size: var(--text-xs); color: var(--color-text-muted); }
+  </style>
+</head>
+<body data-portal="admin">
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-label">HUD OAS Admin</div>
+        <div class="sidebar__brand-name">Console</div>
+      </div>
+      <div class="sidebar__section">Overview</div>
+      <a class="sidebar__nav-item" href="index.html">Dashboard</a>
+      <a class="sidebar__nav-item" href="bidders.html">Bidders</a>
+      <a class="sidebar__nav-item" href="bid-day.html">Bid day ops</a>
+      <a class="sidebar__nav-item" href="bem.html">BEM &amp; awards</a>
+      <div class="sidebar__section">Post-sale</div>
+      <a class="sidebar__nav-item active" href="qa.html">Q&amp;A inbox</a>
+      <a class="sidebar__nav-item" href="settlements.html">Settlements</a>
+      <a class="sidebar__nav-item" href="compliance.html">Compliance &amp; QC</a>
+      <div class="sidebar__user">
+        <div id="user-name" style="color: #FFF; font-weight: 600;">…</div>
+        <div id="user-email" style="font-size: var(--text-xs); opacity: 0.7;"></div>
+        <a href="#" id="signout-link" style="display: inline-block; margin-top: var(--space-2); color: var(--color-portal-bright); text-decoration: underline; font-size: var(--text-sm);">Sign out</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="main__header">
+        <h1 class="main__title">Q&amp;A Inbox</h1>
+        <div>
+          <div class="pill-group" style="margin-bottom: 0;">
+            <span class="pill active" data-filter="">All</span>
+            <span class="pill" data-filter="pending">Pending</span>
+            <span class="pill" data-filter="answered">Answered</span>
+          </div>
+        </div>
+      </header>
+      <div class="main__content" id="app">
+        <p class="empty">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/api.js"></script>
+  <script>
+  (function () {
+    var u = HSG.utils;
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+    if (!HSG.cognito.isAuthenticated()) { window.location.href = 'login.html?next=qa.html'; return; }
+    var claims = HSG.api.decodeClaims() || {};
+    document.getElementById('user-name').textContent = claims['custom:entityName'] || claims.email || 'Admin';
+    document.getElementById('user-email').textContent = claims.email || '';
+    document.getElementById('signout-link').addEventListener('click', function (e) {
+      e.preventDefault(); HSG.cognito.signOut(); window.location.href = 'login.html';
+    });
+
+    var $app = document.getElementById('app');
+    var qa = [];
+    var activeId = null;
+    var statusFilter = '';
+
+    var TEMPLATES = [
+      { name: 'Refer to BIP §X', body: 'Please refer to Section [X] of the Bidder Information Package, which addresses this question in detail. The current BIP supplement is available in the Data Room.' },
+      { name: 'CAA / Loan Sale Agreement', body: 'The terms of the Conditional Award Acceptance and Loan Sale Agreement are non-negotiable. Please refer to the executed CAA template in the Data Room for the complete language.' },
+      { name: 'Bid window mechanics', body: 'The bid window opens at the time specified in the BIP and closes precisely at the close time. Bids submitted after the close time will not be accepted under any circumstances.' },
+      { name: 'Pool composition', body: 'Pool composition is fixed as published in the BIP and the loan stratifications. HUD does not entertain modifications to pool boundaries during the sale window.' },
+      { name: 'Servicing transfer', body: 'Servicing rights and obligations transfer to the purchaser at settlement. The transfer date and procedures are governed by the executed PSA.' },
+      { name: 'Mission designation', body: 'Mission-bid designation must be elected at bid submission and cannot be added or removed after the bid window closes. Eligibility criteria are in the BIP.' },
+      { name: 'Withdraw bid', body: 'Bids may be withdrawn prior to the bid window close via the bidder portal "Withdraw" button on the My Bids tab. Withdrawn bids are removed from BEM evaluation.' },
+      { name: 'Acknowledge — under review', body: 'Thank you for your question. We are reviewing this internally and will respond as soon as possible. We will notify all qualified bidders simultaneously when an answer is published.' }
+    ];
+
+    function load() {
+      $app.innerHTML = '<p class="empty">Loading Q&amp;A…</p>';
+      HSG.api.qa.listInbox(statusFilter || undefined).then(function (r) {
+        qa = (r && r.qa) || [];
+        if (qa.length > 0 && !activeId) activeId = qa[0].qaId;
+        render();
+      }).catch(function (err) { $app.innerHTML = '<div class="error-box">' + esc(err.message) + '</div>'; });
+    }
+
+    function render() {
+      if (qa.length === 0) {
+        $app.innerHTML = '<div class="empty">No Q&amp;A entries match this filter. Bidders submit questions from the Q&amp;A tab in their portal.</div>';
+        return;
+      }
+
+      // Sort: pending first, then by askedAt desc
+      qa.sort(function (a, b) {
+        if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
+        return (b.askedAt || '').localeCompare(a.askedAt || '');
+      });
+
+      var active = qa.find(function (x) { return x.qaId === activeId; }) || qa[0];
+      activeId = active && active.qaId;
+
+      var pending = qa.filter(function (x) { return x.status === 'pending'; });
+      var answered = qa.filter(function (x) { return x.status === 'answered'; });
+
+      var html = '<div class="stat-grid" style="margin-bottom: var(--space-4);">' +
+        '<div class="stat-card"><div class="stat-card__label">PENDING</div><div class="stat-card__value" style="color: var(--color-warning);">' + pending.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-card__label">ANSWERED</div><div class="stat-card__value" style="color: var(--color-success);">' + answered.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-card__label">TOTAL</div><div class="stat-card__value">' + qa.length + '</div></div>' +
+      '</div>';
+
+      html += '<div class="qa-grid">';
+
+      // LEFT — list
+      html += '<div class="qa-list">' + qa.map(function (q) {
+        var isActive = q.qaId === activeId;
+        return '<div class="qa-row ' + (isActive ? 'active' : '') + '" data-id="' + esc(q.qaId) + '">' +
+          '<div class="qa-row__question">' + esc(u.truncate(q.question, 120)) + '</div>' +
+          '<div class="qa-row__meta">' +
+            '<span class="qa-row__sale">' + esc(q.saleId) + '</span>' +
+            '<span class="qa-row__status qa-row__status--' + esc(q.status) + '">' + esc(q.status) + '</span>' +
+            '<span>' + esc(u.dateRelative(q.askedAt)) + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+
+      // RIGHT — detail
+      html += '<div class="qa-detail">' + (active ? renderDetail(active) : '<div class="empty">Select a question from the list.</div>') + '</div>';
+
+      html += '</div>';
+
+      $app.innerHTML = html;
+
+      $app.querySelectorAll('.qa-row').forEach(function (row) {
+        row.addEventListener('click', function () { activeId = row.getAttribute('data-id'); render(); });
+      });
+
+      if (active) wireDetail(active);
+    }
+
+    function renderDetail(q) {
+      var html = '<div class="qa-detail__question">' + esc(q.question) + '</div>';
+      html += '<div class="qa-detail__meta">' +
+        '<span>Sale: <strong>' + esc(q.saleId) + '</strong></span>' +
+        '<span>Asked by: ' + esc(q.bidderName || q.bidderId) + '</span>' +
+        '<span>' + esc(u.dateRelative(q.askedAt)) + '</span>' +
+        '<span>Visibility: ' + esc(q.visibility || 'all') + '</span>' +
+      '</div>';
+
+      if (q.status === 'answered' && q.answer) {
+        html += '<div class="qa-detail__answer">' +
+          '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-success); letter-spacing: 0.05em;">PUBLISHED ANSWER · ' + esc(q.answeredBy || 'Transaction Specialist') + ' · ' + esc(u.dateRelative(q.answeredAt)) + '</div>' +
+          '<div style="margin-top: var(--space-2); white-space: pre-wrap;">' + esc(q.answer) + '</div>' +
+        '</div>';
+      } else {
+        html += '<h4 style="font-family: var(--font-heading); margin: var(--space-4) 0 var(--space-2);">Templates</h4>';
+        html += '<div class="template-grid">' + TEMPLATES.map(function (t, i) {
+          return '<div class="template-card" data-template="' + i + '">' +
+            '<div class="template-card__name">' + esc(t.name) + '</div>' +
+            '<div class="template-card__preview">' + esc(u.truncate(t.body, 80)) + '</div>' +
+          '</div>';
+        }).join('') + '</div>';
+
+        html += '<textarea class="form-textarea" id="answer-text" rows="8" placeholder="Type or select a template — your answer will be visible to all qualified bidders unless you mark it bidder-private."></textarea>';
+        html += '<div style="display: flex; gap: var(--space-2); margin-top: var(--space-3); align-items: center;">' +
+          '<label style="display: flex; gap: var(--space-1); align-items: center; font-size: var(--text-sm);"><input type="checkbox" id="visibility-all" checked /> Visible to all bidders</label>' +
+          '<button class="btn-portal" id="send-btn" style="margin-left: auto;">Send answer →</button>' +
+        '</div>';
+      }
+
+      return html;
+    }
+
+    function wireDetail(q) {
+      $app.querySelectorAll('[data-template]').forEach(function (card) {
+        card.addEventListener('click', function () {
+          var idx = parseInt(card.getAttribute('data-template'), 10);
+          var t = TEMPLATES[idx];
+          var ta = document.getElementById('answer-text');
+          if (ta) ta.value = ta.value ? (ta.value + '\n\n' + t.body) : t.body;
+        });
+      });
+      var sendBtn = document.getElementById('send-btn');
+      if (sendBtn) sendBtn.addEventListener('click', function () {
+        var ta = document.getElementById('answer-text');
+        if (!ta || !ta.value.trim()) { alert('Please enter an answer.'); return; }
+        sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+        HSG.api.qa.answer(q.qaId, ta.value.trim()).then(function () {
+          activeId = null; load();
+        }).catch(function (err) { alert('Send failed: ' + (err.message || err)); sendBtn.disabled = false; sendBtn.textContent = 'Send answer →'; });
+      });
+    }
+
+    document.querySelectorAll('[data-filter]').forEach(function (pill) {
+      pill.addEventListener('click', function () {
+        document.querySelectorAll('[data-filter]').forEach(function (p) { p.classList.remove('active'); });
+        pill.classList.add('active');
+        statusFilter = pill.getAttribute('data-filter');
+        load();
+      });
+    });
+
+    load();
+  })();
+  </script>
+</body>
+</html>

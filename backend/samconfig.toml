@@ -1,0 +1,44 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "hsg-hudoas-dev"
+
+[default.build.parameters]
+cached = true
+parallel = true
+use_container = false
+
+[default.validate.parameters]
+lint = true
+
+[dev.deploy.parameters]
+stack_name = "hsg-hudoas-dev"
+region = "us-east-1"
+s3_prefix = "hsg-hudoas-dev"
+resolve_s3 = true
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
+disable_rollback = false
+parameter_overrides = "Stage=dev DomainName=dev-hudloansales.housestrategiesgroup.com AdminEmail=jelani.house@housestrategiesgroup.com UseCustomDomain=false"
+tags = "Project=HUD-OAS-Platform Stage=dev"
+on_failure = "DO_NOTHING"
+
+[staging.deploy.parameters]
+stack_name = "hsg-hudoas-staging"
+region = "us-east-1"
+s3_prefix = "hsg-hudoas-staging"
+resolve_s3 = true
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
+parameter_overrides = "Stage=staging DomainName=staging-hudloansales.housestrategiesgroup.com AdminEmail=jelani.house@housestrategiesgroup.com"
+tags = "Project=HUD-OAS-Platform Stage=staging"
+
+[prod.deploy.parameters]
+stack_name = "hsg-hudoas-prod"
+region = "us-east-1"
+s3_prefix = "hsg-hudoas-prod"
+resolve_s3 = true
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
+parameter_overrides = "Stage=prod DomainName=hudloansales.housestrategiesgroup.com AdminEmail=jelani.house@housestrategiesgroup.com"
+tags = "Project=HUD-OAS-Platform Stage=prod"

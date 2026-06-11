@@ -1,0 +1,27 @@
+{
+  "name": "hsg-hudoas-backend",
+  "version": "0.1.0",
+  "description": "HUD OAS Transaction Platform backend — HSG",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "sam build --beta-features",
+    "deploy:dev": "sam deploy --config-env dev",
+    "deploy:staging": "sam deploy --config-env staging",
+    "deploy:prod": "sam deploy --config-env prod",
+    "logs:bidders:create": "sam logs --name FnBiddersCreate --stack-name hsg-hudoas-dev --tail",
+    "seed:dev": "node scripts/seed-dev.mjs",
+    "validate": "sam validate --lint",
+    "local:api": "sam local start-api --port 3000"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.645.0",
+    "@aws-sdk/lib-dynamodb": "^3.645.0",
+    "@aws-sdk/client-s3": "^3.645.0",
+    "@aws-sdk/s3-request-presigner": "^3.645.0",
+    "@aws-sdk/client-ses": "^3.645.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.645.0",
+    "pdf-lib": "^1.17.1"
+  }
+}

@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Command Center · HUD OAS Admin</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <link rel="stylesheet" href="_shell.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    .dash-grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); margin-top: var(--space-2); }
+    @media (max-width: 1100px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); margin-bottom: var(--space-6); }
+    @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    .kpi { padding: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); position: relative; overflow: hidden; }
+    .kpi::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px; background: var(--color-portal); }
+    .kpi--residential::before { background: var(--color-portal-residential); }
+    .kpi--commercial::before  { background: var(--color-portal-commercial); }
+    .kpi--alert::before       { background: var(--color-warning); }
+    .kpi--good::before        { background: var(--color-success); }
+    .kpi__label { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-muted); }
+    .kpi__value { font-family: var(--font-heading); font-size: var(--text-3xl); margin-top: var(--space-1); line-height: 1.1; }
+    .kpi__sub   { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: var(--space-1); font-family: var(--font-mono); }
+
+    .sale-row { display: grid; grid-template-columns: minmax(200px, 1fr) 1fr 100px 80px 90px; gap: var(--space-3); padding: var(--space-3); border-bottom: 1px solid var(--color-grey-100); align-items: center; cursor: pointer; }
+    .sale-row:hover { background: var(--color-grey-50); }
+    .sale-row__name strong { font-weight: 600; }
+    .sale-row__name small { display: block; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+
+    .state-rail { display: flex; gap: 2px; }
+    .state-rail__dot { flex: 1; height: 6px; background: var(--color-grey-200); border-radius: 2px; }
+    .state-rail__dot.done    { background: var(--color-success); }
+    .state-rail__dot.active  { background: var(--color-portal); animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .queue-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: var(--space-4); overflow: hidden; }
+    .queue-card__header { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; }
+    .queue-card__title { font-family: var(--font-heading); font-size: var(--text-md); }
+    .queue-card__count { font-family: var(--font-mono); font-size: var(--text-xs); padding: 2px 8px; border-radius: var(--radius-full); background: var(--color-portal-soft); color: var(--color-portal); }
+    .queue-card__body { padding: var(--space-2); max-height: 280px; overflow-y: auto; }
+    .queue-item { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-grey-100); font-size: var(--text-sm); cursor: pointer; }
+    .queue-item:hover { background: var(--color-grey-50); }
+    .queue-item:last-child { border-bottom: none; }
+    .queue-item__meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+    .queue-empty { padding: var(--space-5); text-align: center; color: var(--color-text-muted); font-size: var(--text-sm); }
+
+    .activity-stream { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); max-height: 380px; overflow-y: auto; }
+    .activity-row { display: grid; grid-template-columns: 80px 1fr; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--color-grey-100); }
+    .activity-row:last-child { border-bottom: none; }
+    .activity-row__time { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
+    .activity-row__what { font-size: var(--text-sm); }
+    .activity-row__what em { color: var(--color-text-muted); font-style: normal; font-family: var(--font-mono); font-size: var(--text-xs); margin-left: var(--space-2); }
+
+    .deadlines { background: var(--color-portal-dark); color: #FFF; border-radius: var(--radius-md); padding: var(--space-5); margin-bottom: var(--space-4); }
+    .deadlines__title { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+    .deadlines__hero { font-family: var(--font-heading); font-size: var(--text-3xl); margin: var(--space-2) 0; line-height: 1.1; }
+    .deadlines__list { font-size: var(--text-sm); line-height: 1.8; opacity: 0.85; }
+    .deadlines__list strong { color: #FFF; }
+
+    .countdown { font-family: var(--font-mono); font-size: var(--text-md); padding: 4px 10px; border-radius: var(--radius-sm); background: var(--color-warning-bg); color: var(--color-warning); display: inline-block; }
+    .countdown--imminent { background: var(--color-error-bg); color: var(--color-error); animation: pulse 2s ease-in-out infinite; }
+
+    .section-h { font-family: var(--font-heading); font-size: var(--text-lg); margin: var(--space-4) 0 var(--space-3); display: flex; align-items: center; justify-content: space-between; }
+    .section-h__hint { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 400; letter-spacing: 0.04em; }
+  </style>
+</head>
+<body data-portal="admin">
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-label">HUD OAS Admin</div>
+        <div class="sidebar__brand-name">Console</div>
+      </div>
+      <div class="sidebar__section">Overview</div>
+      <a class="sidebar__nav-item active" href="index.html">Dashboard</a>
+      <a class="sidebar__nav-item" href="bidders.html">Bidders</a>
+      <a class="sidebar__nav-item" href="bid-day.html">Bid day ops</a>
+      <a class="sidebar__nav-item" href="bem.html">BEM &amp; awards</a>
+      <div class="sidebar__section">Post-sale</div>
+      <a class="sidebar__nav-item" href="qa.html">Q&amp;A inbox</a>
+      <a class="sidebar__nav-item" href="settlements.html">Settlements</a>
+      <a class="sidebar__nav-item" href="compliance.html">Compliance &amp; QC</a>
+      <div class="sidebar__user">
+        <div id="user-name" style="color: #FFF; font-weight: 600;">…</div>
+        <div id="user-email" style="font-size: var(--text-xs); opacity: 0.7;"></div>
+        <a href="#" id="signout-link" style="display: inline-block; margin-top: var(--space-2); color: var(--color-portal-bright); text-decoration: underline; font-size: var(--text-sm);">Sign out</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="main__header">
+        <h1 class="main__title">Command Center</h1>
+        <div>
+          <span id="last-refresh" style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); margin-right: var(--space-3);"></span>
+          <button class="btn-portal btn-portal--ghost" id="refresh-btn" style="font-size: var(--text-sm);">Refresh</button>
+        </div>
+      </header>
+      <div class="main__content" id="app">
+        <p class="empty">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/api.js"></script>
+  <script>
+  (function () {
+    var u = HSG.utils;
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      });
+    }
+
+    if (!HSG.cognito.isAuthenticated()) { window.location.href = 'login.html?next=index.html'; return; }
+    var claims = HSG.api.decodeClaims() || {};
+    document.getElementById('user-name').textContent = claims['custom:entityName'] || claims.email || 'Admin';
+    document.getElementById('user-email').textContent = claims.email || '';
+    document.getElementById('signout-link').addEventListener('click', function (e) {
+      e.preventDefault(); HSG.cognito.signOut(); window.location.href = 'login.html';
+    });
+
+    var $app = document.getElementById('app');
+
+    // Sale state machine — drives the progress rail
+    var STATES = ['draft', 'announced', 'qualification_open', 'go_live', 'bid_window', 'under_evaluation', 'awarded', 'settling', 'post_sale', 'archived'];
+    var STATE_LABELS = {
+      'draft': 'Draft', 'announced': 'Announced', 'qualification_open': 'Qual open', 'go_live': 'Go-live',
+      'bid_window': 'Bid window', 'under_evaluation': 'Eval', 'awarded': 'Awarded',
+      'settling': 'Settling', 'post_sale': 'Post-sale', 'archived': 'Archived'
+    };
+
+    function load() {
+      $app.innerHTML = '<p class="empty">Loading dashboard…</p>';
+      Promise.all([
+        HSG.api.sales.list({}).catch(function () { return { sales: [] }; }),
+        HSG.api.bidders.list({}).catch(function () { return { bidders: [] }; }),
+        HSG.api.qa.listInbox('pending').catch(function () { return { qa: [] }; }),
+        HSG.api.settlements.list({}).catch(function () { return { settlements: [] }; }),
+        HSG.api.bids.list({}).catch(function () { return { bids: [] }; })
+      ]).then(function (r) {
+        render({
+          sales:       r[0].sales || [],
+          bidders:     r[1].bidders || [],
+          qaPending:   r[2].qa || [],
+          settlements: r[3].settlements || [],
+          bids:        r[4].bids || []
+        });
+        document.getElementById('last-refresh').textContent = 'Refreshed ' + u.dateRelative(new Date().toISOString());
+      }).catch(function (err) {
+        $app.innerHTML = '<div class="error-box">' + esc(err.message || 'Failed to load') + '</div>';
+      });
+    }
+
+    function render(d) {
+      var residentialSales = d.sales.filter(function (s) { return (s.portal === 'residential') || (['HVLS','HNVLS','SFLS'].indexOf(s.programType || s.program) >= 0); });
+      var commercialSales  = d.sales.filter(function (s) { return (s.portal === 'commercial')  || (['MHLS','HLS'].indexOf(s.programType || s.program) >= 0); });
+      var qualifiedBidders = d.bidders.filter(function (b) { return /Qualified|qualified/.test(b.qualificationStatus || b.status || ''); });
+      var pendingBidders   = d.bidders.filter(function (b) { return /Pending|under_review|Submitted/i.test(b.qualificationStatus || b.status || ''); });
+      var openBidWindow    = d.sales.filter(function (s) { return /bid_window|Bid Window/i.test(s.state || s.status || ''); });
+      var activeSettlement = d.settlements.filter(function (s) { return /pending|active|in.progress/i.test(s.status || ''); });
+      var aggregateUPB     = d.sales.reduce(function (sum, s) { return sum + ((s.summary && s.summary.aggregate_upb) || s.aggregateValue || 0); }, 0);
+
+      var html = '';
+
+      // Hero KPI row
+      html += '<div class="kpi-grid">';
+      html += renderKpi('Residential', residentialSales.length + ' sales', residentialSales.length, residentialSales.reduce(function (s, x) { return s + ((x.summary && x.summary.loan_count) || 0); }, 0) + ' loans · ' + u.currencyCompact(residentialSales.reduce(function (s, x) { return s + ((x.summary && x.summary.aggregate_upb) || 0); }, 0)) + ' UPB', 'kpi--residential');
+      html += renderKpi('Commercial', commercialSales.length + ' sales', commercialSales.length, commercialSales.reduce(function (s, x) { return s + ((x.summary && x.summary.loan_count) || 0); }, 0) + ' loans · ' + u.currencyCompact(commercialSales.reduce(function (s, x) { return s + ((x.summary && x.summary.aggregate_upb) || 0); }, 0)) + ' UPB', 'kpi--commercial');
+      html += renderKpi('Qualified bidders', qualifiedBidders.length, qualifiedBidders.length, pendingBidders.length + ' pending review', pendingBidders.length > 0 ? 'kpi--alert' : 'kpi--good');
+      html += renderKpi('Active settlements', activeSettlement.length, activeSettlement.length, d.settlements.length + ' total', activeSettlement.length > 0 ? 'kpi--commercial' : '');
+      html += '</div>';
+
+      // Two-column grid: left=sales+activity, right=queue+deadlines
+      html += '<div class="dash-grid">';
+
+      // LEFT
+      html += '<div>';
+      html += '<h2 class="section-h">Active sales <span class="section-h__hint">' + d.sales.length + ' total · click to open compliance</span></h2>';
+      if (d.sales.length === 0) {
+        html += '<div class="empty">No sales yet. Seed the dev tables (or stand up a real sale).</div>';
+      } else {
+        html += '<div class="card" style="padding: 0; overflow: hidden;">';
+        html += d.sales.map(renderSaleRow).join('');
+        html += '</div>';
+      }
+
+      html += '<h2 class="section-h">Recent activity <span class="section-h__hint">last 50 events</span></h2>';
+      html += '<div class="activity-stream">' + renderActivityStream(d) + '</div>';
+      html += '</div>';
+
+      // RIGHT
+      html += '<div>';
+
+      // Deadlines hero
+      html += renderDeadlinesPanel(d.sales, openBidWindow);
+
+      // Pending qualifications
+      html += renderQueue('Pending qualifications', pendingBidders.length, pendingBidders.slice(0, 6).map(function (b) {
+        return '<div class="queue-item" data-link="bidders.html?id=' + esc(b.bidderId) + '">' +
+          '<strong>' + esc(b.entityName) + '</strong>' +
+          '<div class="queue-item__meta">' + esc(b.portal || '—') + ' · ' + esc(b.qualificationStatus || b.status) + '</div>' +
+        '</div>';
+      }).join(''));
+
+      // Pending Q&A
+      html += renderQueue('Pending Q&amp;A', d.qaPending.length, d.qaPending.slice(0, 6).map(function (q) {
+        return '<div class="queue-item" data-link="qa.html?id=' + esc(q.qaId) + '">' +
+          '<strong>' + esc(u.truncate(q.question, 80)) + '</strong>' +
+          '<div class="queue-item__meta">' + esc(q.saleId) + ' · asked ' + esc(u.dateRelative(q.askedAt)) + '</div>' +
+        '</div>';
+      }).join(''));
+
+      // Settlements at risk
+      var atRisk = d.settlements.filter(function (s) {
+        var due = s.expectedSettlementDate || s.dueDate;
+        if (!due) return false;
+        return u.daysUntil(due) <= 7;
+      });
+      html += renderQueue('Settlements due <span style="font-weight:400; opacity: 0.7;">≤ 7 days</span>', atRisk.length, atRisk.slice(0, 6).map(function (s) {
+        return '<div class="queue-item" data-link="settlements.html?id=' + esc(s.awardId) + '">' +
+          '<strong>' + esc(s.poolOrDealId || s.awardId) + '</strong>' +
+          '<div class="queue-item__meta">' + esc(s.saleId) + ' · ' + esc(u.dateRelative(s.expectedSettlementDate)) + '</div>' +
+        '</div>';
+      }).join(''));
+
+      html += '</div>'; // right
+      html += '</div>'; // dash-grid
+
+      $app.innerHTML = html;
+
+      // Wire row clicks
+      $app.querySelectorAll('.sale-row').forEach(function (row) {
+        row.addEventListener('click', function () { window.location.href = 'compliance.html?saleId=' + encodeURIComponent(row.getAttribute('data-sale-id')); });
+      });
+      $app.querySelectorAll('[data-link]').forEach(function (item) {
+        item.addEventListener('click', function () { window.location.href = item.getAttribute('data-link'); });
+      });
+    }
+
+    function renderKpi(label, value, _, sub, mod) {
+      return '<div class="kpi ' + (mod || '') + '">' +
+        '<div class="kpi__label">' + esc(label) + '</div>' +
+        '<div class="kpi__value">' + esc(value) + '</div>' +
+        '<div class="kpi__sub">' + sub + '</div>' +
+      '</div>';
+    }
+
+    function renderSaleRow(sale) {
+      var saleId = sale.saleId || sale.sale_id;
+      var program = sale.programType || sale.program || 'MHLS';
+      var name = sale.long_name || sale.sale_name || sale.name || saleId;
+      var state = sale.state || sale.status || 'draft';
+      var stateIdx = Math.max(0, STATES.indexOf(state));
+
+      // Build state rail
+      var rail = STATES.map(function (s, i) {
+        var cls = '';
+        if (i < stateIdx) cls = 'done';
+        else if (i === stateIdx) cls = 'active';
+        return '<div class="state-rail__dot ' + cls + '" title="' + esc(STATE_LABELS[s]) + '"></div>';
+      }).join('');
+
+      var bidDate = (sale.key_dates && sale.key_dates.bid_day) || sale.bidDate;
+      var loanCount = (sale.summary && sale.summary.loan_count) || 0;
+      var upb = (sale.summary && sale.summary.aggregate_upb) || sale.aggregateValue || 0;
+
+      return '<div class="sale-row" data-sale-id="' + esc(saleId) + '">' +
+        '<div class="sale-row__name"><strong>' + esc(name) + '</strong>' +
+          '<small>' + esc(saleId) + ' · ' + esc(program) + '</small>' +
+        '</div>' +
+        '<div class="state-rail" style="grid-column: span 1;">' + rail + '</div>' +
+        '<div style="text-align: right; font-family: var(--font-mono); font-size: var(--text-xs);">' + esc(loanCount) + ' loans</div>' +
+        '<div style="text-align: right; font-family: var(--font-mono); font-size: var(--text-xs);">' + esc(u.currencyCompact(upb)) + '</div>' +
+        '<div style="text-align: right; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">' + (bidDate ? esc(u.dateShort(bidDate)) : '—') + '</div>' +
+      '</div>';
+    }
+
+    function renderActivityStream(d) {
+      // Synthesize an activity stream from recent records
+      var events = [];
+      d.bidders.slice().sort(function (a, b) { return (b.submittedAt || '').localeCompare(a.submittedAt || ''); }).slice(0, 8).forEach(function (b) {
+        events.push({
+          time: b.submittedAt,
+          html: 'Bidder <strong>' + esc(b.entityName) + '</strong> submitted qualification <em>· ' + esc(b.qualificationStatus || b.status || '—') + '</em>'
+        });
+      });
+      d.bids.slice(0, 8).forEach(function (b) {
+        events.push({
+          time: b.timestamp || b.submittedAt,
+          html: 'Bid <strong>' + esc(b.confirmationCode || b.bidId) + '</strong> received on ' + esc(b.poolId || b.dealId) + ' <em>· ' + esc(u.currency(b.bidAmount || b.bidAmountUSD || 0)) + '</em>'
+        });
+      });
+      events.sort(function (a, b) { return (b.time || '').localeCompare(a.time || ''); });
+      if (events.length === 0) return '<div class="queue-empty">No activity yet.</div>';
+      return events.slice(0, 50).map(function (e) {
+        return '<div class="activity-row">' +
+          '<div class="activity-row__time">' + esc(e.time ? u.dateRelative(e.time) : '—') + '</div>' +
+          '<div class="activity-row__what">' + e.html + '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function renderQueue(title, count, body) {
+      return '<div class="queue-card">' +
+        '<div class="queue-card__header">' +
+          '<div class="queue-card__title">' + title + '</div>' +
+          '<div class="queue-card__count">' + count + '</div>' +
+        '</div>' +
+        '<div class="queue-card__body">' + (count === 0 ? '<div class="queue-empty">All clear.</div>' : body) + '</div>' +
+      '</div>';
+    }
+
+    function renderDeadlinesPanel(sales, openBidWindow) {
+      // Find next bid day or qualification close across all sales
+      var deadlines = [];
+      sales.forEach(function (s) {
+        var saleId = s.saleId || s.sale_id;
+        var kd = s.key_dates || {};
+        if (kd.bid_day) deadlines.push({ when: kd.bid_day, what: 'Bid day', sale: saleId });
+        if (kd.qualification_closes) deadlines.push({ when: kd.qualification_closes, what: 'Qualification closes', sale: saleId });
+        if (kd.go_live_data_room) deadlines.push({ when: kd.go_live_data_room, what: 'Go-live', sale: saleId });
+        if (kd.expected_settlement) deadlines.push({ when: kd.expected_settlement, what: 'Settlement', sale: saleId });
+      });
+      var future = deadlines.filter(function (d) { return new Date(d.when) >= new Date(); });
+      future.sort(function (a, b) { return a.when.localeCompare(b.when); });
+      var next = future[0];
+
+      if (openBidWindow.length > 0) {
+        var s = openBidWindow[0];
+        var saleId = s.saleId || s.sale_id;
+        return '<div class="deadlines" style="background: linear-gradient(135deg, var(--color-error) 0%, var(--color-error-bg) 200%);">' +
+          '<div class="deadlines__title" style="color: rgba(255,255,255,0.85);">★ BID WINDOW OPEN</div>' +
+          '<div class="deadlines__hero">' + esc(saleId) + '</div>' +
+          '<div class="deadlines__list">Live until ' + esc((s.key_dates && s.key_dates.bid_window_close_eastern) || '—') + ' Eastern. <a href="bid-day.html?saleId=' + esc(saleId) + '" style="color: #FFF; text-decoration: underline;">Open bid-day ops →</a></div>' +
+        '</div>';
+      }
+
+      if (!next) {
+        return '<div class="deadlines"><div class="deadlines__title">Upcoming</div><div class="deadlines__hero">All clear</div><div class="deadlines__list">No deadlines in the next 30 days.</div></div>';
+      }
+
+      var daysOut = u.daysUntil(next.when);
+      return '<div class="deadlines">' +
+        '<div class="deadlines__title">Next milestone</div>' +
+        '<div class="deadlines__hero">' + esc(next.what) + '</div>' +
+        '<div class="deadlines__list">' +
+          '<strong>' + esc(next.sale) + '</strong> · ' + esc(u.date(next.when)) + ' (' + (daysOut > 0 ? 'in ' + daysOut + ' days' : 'today') + ')<br />' +
+          (future.slice(1, 4).map(function (f) {
+            return '· ' + esc(f.what) + ' for <strong>' + esc(f.sale) + '</strong> — ' + esc(u.dateShort(f.when));
+          }).join('<br />')) +
+        '</div>' +
+      '</div>';
+    }
+
+    document.getElementById('refresh-btn').addEventListener('click', load);
+    load();
+  })();
+  </script>
+</body>
+</html>

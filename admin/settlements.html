@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Settlements · HUD OAS Admin</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <link rel="stylesheet" href="_shell.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    .settlement-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-3); cursor: pointer; transition: box-shadow var(--duration-fast); }
+    .settlement-card:hover { box-shadow: var(--shadow-md); }
+    .settlement-card__header { display: grid; grid-template-columns: 1fr 1fr 120px 100px 100px; gap: var(--space-3); align-items: center; }
+    .settlement-card__name { font-weight: 600; }
+    .settlement-card__sub { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+    .settlement-card__progress { height: 6px; background: var(--color-grey-200); border-radius: 3px; overflow: hidden; margin-top: var(--space-3); }
+    .settlement-card__fill { height: 100%; background: var(--color-portal); transition: width 0.4s ease-out; }
+    .settlement-card__fill--late { background: var(--color-error); }
+    .settlement-card__fill--soon { background: var(--color-warning); }
+
+    .timeline { position: relative; padding-left: var(--space-8); }
+    .timeline::before { content: ''; position: absolute; left: var(--space-3); top: 0; bottom: 0; width: 2px; background: var(--color-border); }
+    .milestone { position: relative; padding: var(--space-3) 0; }
+    .milestone::before { content: ''; position: absolute; left: calc(-1 * var(--space-5) - 8px); top: var(--space-4); width: 16px; height: 16px; border-radius: 50%; background: var(--color-grey-200); border: 3px solid var(--color-surface); box-shadow: 0 0 0 2px var(--color-border); }
+    .milestone--done::before { background: var(--color-success); box-shadow: 0 0 0 2px var(--color-success); }
+    .milestone--active::before { background: var(--color-portal); box-shadow: 0 0 0 2px var(--color-portal); animation: pulse 2s ease-in-out infinite; }
+    .milestone__label { font-weight: 600; font-size: var(--text-sm); }
+    .milestone__meta { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+    .milestone__action { margin-top: var(--space-2); }
+
+    .deliverable-row { display: grid; grid-template-columns: 24px 1fr auto; gap: var(--space-2); padding: var(--space-2); align-items: center; border-bottom: 1px solid var(--color-grey-100); }
+    .deliverable-row:last-child { border-bottom: none; }
+    .deliverable-row__check { cursor: pointer; }
+    .deliverable-row__label { font-size: var(--text-sm); }
+    .deliverable-row__label.done { color: var(--color-text-muted); text-decoration: line-through; }
+    .deliverable-row__cat { font-family: var(--font-mono); font-size: var(--text-xs); padding: 2px 6px; border-radius: var(--radius-sm); }
+    .deliverable-row__cat--legal { background: var(--color-info-bg); color: var(--color-info); }
+    .deliverable-row__cat--financial { background: var(--color-success-bg); color: var(--color-success); }
+    .deliverable-row__cat--operational { background: var(--color-warning-bg); color: var(--color-warning); }
+  </style>
+</head>
+<body data-portal="admin">
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-label">HUD OAS Admin</div>
+        <div class="sidebar__brand-name">Console</div>
+      </div>
+      <div class="sidebar__section">Overview</div>
+      <a class="sidebar__nav-item" href="index.html">Dashboard</a>
+      <a class="sidebar__nav-item" href="bidders.html">Bidders</a>
+      <a class="sidebar__nav-item" href="bid-day.html">Bid day ops</a>
+      <a class="sidebar__nav-item" href="bem.html">BEM &amp; awards</a>
+      <div class="sidebar__section">Post-sale</div>
+      <a class="sidebar__nav-item" href="qa.html">Q&amp;A inbox</a>
+      <a class="sidebar__nav-item active" href="settlements.html">Settlements</a>
+      <a class="sidebar__nav-item" href="compliance.html">Compliance &amp; QC</a>
+      <div class="sidebar__user">
+        <div id="user-name" style="color: #FFF; font-weight: 600;">…</div>
+        <div id="user-email" style="font-size: var(--text-xs); opacity: 0.7;"></div>
+        <a href="#" id="signout-link" style="display: inline-block; margin-top: var(--space-2); color: var(--color-portal-bright); text-decoration: underline; font-size: var(--text-sm);">Sign out</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="main__header">
+        <h1 class="main__title">Settlements</h1>
+        <div>
+          <select class="form-select" id="status-filter" style="width: auto; margin-right: var(--space-2);">
+            <option value="">All statuses</option>
+            <option value="pending-execution">Pending execution</option>
+            <option value="active">Active</option>
+            <option value="closed">Closed</option>
+          </select>
+          <button class="btn-portal btn-portal--ghost" id="refresh-btn" style="font-size: var(--text-sm);">Refresh</button>
+        </div>
+      </header>
+      <div class="main__content" id="app">
+        <p class="empty">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer__header">
+      <h2 id="drawer-title" style="font-family: var(--font-heading); font-size: var(--text-xl);">Settlement</h2>
+      <button class="drawer__close" id="drawer-close">&times;</button>
+    </div>
+    <div class="drawer__content" id="drawer-content"></div>
+  </aside>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/api.js"></script>
+  <script>
+  (function () {
+    var u = HSG.utils;
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+    if (!HSG.cognito.isAuthenticated()) { window.location.href = 'login.html?next=settlements.html'; return; }
+    var claims = HSG.api.decodeClaims() || {};
+    document.getElementById('user-name').textContent = claims['custom:entityName'] || claims.email || 'Admin';
+    document.getElementById('user-email').textContent = claims.email || '';
+    document.getElementById('signout-link').addEventListener('click', function (e) {
+      e.preventDefault(); HSG.cognito.signOut(); window.location.href = 'login.html';
+    });
+
+    var $app = document.getElementById('app');
+    var settlements = [];
+
+    function load() {
+      $app.innerHTML = '<p class="empty">Loading settlements…</p>';
+      var status = document.getElementById('status-filter').value;
+      HSG.api.settlements.list(status ? { status: status } : {}).then(function (r) {
+        settlements = (r && r.settlements) || [];
+        render();
+      }).catch(function (err) { $app.innerHTML = '<div class="error-box">' + esc(err.message) + '</div>'; });
+    }
+
+    function render() {
+      if (settlements.length === 0) {
+        $app.innerHTML = '<div class="empty">No settlements yet. Settlements are created when an admin approves awards in the BEM page.</div>';
+        return;
+      }
+
+      // Stats
+      var totalValue = settlements.reduce(function (s, x) { return s + Number(x.awardAmountUSD || 0); }, 0);
+      var atRisk = settlements.filter(function (s) {
+        var d = u.daysUntil(s.expectedSettlementDate);
+        return d != null && d <= 7 && d >= 0;
+      });
+      var late = settlements.filter(function (s) {
+        var d = u.daysUntil(s.expectedSettlementDate);
+        return d != null && d < 0 && s.status !== 'closed';
+      });
+
+      var html = '<div class="stat-grid">' +
+        '<div class="stat-card"><div class="stat-card__label">TOTAL SETTLEMENTS</div><div class="stat-card__value">' + settlements.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-card__label">AGGREGATE VALUE</div><div class="stat-card__value">' + esc(u.currencyCompact(totalValue)) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-card__label">DUE ≤ 7 DAYS</div><div class="stat-card__value" style="color: var(--color-warning);">' + atRisk.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-card__label">PAST DUE</div><div class="stat-card__value" style="color: var(--color-error);">' + late.length + '</div></div>' +
+      '</div>';
+
+      // Sort: late first, then by expected date
+      settlements.sort(function (a, b) {
+        var da = u.daysUntil(a.expectedSettlementDate);
+        var db = u.daysUntil(b.expectedSettlementDate);
+        if (da == null) return 1;
+        if (db == null) return -1;
+        return da - db;
+      });
+
+      html += settlements.map(renderCard).join('');
+
+      $app.innerHTML = html;
+
+      $app.querySelectorAll('.settlement-card').forEach(function (card) {
+        card.addEventListener('click', function () { openDrawer(card.getAttribute('data-id')); });
+      });
+    }
+
+    function renderCard(s) {
+      var milestoneTotal = (s.milestones || []).length;
+      var milestoneDone = (s.milestones || []).filter(function (m) { return m.status === 'done'; }).length;
+      var deliverableTotal = (s.deliverables || []).length;
+      var deliverableDone = (s.deliverables || []).filter(function (d) { return d.completed; }).length;
+      var pct = milestoneTotal > 0 ? Math.round((milestoneDone / milestoneTotal) * 100) : 0;
+      var daysOut = u.daysUntil(s.expectedSettlementDate);
+      var fillMod = daysOut != null && daysOut < 0 ? 'late' : (daysOut != null && daysOut <= 7 ? 'soon' : '');
+
+      return '<div class="settlement-card" data-id="' + esc(s.awardId) + '">' +
+        '<div class="settlement-card__header">' +
+          '<div>' +
+            '<div class="settlement-card__name">' + esc(s.poolOrDealId || s.awardId) + '</div>' +
+            '<div class="settlement-card__sub">' + esc(s.saleId) + ' · ' + esc(s.programType || '—') + ' · ' + esc(s.bidderId) + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size: var(--text-sm);"><strong>' + esc(u.currency(s.awardAmountUSD || 0)) + '</strong></div>' +
+            '<div class="settlement-card__sub">awarded</div>' +
+          '</div>' +
+          '<div style="text-align: right;">' +
+            '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">' + milestoneDone + '/' + milestoneTotal + ' milestones</div>' +
+            '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">' + deliverableDone + '/' + deliverableTotal + ' deliverables</div>' +
+          '</div>' +
+          '<div style="text-align: right;">' +
+            '<div style="font-family: var(--font-mono); font-size: var(--text-md); font-weight: 600;">' + (daysOut != null ? (daysOut >= 0 ? daysOut + 'd' : 'late ' + Math.abs(daysOut) + 'd') : '—') + '</div>' +
+            '<div class="settlement-card__sub">' + esc(s.expectedSettlementDate ? u.dateShort(s.expectedSettlementDate) : 'TBD') + '</div>' +
+          '</div>' +
+          '<div style="text-align: right;">' +
+            '<span class="badge badge--' + esc(s.status || 'pending') + '">' + esc((s.status || 'pending').replace(/-/g,' ').toUpperCase()) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="settlement-card__progress"><div class="settlement-card__fill ' + (fillMod ? 'settlement-card__fill--' + fillMod : '') + '" style="width: ' + pct + '%;"></div></div>' +
+      '</div>';
+    }
+
+    function openDrawer(awardId) {
+      var s = settlements.find(function (x) { return x.awardId === awardId; });
+      if (!s) return;
+      document.getElementById('drawer-title').textContent = s.poolOrDealId || s.awardId;
+      document.getElementById('drawer-content').innerHTML = renderDetail(s);
+      document.getElementById('drawer').classList.add('active');
+      document.getElementById('drawer-overlay').classList.add('active');
+      wireDrawerActions(s);
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawer').classList.remove('active');
+      document.getElementById('drawer-overlay').classList.remove('active');
+    }
+    document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+    document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
+
+    function renderDetail(s) {
+      var milestones = s.milestones || [];
+      var deliverables = s.deliverables || [];
+      var bicat = {};
+      deliverables.forEach(function (d) { (bicat[d.category || 'other'] = bicat[d.category || 'other'] || []).push(d); });
+
+      return '<section style="margin-bottom: var(--space-6);">' +
+        '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-3); margin-bottom: var(--space-4);">' +
+          row('Sale', s.saleId) +
+          row('Program', s.programType) +
+          row('Bidder', s.bidderId) +
+          row('Award amount', u.currency(s.awardAmountUSD || 0)) +
+          row('Mission bid', s.missionBid ? 'Yes' : 'No') +
+          row('Expected settlement', s.expectedSettlementDate ? u.date(s.expectedSettlementDate) : 'TBD') +
+        '</div>' +
+      '</section>' +
+
+      '<section style="margin-bottom: var(--space-6);">' +
+        '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-3);">Milestones</h3>' +
+        '<div class="timeline">' + milestones.map(function (m, i) {
+          var modClass = m.status === 'done' ? 'milestone--done' : (m.status === 'active' || (i > 0 && milestones[i-1] && milestones[i-1].status === 'done' && m.status === 'pending') ? 'milestone--active' : '');
+          return '<div class="milestone ' + modClass + '">' +
+            '<div class="milestone__label">' + esc(m.label) + '</div>' +
+            '<div class="milestone__meta">due offset: ' + (m.dueOffsetDays != null ? m.dueOffsetDays + ' days' : '—') + ' · ' + esc(m.status || 'pending') + '</div>' +
+            (m.status !== 'done' ? '<div class="milestone__action"><button class="btn-portal" data-mark-done="' + i + '" style="font-size: var(--text-xs); padding: 4px 10px;">Mark done</button></div>' : '') +
+          '</div>';
+        }).join('') + '</div>' +
+      '</section>' +
+
+      '<section style="margin-bottom: var(--space-6);">' +
+        '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-3);">Deliverables</h3>' +
+        Object.keys(bicat).map(function (cat) {
+          return '<h4 style="font-family: var(--font-mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); margin: var(--space-3) 0 var(--space-1);">' + esc(cat) + '</h4>' +
+            bicat[cat].map(function (d) {
+              return '<div class="deliverable-row">' +
+                '<input type="checkbox" class="deliverable-row__check" data-deliverable="' + esc(d.id) + '" ' + (d.completed ? 'checked' : '') + ' />' +
+                '<div class="deliverable-row__label ' + (d.completed ? 'done' : '') + '">' + esc(d.label) + (d.required ? ' <span style="font-family: var(--font-mono); font-size: 9px; color: var(--color-text-muted);">REQ</span>' : '') + '</div>' +
+                '<div class="deliverable-row__cat deliverable-row__cat--' + esc(d.category || 'other') + '">' + esc(d.category || 'other') + '</div>' +
+              '</div>';
+            }).join('');
+        }).join('') +
+      '</section>';
+    }
+
+    function row(label, value) {
+      return '<div>' +
+        '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.04em; text-transform: uppercase;">' + esc(label) + '</div>' +
+        '<div style="font-size: var(--text-sm); margin-top: 2px;">' + esc(value || '—') + '</div>' +
+      '</div>';
+    }
+
+    function wireDrawerActions(s) {
+      document.querySelectorAll('[data-mark-done]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var idx = parseInt(btn.getAttribute('data-mark-done'), 10);
+          btn.disabled = true;
+          HSG.api.settlements.updateMilestone(s.awardId, idx, { status: 'done' }).then(function () { load(); closeDrawer(); }).catch(function (err) { alert(err.message); btn.disabled = false; });
+        });
+      });
+      document.querySelectorAll('[data-deliverable]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+          var id = cb.getAttribute('data-deliverable');
+          HSG.api.settlements.updateDeliverable(s.awardId, id, { completed: cb.checked }).catch(function (err) { alert(err.message); cb.checked = !cb.checked; });
+        });
+      });
+    }
+
+    document.getElementById('refresh-btn').addEventListener('click', load);
+    document.getElementById('status-filter').addEventListener('change', load);
+    load();
+  })();
+  </script>
+</body>
+</html>
