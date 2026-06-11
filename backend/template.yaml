@@ -1157,6 +1157,7 @@ Resources:
       Policies:
         - DynamoDBReadPolicy: { TableName: !Ref LoansTable }
         - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+        - DynamoDBReadPolicy: { TableName: !Ref BiddersTable }   # qualification gate (QL-03)
       Events:
         HttpLoans:
           Type: HttpApi
@@ -1175,6 +1176,7 @@ Resources:
       Policies:
         - DynamoDBReadPolicy: { TableName: !Ref LoansTable }
         - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+        - DynamoDBReadPolicy: { TableName: !Ref BiddersTable }   # qualification gate (QL-03)
       Events:
         HttpGet:
           Type: HttpApi
