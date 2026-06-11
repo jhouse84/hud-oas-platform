@@ -1,6 +1,6 @@
 import { query, getItem, TABLES } from '../../lib/ddb.mjs';
 import { ok, notFound, wrap } from '../../lib/response.mjs';
-import { requirePortalAccess } from '../../lib/auth.mjs';
+import { requirePortalAccess, requireQualifiedForSale } from '../../lib/auth.mjs';
 import { stampPortal } from '../../lib/portal.mjs';
 
 /**
@@ -21,6 +21,8 @@ export const handler = wrap(async (event) => {
   if (!sale) return notFound('Sale');
   stampPortal(sale);
   requirePortalAccess(event, sale);
+  // The loan tape is sale-sensitive — qualification-gated like the VDR (QL-03).
+  await requireQualifiedForSale(event, sale, (id) => getItem(TABLES.BIDDERS, { bidderId: id }));
 
   const items = await query(TABLES.LOANS, {
     KeyConditionExpression: '#s = :s',

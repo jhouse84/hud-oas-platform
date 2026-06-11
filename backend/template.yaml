@@ -1535,6 +1535,32 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
+  # Explicit security-headers policy (the prior managed ID was a CORS policy,
+  # so no security headers were actually being served). Audit S-2.
+  SecurityHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub 'hsg-${Stage}-security-headers'
+        Comment: HSTS, CSP, frame/nosniff/referrer/permissions for the OAS platform
+        SecurityHeadersConfig:
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 63072000
+            IncludeSubdomains: true
+            Preload: true
+            Override: true
+          ContentTypeOptions: { Override: true }
+          FrameOptions: { FrameOption: DENY, Override: true }
+          ReferrerPolicy: { ReferrerPolicy: strict-origin-when-cross-origin, Override: true }
+          ContentSecurityPolicy:
+            Override: true
+            ContentSecurityPolicy: !Sub "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://*.execute-api.${AWS::Region}.amazonaws.com https://cognito-idp.${AWS::Region}.amazonaws.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+        CustomHeadersConfig:
+          Items:
+            - Header: Permissions-Policy
+              Value: "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+              Override: true
+
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -1568,7 +1594,7 @@ Resources:
           CachedMethods: [GET, HEAD]
           Compress: true
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6   # CachingOptimized
-          ResponseHeadersPolicyId: 5cc3b908-e619-4b99-88e5-2cf7f45965bd   # SecurityHeadersPolicy (managed)
+          ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
         CacheBehaviors:
           - PathPattern: /api/*
             TargetOriginId: ApiOrigin
@@ -1578,6 +1604,7 @@ Resources:
             Compress: true
             CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad   # CachingDisabled
             OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac   # AllViewerExceptHostHeader
+            ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
         CustomErrorResponses:
           - { ErrorCode: 403, ResponseCode: 200, ResponsePagePath: /index.html, ErrorCachingMinTTL: 60 }
           - { ErrorCode: 404, ResponseCode: 200, ResponsePagePath: /index.html, ErrorCachingMinTTL: 60 }

@@ -84,6 +84,36 @@ export function requirePortalAccess(event, target) {
   throw err;
 }
 
+// Sale states at which qualified bidders may see sale-sensitive data (tape, VDR).
+export const VDR_OPEN_STATES = new Set([
+  'go_live', 'Go-Live', 'bid_window', 'Bid Window',
+  'under_evaluation', 'Under evaluation', 'awarded', 'Awarded',
+  'settling', 'Settling', 'post_sale', 'Post-sale'
+]);
+
+/**
+ * Gate sale-sensitive data (loan tape, VDR) behind qualification (QL-03).
+ * Admins pass freely. A non-admin bidder must be Qualified AND the sale must
+ * be at an open state. Returns the identity on success; throws 403 otherwise.
+ * `getBidder` is an async (bidderId) => bidderRecord (callers pass ddb getItem).
+ */
+export async function requireQualifiedForSale(event, sale, getBidder) {
+  const me = identity(event);
+  if (me.isAdmin) return me;
+  if (!me.bidderId) {
+    const err = new Error('Authenticated bidder required'); err.statusCode = 403; err.expose = true; throw err;
+  }
+  const bidder = await getBidder(me.bidderId);
+  if (!bidder || !/Qualified/i.test(bidder.qualificationStatus || bidder.status || '')) {
+    const err = new Error(`Qualification required before sale data access (current: ${bidder ? (bidder.qualificationStatus || bidder.status) : 'none'})`);
+    err.statusCode = 403; err.expose = true; throw err;
+  }
+  if (sale && sale.state && !VDR_OPEN_STATES.has(sale.state)) {
+    const err = new Error(`Sale data is not open (sale state: ${sale.state})`); err.statusCode = 403; err.expose = true; throw err;
+  }
+  return me;
+}
+
 /**
  * Derive portal from request — query string `?portal=` or path prefix.
  */
