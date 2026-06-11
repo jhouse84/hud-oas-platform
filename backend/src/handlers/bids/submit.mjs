@@ -245,7 +245,7 @@ export const handler = wrap(async (event) => {
   }
 
   // Receipt email — figures and CODE come from the validated form
-  await sendEmail({
+  const emailResult = await sendEmail({
     to: bidder.contactEmail,
     subject: `Bid form received — ${body.saleId} · ${receiptId}`,
     text: `Your bid form for ${body.saleId} has been received and validated.\n\n` +
@@ -257,6 +257,18 @@ export const handler = wrap(async (event) => {
           `You may revise and resubmit any time before the bid window closes; the latest validated form governs at close.`
   });
 
+  // In-app notification — the receipt the bidder sees even if email fails
+  await putItem(TABLES.NOTIFICATIONS, {
+    notifId: uid('NTF'),
+    recipientId: bidderId,
+    type: 'bid-received',
+    title: 'Bid form received',
+    message: `${body.saleId}: receipt ${receiptId}` +
+             (completionCode ? ` · CODE ${completionCode}` : '') +
+             ` · total $${totalUSD.toLocaleString()} · deposit $${depositUSD.toLocaleString()}`,
+    createdAt: now
+  });
+
   return created({
     receipt: {
       receiptId,
@@ -265,7 +277,8 @@ export const handler = wrap(async (event) => {
       pools: records.map(r => ({ poolId: r.poolId, aggregateUsd: r.aggregateUsd })),
       totalUSD,
       depositUSD,
-      submittedAt: now
+      submittedAt: now,
+      emailDelivered: emailResult.delivered
     }
   });
 });

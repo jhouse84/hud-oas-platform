@@ -42,7 +42,7 @@ Conditions:
 
 Globals:
   Function:
-    Runtime: nodejs20.x
+    Runtime: nodejs24.x
     Architectures: [arm64]
     Timeout: 15
     MemorySize: 512
@@ -553,8 +553,11 @@ Resources:
       AutoVerifiedAttributes: [email]
       UsernameAttributes: [email]
       UsernameConfiguration: { CaseSensitive: false }
-      MfaConfiguration: 'OPTIONAL'
+      MfaConfiguration: 'ON'   # AAL2: TOTP required for every account (audit S-3)
       EnabledMfas: [SOFTWARE_TOKEN_MFA]
+      UserPoolTier: PLUS       # required for threat protection (audit S-8)
+      UserPoolAddOns:
+        AdvancedSecurityMode: ENFORCED
       Policies:
         PasswordPolicy:
           MinimumLength: 12
@@ -804,6 +807,7 @@ Resources:
       Handler: handlers/bidders/approve.handler
       Policies:
         - DynamoDBCrudPolicy: { TableName: !Ref BiddersTable }
+        - DynamoDBCrudPolicy: { TableName: !Ref NotificationsTable }
         - Statement:
             - Effect: Allow
               Action: [ses:SendEmail, ses:SendRawEmail]
@@ -871,12 +875,17 @@ Resources:
       FunctionName: !Sub 'hsg-${Stage}-docs-presign-download'
       CodeUri: src/
       Handler: handlers/docs/presignDownload.handler
-      Timeout: 10
+      Timeout: 30          # on-demand per-bidder PDF stamping
+      MemorySize: 1024
       Policies:
         - S3ReadPolicy: { BucketName: !Ref DocsBucket }
         - DynamoDBCrudPolicy: { TableName: !Ref AccessLogTable }
         - DynamoDBReadPolicy: { TableName: !Ref BiddersTable }
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
         - Statement:
+            - Effect: Allow
+              Action: [s3:PutObject]
+              Resource: !Sub 'arn:aws:s3:::hsg-${Stage}-docs-${AWS::AccountId}/watermarked/*'
             - Effect: Allow
               Action: [kms:Decrypt, kms:GenerateDataKey]
               Resource: !GetAtt KmsKey.Arn
@@ -992,6 +1001,7 @@ Resources:
         - DynamoDBReadPolicy: { TableName: !Ref BiddersTable }
         - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
         - DynamoDBReadPolicy: { TableName: !Ref LoansTable }
+        - DynamoDBCrudPolicy: { TableName: !Ref NotificationsTable }
         - Statement:
             - Effect: Allow
               Action: [ses:SendEmail]
@@ -1003,6 +1013,31 @@ Resources:
             ApiId: !Ref HttpApi
             Method: POST
             Path: /bids
+            Auth: { Authorizer: CognitoJwt }
+
+  FnBidsWithdraw:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-bids-withdraw'
+      CodeUri: src/
+      Handler: handlers/bids/withdraw.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref BidsTable }
+        - DynamoDBReadPolicy: { TableName: !Ref BiddersTable }
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+        - DynamoDBCrudPolicy: { TableName: !Ref AccessLogTable }
+        - DynamoDBCrudPolicy: { TableName: !Ref NotificationsTable }
+        - Statement:
+            - Effect: Allow
+              Action: [ses:SendEmail]
+              Resource: '*'
+      Events:
+        HttpWithdraw:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /bids/{bidId}/withdraw
             Auth: { Authorizer: CognitoJwt }
 
   FnBidsList:
@@ -1537,6 +1572,218 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
+  # ---------------------------------------------------------------
+  # Edge protection — WAF on the distribution (audit S-4)
+  # ---------------------------------------------------------------
+  WebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub 'hsg-${Stage}-edge-acl'
+      Scope: CLOUDFRONT
+      DefaultAction: { Allow: {} }
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub 'hsg-${Stage}-edge-acl'
+      Rules:
+        - Name: AWSCommonRuleSet
+          Priority: 0
+          OverrideAction: { None: {} }
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          VisibilityConfig: { SampledRequestsEnabled: true, CloudWatchMetricsEnabled: true, MetricName: common }
+        - Name: AWSKnownBadInputs
+          Priority: 1
+          OverrideAction: { None: {} }
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          VisibilityConfig: { SampledRequestsEnabled: true, CloudWatchMetricsEnabled: true, MetricName: badinputs }
+        - Name: AWSIpReputation
+          Priority: 2
+          OverrideAction: { None: {} }
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesAmazonIpReputationList
+          VisibilityConfig: { SampledRequestsEnabled: true, CloudWatchMetricsEnabled: true, MetricName: iprep }
+        - Name: RateLimitPerIp
+          Priority: 3
+          Action: { Block: {} }
+          Statement:
+            RateBasedStatement:
+              Limit: 1000          # per 5 minutes per IP — generous for bidders, stops floods
+              AggregateKeyType: IP
+          VisibilityConfig: { SampledRequestsEnabled: true, CloudWatchMetricsEnabled: true, MetricName: ratelimit }
+
+  # ---------------------------------------------------------------
+  # Audit trail — CloudTrail to a locked bucket (audit S-6)
+  # ---------------------------------------------------------------
+  AuditTrailBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub 'hsg-${Stage}-audit-trail-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      VersioningConfiguration: { Status: Enabled }
+      LifecycleConfiguration:
+        Rules:
+          - Id: RetainSevenYears
+            Status: Enabled
+            Transitions:
+              - { StorageClass: GLACIER, TransitionInDays: 365 }
+            ExpirationInDays: 2557   # ~7 years per federal retention posture
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+        - { Key: Stage,   Value: !Ref Stage }
+
+  AuditTrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AuditTrailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: CloudTrailAclCheck
+            Effect: Allow
+            Principal: { Service: cloudtrail.amazonaws.com }
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt AuditTrailBucket.Arn
+          - Sid: CloudTrailWrite
+            Effect: Allow
+            Principal: { Service: cloudtrail.amazonaws.com }
+            Action: s3:PutObject
+            Resource: !Sub '${AuditTrailBucket.Arn}/AWSLogs/${AWS::AccountId}/*'
+            Condition:
+              StringEquals: { 's3:x-amz-acl': bucket-owner-full-control }
+          - Sid: DenyNonTLS
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource: [!GetAtt AuditTrailBucket.Arn, !Sub '${AuditTrailBucket.Arn}/*']
+            Condition:
+              Bool: { 'aws:SecureTransport': 'false' }
+
+  AuditTrail:
+    Type: AWS::CloudTrail::Trail
+    DependsOn: AuditTrailBucketPolicy
+    Properties:
+      TrailName: !Sub 'hsg-${Stage}-trail'
+      S3BucketName: !Ref AuditTrailBucket
+      IsLogging: true
+      IsMultiRegionTrail: true
+      IncludeGlobalServiceEvents: true
+      EnableLogFileValidation: true
+      Tags:
+        - { Key: Project, Value: HUD-OAS-Platform }
+        - { Key: Stage,   Value: !Ref Stage }
+
+  # ---------------------------------------------------------------
+  # Alerting — SNS + alarms on the bid-critical path (audit S-7)
+  # ---------------------------------------------------------------
+  OpsAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub 'hsg-${Stage}-ops-alerts'
+      KmsMasterKeyId: alias/aws/sns
+
+  OpsAlertEmail:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref OpsAlertTopic
+      Protocol: email
+      Endpoint: !Ref AdminEmail
+
+  AlarmBidsSubmitErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'hsg-${Stage}-bids-submit-errors'
+      AlarmDescription: Any error on bid submission — the bid-day critical path
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{ Name: FunctionName, Value: !Sub 'hsg-${Stage}-bids-submit' }]
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertTopic]
+
+  AlarmPresignErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'hsg-${Stage}-presign-errors'
+      AlarmDescription: VDR download path failing
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{ Name: FunctionName, Value: !Sub 'hsg-${Stage}-docs-presign-download' }]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertTopic]
+
+  AlarmBiddersCreateErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'hsg-${Stage}-bidders-create-errors'
+      AlarmDescription: Public qualification intake failing
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{ Name: FunctionName, Value: !Sub 'hsg-${Stage}-bidders-create' }]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertTopic]
+
+  AlarmApi5xx:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'hsg-${Stage}-api-5xx'
+      AlarmDescription: API Gateway server errors
+      Namespace: AWS/ApiGateway
+      MetricName: 5xx
+      Dimensions: [{ Name: ApiId, Value: !Ref HttpApi }]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertTopic]
+
+  AlarmLambdaThrottles:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'hsg-${Stage}-lambda-throttles'
+      AlarmDescription: Any function throttling account-wide
+      Namespace: AWS/Lambda
+      MetricName: Throttles
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertTopic]
+
   # Explicit security-headers policy (the prior managed ID was a CORS policy,
   # so no security headers were actually being served). Audit S-2.
   SecurityHeadersPolicy:
@@ -1571,6 +1818,7 @@ Resources:
         HttpVersion: http2and3
         IPV6Enabled: true
         PriceClass: PriceClass_100   # US + EU only (cheapest)
+        WebACLId: !GetAtt WebAcl.Arn
         Aliases: !If [UseCustomDomain, [!Ref DomainName], !Ref 'AWS::NoValue']
         ViewerCertificate: !If
           - UseCustomDomain

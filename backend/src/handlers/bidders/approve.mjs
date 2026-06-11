@@ -1,4 +1,4 @@
-import { getItem, updateItem, TABLES } from '../../lib/ddb.mjs';
+import { getItem, updateItem, putItem, uid, TABLES } from '../../lib/ddb.mjs';
 import { ok, notFound, wrap, parseBody } from '../../lib/response.mjs';
 import { requireAdmin } from '../../lib/auth.mjs';
 import { sendEmail, EMAIL_TEMPLATES } from '../../lib/ses.mjs';
@@ -82,6 +82,16 @@ export const handler = wrap(async (event) => {
 
   const tpl = EMAIL_TEMPLATES.approved(updated);
   await sendEmail({ to: bidder.contactEmail, ...tpl });
+
+  // In-app notification for the newly qualified bidder
+  await putItem(TABLES.NOTIFICATIONS, {
+    notifId: uid('NTF'),
+    recipientId: bidderId,
+    type: 'qualification-approved',
+    title: 'Qualification approved',
+    message: 'Your bidder qualification is approved. Sign in to access the data room and bid form for your sales.',
+    createdAt: new Date().toISOString()
+  });
 
   return ok({ bidder: updated });
 });

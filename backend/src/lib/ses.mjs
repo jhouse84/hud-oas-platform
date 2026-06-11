@@ -19,11 +19,12 @@ export async function sendEmail({ to, subject, text, html, cc, replyTo }) {
   });
   try {
     const res = await ses.send(cmd);
-    return res.MessageId;
+    return { delivered: true, messageId: res.MessageId };
   } catch (err) {
-    // Don't fail the request if email delivery fails — just log.
+    // Email failure never fails the request — but callers can now surface it
+    // (a bidder must not believe a receipt email arrived when it did not).
     console.error('SES send failed', { to: toList, subject, error: err?.message });
-    return null;
+    return { delivered: false, messageId: null, error: err?.message };
   }
 }
 
