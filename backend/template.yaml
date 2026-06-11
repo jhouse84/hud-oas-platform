@@ -990,6 +990,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy: { TableName: !Ref BidsTable }
         - DynamoDBReadPolicy: { TableName: !Ref BiddersTable }
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+        - DynamoDBReadPolicy: { TableName: !Ref LoansTable }
         - Statement:
             - Effect: Allow
               Action: [ses:SendEmail]

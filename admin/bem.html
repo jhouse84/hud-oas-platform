@@ -311,11 +311,11 @@
             return '<tr><td><strong>' + esc(p.pool_name || pid) + '</strong></td><td colspan="5" style="color: var(--color-text-muted); font-style: italic;">No award (below reserve or no bids)</td></tr>';
           }
           var aggUpb = (p.summary && p.summary.aggregate_upb) || 0;
-          var pct = aggUpb > 0 ? ((w.bidAmountUSD || w.bidAmount || 0) / aggUpb) * 100 : 0;
+          var pct = aggUpb > 0 ? ((w.aggregateUsd || w.bidAmountUSD || w.bidAmount || 0) / aggUpb) * 100 : 0;
           return '<tr>' +
             '<td><strong>' + esc(p.pool_name || pid) + '</strong></td>' +
             '<td class="winner">' + esc(w.bidderName || w.bidderId) + '</td>' +
-            '<td style="text-align:right;">' + esc(u.currency(w.bidAmountUSD || w.bidAmount || 0)) + '</td>' +
+            '<td style="text-align:right;">' + esc(u.currency(w.aggregateUsd || w.bidAmountUSD || w.bidAmount || 0)) + '</td>' +
             '<td style="text-align:right;">' + pct.toFixed(2) + '%</td>' +
             '<td>' + (w.missionBid ? '<span class="badge badge--qualified">MISSION</span>' : '—') + '</td>' +
             '<td><span style="font-family: var(--font-mono); font-size: var(--text-xs);">' + esc(w.confirmationCode || w.bidId) + '</span></td>' +
@@ -332,9 +332,9 @@
       if (awarded.length === 0) {
         return 'No awards generated under the current parameters. Either no bids were submitted, or all bids fell below reserve.';
       }
-      var top = awarded.slice().sort(function (a, b) { return Number(b.bidAmountUSD || 0) - Number(a.bidAmountUSD || 0); })[0];
+      var top = awarded.slice().sort(function (a, b) { return Number(b.aggregateUsd || b.bidAmountUSD || 0) - Number(a.aggregateUsd || a.bidAmountUSD || 0); })[0];
       var missionCount = awarded.filter(function (a) { return a.missionBid; }).length;
-      return 'Allocation maximizes aggregate proceeds across the conforming bid set. Top award: <strong>' + esc(top.bidderName) + '</strong> at ' + esc(u.currency(top.bidAmountUSD)) + '. ' +
+      return 'Allocation maximizes aggregate proceeds across the conforming bid set. Top award: <strong>' + esc(top.bidderName) + '</strong> at ' + esc(u.currency(top.aggregateUsd || top.bidAmountUSD)) + '. ' +
         missionCount + ' of ' + awarded.length + ' awards went to mission-bid bidders. Reserve discipline held — ' +
         (pools.length - awarded.length) + ' pools fell below reserve and remain unawarded. Recommend OGC sign-off and proceed to award letters.';
     }
@@ -470,7 +470,7 @@
             var pid = p.pool_id || p.poolId;
             return '<tr><td>' + esc(p.pool_name || pid) + '</td>' + results.map(function (r) {
               var w = (r.awards || {})[pid];
-              return '<td>' + (w ? esc(w.bidderName) + '<br /><span style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">' + esc(u.currencyCompact(w.bidAmountUSD || 0)) + '</span>' : '—') + '</td>';
+              return '<td>' + (w ? esc(w.bidderName) + '<br /><span style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">' + esc(u.currencyCompact(w.aggregateUsd || w.bidAmountUSD || 0)) + '</span>' : '—') + '</td>';
             }).join('') + '</tr>';
           }).join('') + '</tbody>' +
         '</table>' +

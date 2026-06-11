@@ -4,7 +4,7 @@
     {
       "name": "platform",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8765"],
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "C:/Users/jelan/OneDrive/Documents/House Strategies/Product Development/Website Development/platform"],
       "port": 8765
     }
   ]

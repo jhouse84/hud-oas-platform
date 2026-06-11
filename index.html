@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HUD OAS Transaction Platform · House Strategies Group</title>
+  <link rel="stylesheet" href="shared/design-system.css" />
+  <style>
+    body { background: var(--color-grey-50); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .gateway { max-width: 920px; width: 100%; padding: var(--space-8); }
+    .gateway__brand { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.12em; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: var(--space-2); }
+    .gateway__title { font-family: var(--font-heading); font-size: var(--text-3xl); margin-bottom: var(--space-2); }
+    .gateway__sub { color: var(--color-text-muted); margin-bottom: var(--space-8); max-width: 60ch; }
+    .gateway__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-4); }
+    .portal-card { display: block; padding: var(--space-6); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); text-decoration: none; color: inherit; transition: transform var(--duration-fast), box-shadow var(--duration-fast); border-top: 4px solid var(--accent); }
+    .portal-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.08)); }
+    .portal-card__kicker { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--accent); margin-bottom: var(--space-2); }
+    .portal-card__name { font-family: var(--font-heading); font-size: var(--text-xl); margin-bottom: var(--space-2); }
+    .portal-card__desc { font-size: var(--text-sm); color: var(--color-text-muted); }
+    .gateway__foot { margin-top: var(--space-8); font-size: var(--text-xs); color: var(--color-text-muted); }
+  </style>
+</head>
+<body>
+  <main class="gateway">
+    <div class="gateway__brand">House Strategies Group · HUD Office of Asset Sales</div>
+    <h1 class="gateway__title">HUD OAS Transaction Platform</h1>
+    <p class="gateway__sub">Qualification, data room, sealed bidding, and settlement for HUD loan sales — the same rules, math, and sequence as the published Bidder Information Package, in one place.</p>
+    <div class="gateway__grid">
+      <a class="portal-card" style="--accent: var(--color-hvls, #3B82F6);" href="residential/index.html">
+        <div class="portal-card__kicker">RESIDENTIAL</div>
+        <div class="portal-card__name">HVLS · HNVLS · SFLS</div>
+        <p class="portal-card__desc">HECM vacant and occupied pools and single-family forward loans. Loan-level percentage bidding with whole-pool participation.</p>
+      </a>
+      <a class="portal-card" style="--accent: var(--color-hls, #DC2626);" href="commercial/index.html">
+        <div class="portal-card__kicker">COMMERCIAL</div>
+        <div class="portal-card__name">MHLS · HLS</div>
+        <p class="portal-card__desc">Multifamily and healthcare notes. Percentage-of-UPB bidding per asset, with HUD-furnished related-note groupings honored as offered.</p>
+      </a>
+      <a class="portal-card" style="--accent: var(--color-portal, #2D2E8F);" href="admin/login.html">
+        <div class="portal-card__kicker">TRANSACTION SPECIALIST</div>
+        <div class="portal-card__name">Admin Console</div>
+        <p class="portal-card__desc">Bidder pipeline, bid-day operations, evaluation, awards, settlements, and compliance reporting. Authorized staff only.</p>
+      </a>
+    </div>
+    <p class="gateway__foot">Operated by House Strategies Group LLC. Access requires qualification under the applicable sale's Bidder Information Package; activity is logged.</p>
+  </main>
+</body>
+</html>

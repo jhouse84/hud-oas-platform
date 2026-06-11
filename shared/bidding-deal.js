@@ -1,22 +1,25 @@
 /**
- * HSG.bidding.deal — Deal-level dollar bidding (MHLS / HLS).
+ * HSG.bidding.deal — Asset-level percentage bidding (MHLS / HLS).
  *
- * Commercial portal bidding mechanics:
- *   - Bid is a single $ amount per deal (note or note pool).
- *   - Per-unit price is derived (bid / unit count) for multifamily.
- *   - Implied cap rate is derived (NOI / bid) for multifamily and healthcare.
- *   - Yield-to-purchase is derived from coupon, bid, and remaining term.
- *   - Reserve price is dollar-denominated, not percentage.
+ * Mirrors the HUD commercial bid form exactly:
+ *   - Each asset (note or small note pool) is one row: "ASSET POOL NUM".
+ *   - The bidder enters ONE number per asset: a BID % of that asset's UPB
+ *     (up to 5 decimals). BID $ is DERIVED and read-only.
+ *   - Each asset is bid independently; an asset is declined by leaving it blank.
+ *   - Blank = NO BID (allowed). A literal 0 = error. Derived $ below the
+ *     per-asset minimum = error.
+ *   - The bid surface carries UPB, BID %, and derived BID $ only — analysis
+ *     metrics (per-unit, cap rate, yield, NOI) belong to the data room, not
+ *     the bid sheet.
+ *   - HUD-furnished related-loan linkage (cross-collateral) is enforced as
+ *     offered: linked notes transfer together, so a bid on one applies to the
+ *     group as a single row/unit.
+ *   - Deposit follows the sale's published terms (greater of floor or rate ×
+ *     aggregate, rounded up; 50%-of-bid under the floor).
  *
- * A deal bid record:
- *   {
- *     bidderId, saleId, dealId, programType,
- *     bidAmountUSD,       // 12_500_000
- *     pricePerUnit,       // optional — derived for multifamily
- *     impliedCapRate,     // optional — derived
- *     conditions,         // array of bidder-imposed conditions
- *     submittedAt, status, confirmationCode
- *   }
+ * Receipts and the form-completion CODE are issued by the server at submit.
+ *
+ * An asset entry: { assetId, pct, usd }
  */
 window.HSG = window.HSG || {};
 HSG.bidding = HSG.bidding || {};
@@ -24,101 +27,113 @@ HSG.bidding = HSG.bidding || {};
 HSG.bidding.deal = (function () {
   'use strict';
 
-  function pricePerUnit(bidUSD, deal) {
-    if (!deal || !deal.unitCount) return null;
-    return Math.round(((Number(bidUSD) || 0) / deal.unitCount) * 100) / 100;
+  var CONFIG = {
+    pctDecimals: 5,
+    minDerivedUSD: 100,
+    maxPct: null,                       // no cap unless the sale supplies one
+    deposit: { rate: 0.10, floor: 100000, underFloorRate: 0.50 }
+  };
+
+  /** HUD-furnished asset UPB (the bid basis). Never derived or corrected here. */
+  function assetUpb(asset) {
+    if (!asset) return 0;
+    if (asset.summary && asset.summary.aggregate_upb != null) return Number(asset.summary.aggregate_upb) || 0;
+    return Number(asset.aggregate_upb || asset.aggregateUPB || asset.upb || 0) || 0;
   }
 
-  function impliedCapRate(bidUSD, deal) {
-    if (!deal || !deal.noi || !bidUSD) return null;
-    return Math.round((deal.noi / Number(bidUSD)) * 10000) / 100;  // pct, 2 decimals
+  function roundPct(n) {
+    var m = Math.pow(10, CONFIG.pctDecimals);
+    return Math.round(Number(n) * m) / m;
   }
 
-  function pctOfUPB(bidUSD, deal) {
-    if (!deal || !deal.upb) return null;
-    return Math.round(((Number(bidUSD) || 0) / deal.upb) * 10000) / 100;
+  /** Parse one raw input. Returns { state: 'blank'|'invalid'|'ok', pct, message }. */
+  function parsePct(raw) {
+    if (raw === '' || raw == null) return { state: 'blank' };
+    if (typeof raw === 'string' && raw.trim() === '') return { state: 'blank' };
+    var n = Number(raw);
+    if (isNaN(n)) return { state: 'invalid', message: 'Enter a numeric percentage' };
+    if (n === 0) return { state: 'invalid', message: 'A bid of 0 is not valid — leave the asset blank to decline it' };
+    if (n < 0) return { state: 'invalid', message: 'Percentage must be positive' };
+    return { state: 'ok', pct: roundPct(n) };
   }
 
-  function yieldToPurchase(bidUSD, deal) {
-    // Approximation: coupon × (UPB / bid). Real YTM requires DCF over remaining term.
-    if (!deal || !deal.upb || !deal.couponRate || !bidUSD) return null;
-    return Math.round(((deal.couponRate * (deal.upb / Number(bidUSD)))) * 100) / 100;
+  /** Derived BID $ for one asset (read-only on the sheet). */
+  function deriveUsd(pct, asset) {
+    return Math.round((Number(pct) / 100) * assetUpb(asset) * 100) / 100;
   }
 
-  function validate(bid, deal, opts) {
-    opts = opts || {};
-    var errors = [];
-    var warnings = [];
-
-    if (!bid.bidderId)    errors.push({ field: 'bidderId',    message: 'Bidder ID is required' });
-    if (!bid.saleId)      errors.push({ field: 'saleId',      message: 'Sale ID is required' });
-    if (!bid.dealId)      errors.push({ field: 'dealId',      message: 'Deal ID is required' });
-    if (!bid.programType) errors.push({ field: 'programType', message: 'Program type is required' });
-
-    if (typeof bid.bidAmountUSD !== 'number' || isNaN(bid.bidAmountUSD) || bid.bidAmountUSD <= 0) {
-      errors.push({ field: 'bidAmountUSD', message: 'Bid amount is required and must be positive' });
-    } else {
-      var minimumBid = (deal && deal.minimumBidUSD) || 100000;
-      if (bid.bidAmountUSD < minimumBid) {
-        errors.push({ field: 'bidAmountUSD', message: 'Bid is below the deal minimum ($' + minimumBid.toLocaleString() + ')' });
-      }
-      if (deal && deal.upb && bid.bidAmountUSD > deal.upb * 1.5) {
-        warnings.push({ field: 'bidAmountUSD', message: 'Bid exceeds 150% of UPB — please confirm' });
-      }
-    }
-
-    // Reserve price
-    if (deal && deal.reservePriceUSD != null && bid.bidAmountUSD < deal.reservePriceUSD) {
-      warnings.push({ field: 'bidAmountUSD', message: 'Bid is below reserve ($' + deal.reservePriceUSD.toLocaleString() + ') — may be ineligible' });
-    }
-
-    // Healthcare-specific checks
-    if (bid.programType === 'HLS') {
-      if (deal && deal.requiresOperatorContinuity && !bid.operatorContinuityPlan) {
-        errors.push({ field: 'operatorContinuityPlan', message: 'Section 232 deals require an operator continuity plan' });
-      }
-    }
-
-    // Auto-derive metrics
-    bid.pricePerUnit   = pricePerUnit(bid.bidAmountUSD, deal);
-    bid.impliedCapRate = impliedCapRate(bid.bidAmountUSD, deal);
-    bid.pctOfUPB       = pctOfUPB(bid.bidAmountUSD, deal);
-    bid.yieldToPurchase = yieldToPurchase(bid.bidAmountUSD, deal);
-
-    return { valid: errors.length === 0, errors: errors, warnings: warnings, bid: bid };
-  }
-
-  function slipTotal(bids, opts) {
-    opts = opts || {};
-    var depositRate = (opts.depositRate != null) ? opts.depositRate : 0.10;
-    var summary = (bids || []).reduce(function (acc, b) {
-      acc.totalUSD += Number(b.bidAmountUSD || 0);
-      acc.dealCount += 1;
-      acc.totalUnits += (b._dealMeta && b._dealMeta.unitCount) || 0;
-      return acc;
-    }, { totalUSD: 0, dealCount: 0, totalUnits: 0 });
-    summary.depositUSD = Math.round(summary.totalUSD * depositRate);
-    summary.depositRate = depositRate;
-    summary.weightedAvgPricePerUnit = summary.totalUnits ? Math.round(summary.totalUSD / summary.totalUnits) : null;
-    return summary;
-  }
-
-  function confirmationCode() {
-    var y = new Date().getFullYear();
-    var rand = Math.random().toString(36).replace(/[^A-Z0-9]/gi, '').toUpperCase().slice(0, 5);
-    while (rand.length < 5) rand += Math.floor(Math.random() * 36).toString(36).toUpperCase();
-    return 'HUD-' + y + '-' + rand;
-  }
-
-  // ---------------------------------------------------------------------
-  //  Cross-collateralization enforcement
-  // ---------------------------------------------------------------------
   /**
-   * Detect cross-collateralization within a pool. Returns groups of related
-   * loan IDs that must be acquired together. Empty array if independent.
-   *   const groups = crossCollatGroups(pool, loans);
-   *   // [["094-38008S","094-38009S"]]   ← Cando + Sheyenne
+   * Validate one asset's entry.
+   * Returns { state: 'NO_BID' | 'error' | 'ok', pct, usd, message }.
    */
+  function validateAssetEntry(raw, asset, saleConfig) {
+    var parsed = parsePct(raw);
+    if (parsed.state === 'blank') return { state: 'NO_BID' };
+    if (parsed.state === 'invalid') return { state: 'error', message: parsed.message };
+    var cap = (saleConfig && saleConfig.maxPct != null) ? Number(saleConfig.maxPct) : CONFIG.maxPct;
+    if (cap != null && parsed.pct > cap) {
+      return { state: 'error', message: 'BID % exceeds the sale maximum (' + cap + '%)' };
+    }
+    var usd = deriveUsd(parsed.pct, asset);
+    if (usd < CONFIG.minDerivedUSD) {
+      return { state: 'error', message: 'Derived bid $' + usd.toLocaleString() + ' is below the per-asset minimum ($' + CONFIG.minDerivedUSD + ')' };
+    }
+    return { state: 'ok', pct: parsed.pct, usd: usd };
+  }
+
+  /**
+   * Validate the whole sheet: entries = { assetId → raw value }, assets = roster.
+   * Every entered asset must be valid; untouched assets are NO BID.
+   */
+  function validateSheet(entries, assets, opts) {
+    opts = opts || {};
+    var bids = [], errors = [], aggregate = 0;
+    (assets || []).forEach(function (asset) {
+      var id = asset.pool_id || asset.poolId || asset.assetId || asset.dealId;
+      var raw = entries ? entries[id] : undefined;
+      var r = validateAssetEntry(raw, asset, opts.saleConfig);
+      if (r.state === 'ok') {
+        aggregate += r.usd;
+        bids.push({ assetId: id, pct: r.pct, usd: r.usd });
+      } else if (r.state === 'error') {
+        errors.push({ assetId: id, message: r.message });
+      }
+    });
+    return {
+      complete: errors.length === 0 && bids.length > 0,
+      bids: bids,
+      errors: errors,
+      aggregateUsd: Math.round(aggregate * 100) / 100
+    };
+  }
+
+  /** Deposit per the sale's published terms (DP-01). */
+  function deposit(aggregateUsd, terms) {
+    var t = terms || {};
+    var rate = Number(t.deposit_pct_of_aggregate_bid != null ? t.deposit_pct_of_aggregate_bid : CONFIG.deposit.rate);
+    var floor = Number(t.minimum_deposit_floor != null ? t.minimum_deposit_floor : CONFIG.deposit.floor);
+    var underRate = Number(t.under_floor_pct != null ? t.under_floor_pct : CONFIG.deposit.underFloorRate);
+    var agg = Number(aggregateUsd) || 0;
+    if (agg <= 0) return 0;
+    if (agg < floor) return Math.ceil(agg * underRate);
+    return Math.max(floor, Math.ceil(agg * rate));
+  }
+
+  /** Slip totals across asset entries. */
+  function slipTotal(assetBids, terms) {
+    var s = (assetBids || []).reduce(function (acc, b) {
+      acc.assetCount += 1;
+      acc.totalUSD += Number(b.usd || b.bidAmountUSD || 0);
+      return acc;
+    }, { assetCount: 0, totalUSD: 0 });
+    s.totalUSD = Math.round(s.totalUSD * 100) / 100;
+    s.depositUSD = deposit(s.totalUSD, terms);
+    return s;
+  }
+
+  // -------------------------------------------------------------------
+  // HUD-furnished related-loan (cross-collateral) linkage — offered as-is
+  // -------------------------------------------------------------------
   function crossCollatGroups(pool, loans) {
     if (!pool || !loans) return [];
     var ids = pool.loan_ids || pool.loanIds || [];
@@ -144,44 +159,20 @@ HSG.bidding.deal = (function () {
     return groups;
   }
 
-  /**
-   * Returns true if any cross-collat group exists within the pool.
-   * Bid UI uses this to lock loan-level toggles; the pool is bid as a unit.
-   */
   function poolIsCrossCollateralized(pool, loans) {
     return crossCollatGroups(pool, loans).length > 0;
   }
 
-  /**
-   * Validate that a bid does not partially-select a cross-collateralized group.
-   * Returns { valid, message } — message describes the violation if invalid.
-   */
-  function validateCrossCollatSelection(pool, loans, selectedLoanIds) {
-    var groups = crossCollatGroups(pool, loans);
-    for (var i = 0; i < groups.length; i++) {
-      var group = groups[i];
-      var inSelection = group.filter(function (id) { return selectedLoanIds.indexOf(id) >= 0; });
-      if (inSelection.length > 0 && inSelection.length < group.length) {
-        return {
-          valid: false,
-          message: 'Cross-collateralized loans must be acquired together: ' + group.join(' + ') +
-                   '. Selected only: ' + inSelection.join(', ')
-        };
-      }
-    }
-    return { valid: true };
-  }
-
   return {
-    pricePerUnit: pricePerUnit,
-    impliedCapRate: impliedCapRate,
-    pctOfUPB: pctOfUPB,
-    yieldToPurchase: yieldToPurchase,
-    validate: validate,
+    CONFIG: CONFIG,
+    assetUpb: assetUpb,
+    parsePct: parsePct,
+    deriveUsd: deriveUsd,
+    validateAssetEntry: validateAssetEntry,
+    validateSheet: validateSheet,
+    deposit: deposit,
     slipTotal: slipTotal,
-    confirmationCode: confirmationCode,
     crossCollatGroups: crossCollatGroups,
-    poolIsCrossCollateralized: poolIsCrossCollateralized,
-    validateCrossCollatSelection: validateCrossCollatSelection
+    poolIsCrossCollateralized: poolIsCrossCollateralized
   };
 })();

@@ -110,7 +110,7 @@
     }).catch(function () {});
 
     var bidderId = claims['custom:bidderId'] || null;
-    var slip = {};
+    var entries = {}; // saleId → { assetId → raw BID % input }
 
     HSG.router.on('/', renderSales)
               .on('/sales', renderSales)
@@ -223,18 +223,19 @@
       var content = document.getElementById('tab-content');
       var saleId = sale.sale_id || sale.saleId;
       if (tab === 'bidding') {
-        var bids = slip[saleId] || [];
+        var saleEntries = entries[saleId] = entries[saleId] || {};
         var poolsHtml = (saleCtx.pools || []).map(function (p) {
           var pid = p.pool_id || p.poolId;
-          var existing = bids.find(function (b) { return b.poolId === pid; });
           var pl = loansInPool(p, saleCtx.loans);
-          return c.renderPoolCard(p, pl, existing);
+          var raw = saleEntries[pid];
+          return c.renderPoolCard(p, pl, raw != null ? { rawPct: raw } : null);
         }).join('');
         content.innerHTML = '<div class="form-grid" style="grid-template-columns: 2fr 1fr; gap: var(--space-6); align-items: flex-start;">' +
-          '<div>' + (poolsHtml || '<p class="empty">No pools defined for this sale.</p>') + '<button id="submit-bids" class="btn-portal" style="margin-top: var(--space-4);" disabled>Review &amp; submit slip</button></div>' +
-          '<div id="slip-container">' + c.renderBidSlip(bids, sale) + '</div>' +
+          '<div>' + (poolsHtml || '<p class="empty">No assets defined for this sale.</p>') + '<button id="submit-bids" class="btn-portal" style="margin-top: var(--space-4);" disabled>Review &amp; submit bid form</button></div>' +
+          '<div id="slip-container">' + c.renderBidSlip(currentSheet(sale, saleCtx), sale) + '</div>' +
         '</div>';
         wirePoolBidInputs(sale, saleCtx);
+        updateSlipPanel(sale, saleCtx);
       } else if (tab === 'loantape') {
         renderLoanTape(content, sale, saleCtx);
       } else if (tab === 'dataroom') {
@@ -244,124 +245,87 @@
       }
     }
 
+    /** Validate the whole sheet from current raw entries. */
+    function currentSheet(sale, saleCtx) {
+      var saleId = sale.sale_id || sale.saleId;
+      return HSG.bidding.deal.validateSheet(entries[saleId] || {}, saleCtx.pools || []);
+    }
+
     function wirePoolBidInputs(sale, saleCtx) {
       var content = document.getElementById('tab-content');
       var saleId = sale.sale_id || sale.saleId;
-      content.querySelectorAll('input[name="bid-amount"]').forEach(function (input) {
+      var saleEntries = entries[saleId] = entries[saleId] || {};
+      content.querySelectorAll('input[name="bid-pct"]').forEach(function (input) {
         input.addEventListener('input', function () {
           var poolId = input.getAttribute('data-pool-id');
           var pool = (saleCtx.pools || []).find(function (p) { return (p.pool_id || p.poolId) === poolId; });
-          var amt = parseFloat(input.value);
-          if (!pool || isNaN(amt) || amt <= 0) {
-            slip[saleId] = (slip[saleId] || []).filter(function (b) { return b.poolId !== poolId; });
-            updatePoolMetrics(content, poolId, null, null);
-            updateSlipPanel(sale);
-            return;
+          var raw = input.value;
+          if (raw === '' || raw == null) delete saleEntries[poolId];
+          else saleEntries[poolId] = raw;
+          // Update the derived BID $ readout (read-only — the bidder never types a dollar amount)
+          var entry = HSG.bidding.deal.validateAssetEntry(raw === '' ? undefined : raw, pool);
+          var cell = content.querySelector('[data-role="usd-cell"][data-pool-id="' + poolId + '"]');
+          if (cell) cell.textContent = entry.state === 'ok' ? u.currency(entry.usd) : '—';
+          input.style.borderColor = entry.state === 'error' ? 'var(--color-error)' : '';
+          input.title = entry.state === 'error' ? entry.message : '';
+          var errEl = content.querySelector('[data-role="pool-error"][data-pool-id="' + poolId + '"]');
+          if (errEl) {
+            if (entry.state === 'error') {
+              errEl.textContent = entry.message;
+              errEl.className = 'auth-error';
+              errEl.style.cssText = 'margin-top: var(--space-2); font-size: var(--text-sm);';
+            } else {
+              errEl.textContent = '';
+              errEl.style.display = 'none';
+            }
           }
-          var poolLoans = loansInPool(pool, saleCtx.loans);
-          var aggUpb = (pool.summary && pool.summary.aggregate_upb) || poolLoans.reduce(function (s, l) { return s + (Number(l.current_upb) || 0); }, 0);
-          var totalUnits = poolLoans.reduce(function (s, l) {
-            var p = l.property || {};
-            return s + (Number(p.units_total) || (p.hc_unit_mix && Number(p.hc_unit_mix.total_units)) || 0);
-          }, 0);
-          var bid = {
-            bidderId: bidderId,
-            saleId: saleId,
-            poolId: poolId,
-            programType: sale.program || sale.programType,
-            bidAmountUSD: amt,
-            pctOfUPB: aggUpb ? (amt / aggUpb) * 100 : null,
-            pricePerUnit: totalUnits ? Math.round(amt / totalUnits) : null,
-            crossCollat: HSG.bidding.deal.poolIsCrossCollateralized(pool, poolLoans),
-            _meta: { aggUpb: aggUpb, totalUnits: totalUnits, loanCount: poolLoans.length }
-          };
-          var arr = (slip[saleId] = slip[saleId] || []);
-          var idx = arr.findIndex(function (b) { return b.poolId === poolId; });
-          if (idx >= 0) arr[idx] = bid; else arr.push(bid);
-          updatePoolMetrics(content, poolId, bid, aggUpb, totalUnits);
-          updateSlipPanel(sale);
+          updateSlipPanel(sale, saleCtx);
         });
       });
       var submitBtn = document.getElementById('submit-bids');
-      if (submitBtn) submitBtn.addEventListener('click', function () { submitSlip(sale, saleCtx); });
+      if (submitBtn) submitBtn.addEventListener('click', function () { submitBidForm(sale, saleCtx); });
     }
 
-    function updatePoolMetrics(container, poolId, bid, aggUpb, totalUnits) {
-      var per = container.querySelector('[data-role="per-unit-display"][data-pool-id="' + poolId + '"]');
-      var pct = container.querySelector('[data-role="pct-upb-display"][data-pool-id="' + poolId + '"]');
-      if (per) per.textContent = bid && bid.pricePerUnit != null ? u.currency(bid.pricePerUnit) : '—';
-      if (pct) pct.textContent = bid && bid.pctOfUPB != null ? bid.pctOfUPB.toFixed(2) + '%' : '—';
-    }
-
-    function updateSlipPanel(sale) {
-      var saleId = sale.sale_id || sale.saleId;
-      var bids = slip[saleId] || [];
+    function updateSlipPanel(sale, saleCtx) {
+      var sheet = currentSheet(sale, saleCtx);
       var slipEl = document.getElementById('slip-container');
-      if (slipEl) {
-        // Render a simplified pool-aware slip
-        if (bids.length === 0) {
-          slipEl.innerHTML = '<div class="card" style="padding: var(--space-5);"><h3 style="font-family: var(--font-heading); margin-bottom: var(--space-2);">Bid slip</h3><p style="color: var(--color-text-muted); font-size: var(--text-sm);">Enter a bid amount on a pool to add it to your slip.</p></div>';
-        } else {
-          var total = bids.reduce(function (s, b) { return s + Number(b.bidAmountUSD || 0); }, 0);
-          var deposit = Math.round(total * 0.10);
-          slipEl.innerHTML = '<div class="card" style="padding: var(--space-5);">' +
-            '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-3);">Bid slip — ' + c.esc(saleId) + '</h3>' +
-            '<table class="data-table" style="margin-bottom: var(--space-3);">' +
-              '<thead><tr><th>Pool</th><th style="text-align:right;">Bid</th><th style="text-align:right;">% UPB</th></tr></thead>' +
-              '<tbody>' + bids.map(function (b) {
-                return '<tr><td>' + c.esc(b.poolId) + '</td><td style="text-align:right;">' + c.esc(u.currency(b.bidAmountUSD)) + '</td><td style="text-align:right;">' + (b.pctOfUPB != null ? b.pctOfUPB.toFixed(2) + '%' : '—') + '</td></tr>';
-              }).join('') + '</tbody>' +
-            '</table>' +
-            '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); padding: var(--space-3); background: var(--color-portal-soft); border-radius: var(--radius-md);">' +
-              '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">POOLS</div><div style="font-weight: 600;">' + bids.length + '</div></div>' +
-              '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">TOTAL</div><div style="font-weight: 600;">' + c.esc(u.currency(total)) + '</div></div>' +
-              '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">DEPOSIT (10%)</div><div style="font-weight: 600;">' + c.esc(u.currency(deposit)) + '</div></div>' +
-            '</div>' +
-          '</div>';
-        }
-      }
+      if (slipEl) slipEl.innerHTML = c.renderBidSlip(sheet, sale);
       var btn = document.getElementById('submit-bids');
-      if (btn) btn.disabled = bids.length === 0;
+      if (btn) btn.disabled = !sheet.complete;
     }
 
-    function submitSlip(sale, saleCtx) {
+    function submitBidForm(sale, saleCtx) {
       var saleId = sale.sale_id || sale.saleId;
-      var bids = slip[saleId] || [];
-      if (bids.length === 0) return;
-
-      var errors = [];
-      bids.forEach(function (b) {
-        var pool = (saleCtx.pools || []).find(function (p) { return (p.pool_id || p.poolId) === b.poolId; });
-        if (!pool) { errors.push(b.poolId + ': pool not found'); return; }
-        if (!b.bidAmountUSD || b.bidAmountUSD <= 0) errors.push(b.poolId + ': bid amount required');
-        // Pool-level minimum
-        var minUSD = (pool.minimum_bid_usd || 100000);
-        if (b.bidAmountUSD < minUSD) errors.push(b.poolId + ': below minimum ($' + minUSD.toLocaleString() + ')');
-      });
-      // Bid window enforcement (state machine — UI-side; server will reject too)
-      var saleState = sale.state || sale.status;
-      if (saleState && saleState !== 'bid_window' && saleState !== 'Bid Window') {
-        errors.push('Bid window not open. Sale state: ' + saleState);
-      }
-
-      if (errors.length) {
-        alert('Cannot submit:\n\n' + errors.join('\n'));
+      var sheet = currentSheet(sale, saleCtx);
+      if (sheet.errors.length) {
+        alert('Correct the following before submitting:\n\n' + sheet.errors.map(function (e) { return e.assetId + ': ' + e.message; }).join('\n'));
         return;
       }
-
-      var total = bids.reduce(function (s, b) { return s + Number(b.bidAmountUSD || 0); }, 0);
-      var deposit = Math.round(total * 0.10);
-      var msg = 'Submit ' + bids.length + ' pool bid(s)?\n\nTotal: ' + u.currency(total) + '\nDeposit (10%): ' + u.currency(deposit) + '\n\nType "SUBMIT" to confirm:';
+      if (sheet.bids.length === 0) return;
+      // Bid window enforcement (UI-side; the server enforces authoritatively)
+      var saleState = sale.state || sale.status;
+      if (saleState && saleState !== 'bid_window' && saleState !== 'Bid Window') {
+        alert('Bid window not open. Sale state: ' + saleState);
+        return;
+      }
+      var terms = sale.deposit_terms || sale.depositTerms;
+      var s = HSG.bidding.deal.slipTotal(sheet.bids, terms);
+      var msg = 'Submit your bid form?\n\nAssets: ' + s.assetCount + '\nTotal (derived): ' + u.currency(s.totalUSD) + '\nDeposit: ' + u.currency(s.depositUSD) + '\n\nYou may revise any percentage until the bid window closes.\n\nType "SUBMIT" to confirm:';
       var resp = prompt(msg);
       if (resp !== 'SUBMIT') return;
-      var confirmation = HSG.bidding.deal.confirmationCode();
-      Promise.all(bids.map(function (b) {
-        b.confirmationCode = confirmation;
-        b.submittedAt = new Date().toISOString();
-        return HSG.api.bids.submit(b);
-      })).then(function () {
-        alert('Bids submitted. Confirmation: ' + confirmation);
-        slip[saleId] = [];
+      var payload = {
+        saleId: saleId,
+        bidderId: bidderId,
+        assetBids: sheet.bids.map(function (b) { return { assetId: b.assetId, bidPct: b.pct }; })
+      };
+      HSG.api.bids.submit(payload).then(function (resp2) {
+        var receipt = (resp2 && resp2.receipt) || {};
+        alert('Bid form received.\n\nReceipt: ' + (receipt.receiptId || '—') +
+              '\nForm completion CODE: ' + (receipt.completionCode || '—') +
+              '\nTotal (derived): ' + u.currency(receipt.totalUSD || s.totalUSD) +
+              '\nDeposit: ' + u.currency(receipt.depositUSD || s.depositUSD) +
+              '\n\nYour latest submission supersedes prior ones; you may revise until the window closes.');
+        delete entries[saleId];
         renderSaleDetail({ saleId: saleId });
       }).catch(function (err) {
         alert('Submission failed: ' + (err.message || 'Unknown error'));
@@ -518,19 +482,24 @@
       HSG.api.bids.list({ bidderId: bidderId }).then(function (r) {
         var bids = (r && r.bids) || [];
         if (bids.length === 0) { $app.innerHTML = '<div class="empty">You have not submitted any bids yet.</div>'; return; }
-        var html = '<table class="data-table"><thead><tr><th>Sale</th><th>Pool</th><th style="text-align:right;">Bid</th><th style="text-align:right;">% UPB</th><th>Status</th><th>Submitted</th><th></th></tr></thead><tbody>';
+        var html = '<table class="data-table"><thead><tr><th>Sale</th><th>Asset</th><th style="text-align:right;">BID %</th><th style="text-align:right;">BID $ (derived)</th><th>CODE</th><th>Status</th><th>Submitted</th><th></th></tr></thead><tbody>';
         html += bids.map(function (b) {
+          var pct = b.bidPct != null ? b.bidPct : (b.loanBids && b.loanBids.length === 1 ? b.loanBids[0].bidPct : null);
+          var agg = b.aggregateUsd != null ? b.aggregateUsd : b.bidAmountUSD;
+          var live = !b.withdrawn && (b.status === 'live' || !b.status);
           return '<tr>' +
             '<td>' + c.esc(b.saleId) + '</td>' +
-            '<td>' + c.esc(b.poolId || b.dealId) + '</td>' +
-            '<td style="text-align:right;">' + c.esc(u.currency(b.bidAmountUSD)) + '</td>' +
-            '<td style="text-align:right;">' + c.esc(b.pctOfUPB != null ? b.pctOfUPB.toFixed(2) + '%' : (b.pricePerUnit ? u.currency(b.pricePerUnit) : '—')) + '</td>' +
-            '<td><span class="badge">' + c.esc((b.status || 'live').toUpperCase()) + '</span></td>' +
-            '<td>' + c.esc(u.dateShort(b.submittedAt)) + '</td>' +
-            '<td>' + (b.status === 'live' || !b.status ? '<a href="#" data-action="withdraw" data-bid-id="' + c.esc(b.bidId) + '">Withdraw</a>' : '') + '</td>' +
+            '<td>' + c.esc(b.poolId || b.assetId || b.dealId) + '</td>' +
+            '<td style="text-align:right;">' + c.esc(pct != null ? pct + '%' : '—') + '</td>' +
+            '<td style="text-align:right;">' + c.esc(u.currency(agg)) + '</td>' +
+            '<td style="font-family: var(--font-mono); font-size: var(--text-xs);">' + c.esc(b.completionCode || '—') + '</td>' +
+            '<td><span class="badge">' + c.esc((b.withdrawn ? 'withdrawn' : (b.status || 'live')).toUpperCase()) + '</span></td>' +
+            '<td>' + c.esc(u.dateShort(b.submittedAt || b.timestamp)) + '</td>' +
+            '<td>' + (live ? '<a href="#" data-action="withdraw" data-bid-id="' + c.esc(b.bidId) + '">Withdraw</a>' : '') + '</td>' +
           '</tr>';
         }).join('');
-        html += '</tbody></table>';
+        html += '</tbody></table>' +
+          '<p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: var(--space-3);">Resubmitting an asset before the window closes supersedes your prior bid on that asset; the latest validated form governs at close.</p>';
         $app.innerHTML = html;
         $app.querySelectorAll('[data-action="withdraw"]').forEach(function (a) {
           a.addEventListener('click', function (e) {

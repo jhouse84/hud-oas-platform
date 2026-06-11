@@ -240,11 +240,13 @@
       renderSteps();
       var stepKey = HSG.forms9611.STEPS[stepIdx].key;
       var content = '';
-      if (stepKey === 'entity')    content = renderEntity(errors);
+      if (stepKey === 'ca')        content = renderCA(errors);
+      else if (stepKey === 'entity')    content = renderEntity(errors);
       else if (stepKey === 'ownership') content = renderOwnership(errors);
       else if (stepKey === 'financial') content = renderFinancial(errors);
       else if (stepKey === 'mission')   content = renderMission(errors);
       else if (stepKey === 'related')   content = renderRelated(errors);
+      else if (stepKey === 'bauf')      content = renderBAUF(errors);
       else if (stepKey === 'certify')   content = renderCertify(errors, screening);
       var extra = stepKey === 'certify'
         ? '<button type="button" class="btn-portal" data-action="submit">Submit qualification →</button>'
@@ -358,20 +360,76 @@
       });
     }
 
+
+    function renderCA(errors) {
+      var ca = form.ca;
+      return '<h2 class="wizard__panel-title">Confidentiality Agreement (CA / NDA)</h2>' +
+        '<p class="wizard__panel-subtitle">The Confidentiality Agreement governs every sale document you will receive. It is executed once per sale and must be in place before the data room opens to you.</p>' +
+        '<div class="card" style="padding: var(--space-4); margin-bottom: var(--space-4); background: var(--color-grey-50); font-size: var(--text-sm); max-height: 220px; overflow-y: auto;">' +
+          '<p style="margin-bottom: var(--space-2);"><strong>Key terms.</strong> Sale materials (the tape, valuation files, loan documents, and supplements) are furnished solely to evaluate and bid the offered assets. They may be shared only with your directors, officers, employees, and retained advisors with a need to know, each bound to the same obligations. Bid information is sealed: you will not disclose your participation, your bid, or any sale document to any other bidder or third party, and you will return or destroy materials on request if you do not close.</p>' +
+          '<p>The executed agreement for the specific sale is the governing document; this acknowledgment executes it electronically with the signature below.</p>' +
+        '</div>' +
+        '<label class="form-checkbox"><input type="checkbox" name="ca.acknowledged"' + (ca.acknowledged ? ' checked' : '') + ' /><span><span class="form-checkbox__label">I execute the Confidentiality Agreement</span><span class="form-checkbox__desc">On behalf of the entity, with authority to bind it.</span></span></label>' +
+        (errors['ca.acknowledged'] ? '<p class="wizard__error">' + esc(errors['ca.acknowledged']) + '</p>' : '') +
+        '<div class="form-grid form-grid--2" style="margin-top: var(--space-4);">' +
+          renderField('ca.signerName', 'Signer name', 'text', ca.signerName, null, errors['ca.signerName']) +
+          renderField('ca.signerTitle', 'Signer title', 'text', ca.signerTitle, null, errors['ca.signerTitle']) +
+        '</div>';
+    }
+
+    function renderBAUF(errors) {
+      var b = form.bauf;
+      return '<h2 class="wizard__panel-title">Bid Terms &amp; Authorized User (BTAF + BAUF)</h2>' +
+        '<p class="wizard__panel-subtitle">Two short forms complete the qualification stack: acknowledge the bid terms as published, and designate the single authorized user who will submit your bid.</p>' +
+        '<label class="form-checkbox"><input type="checkbox" name="bauf.btafAcknowledged"' + (b.btafAcknowledged ? ' checked' : '') + ' /><span><span class="form-checkbox__label">Bid Terms Acknowledgement (BTAF)</span><span class="form-checkbox__desc">I have read the Bidder Information Package for the sale and accept the bid terms as published &mdash; sealed bidding, the bid window, the deposit terms, and the award and settlement timeline.</span></span></label>' +
+        (errors['bauf.btafAcknowledged'] ? '<p class="wizard__error">' + esc(errors['bauf.btafAcknowledged']) + '</p>' : '') +
+        '<h3 style="font-family: var(--font-heading); margin: var(--space-5) 0 var(--space-2);">Bidder Authorized User Form (BAUF)</h3>' +
+        '<p style="color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--space-3);">The authorized user is the one person who may enter and submit bids for your entity on this platform. Their account carries the bid; everything they submit binds the bidder.</p>' +
+        '<div class="form-grid form-grid--2">' +
+          renderField('bauf.authorizedUserName', 'Authorized user &mdash; full name', 'text', b.authorizedUserName, null, errors['bauf.authorizedUserName']) +
+          renderField('bauf.authorizedUserTitle', 'Title', 'text', b.authorizedUserTitle, null, errors['bauf.authorizedUserTitle']) +
+          renderField('bauf.authorizedUserEmail', 'Email (their sign-in identity)', 'email', b.authorizedUserEmail, null, errors['bauf.authorizedUserEmail']) +
+          renderField('bauf.authorizedUserPhone', 'Phone', 'tel', b.authorizedUserPhone, null, errors['bauf.authorizedUserPhone']) +
+        '</div>';
+    }
+
+    function readCA() {
+      panelEl.querySelectorAll('input').forEach(function (el) {
+        var n = el.name;
+        if (n === 'ca.acknowledged') form.ca.acknowledged = el.checked;
+        else if (n === 'ca.signerName') form.ca.signerName = el.value;
+        else if (n === 'ca.signerTitle') form.ca.signerTitle = el.value;
+      });
+    }
+
+    function readBAUF() {
+      panelEl.querySelectorAll('input').forEach(function (el) {
+        var n = el.name;
+        if (n === 'bauf.btafAcknowledged') form.bauf.btafAcknowledged = el.checked;
+        else if (n === 'bauf.authorizedUserName') form.bauf.authorizedUserName = el.value;
+        else if (n === 'bauf.authorizedUserTitle') form.bauf.authorizedUserTitle = el.value;
+        else if (n === 'bauf.authorizedUserEmail') form.bauf.authorizedUserEmail = el.value;
+        else if (n === 'bauf.authorizedUserPhone') form.bauf.authorizedUserPhone = el.value;
+      });
+    }
+
     function readCurrentStep() {
       var k = HSG.forms9611.STEPS[stepIdx].key;
-      if (k === 'entity') readEntity();
+      if (k === 'ca') readCA();
+      else if (k === 'entity') readEntity();
       else if (k === 'ownership') readOwnership();
       else if (k === 'financial') readFinancial();
       else if (k === 'mission') readMission();
       else if (k === 'related') readRelated();
+      else if (k === 'bauf') readBAUF();
       else if (k === 'certify') readCertify();
     }
 
     function validateCurrent() {
       var k = HSG.forms9611.STEPS[stepIdx].key;
       var v;
-      if (k === 'entity') {
+      if (k === 'ca') v = HSG.forms9611.validateCA(form.ca);
+      else if (k === 'entity') {
         v = HSG.forms9611.validateEntity(form.entity);
         if (form.programTypes.length === 0) v.errors['programTypes'] = 'Select at least one program';
         v.valid = Object.keys(v.errors).length === 0;
@@ -380,6 +438,7 @@
       else if (k === 'financial') v = HSG.forms9611.validateFinancial(form.financial);
       else if (k === 'mission')   v = HSG.forms9611.validateMission(form.mission, form.entity.entityType);
       else if (k === 'related')   v = HSG.forms9611.validateRelated(form.related);
+      else if (k === 'bauf')      v = HSG.forms9611.validateBAUF(form.bauf);
       else if (k === 'certify')   v = HSG.forms9611.validateCertify(form.certify);
       return v;
     }

@@ -245,83 +245,39 @@ HSG.commercial.components = (function () {
     var aggUpb = summary.aggregate_upb || (poolLoans || []).reduce(function (s, l) { return s + (Number(l.current_upb) || 0); }, 0);
     var avgDscr = summary.avg_dscr;
     var states = (summary.states || []).join(', ');
-    var bidUSD = currentBid && currentBid.bidAmountUSD ? currentBid.bidAmountUSD : '';
-    var perUnitTotal = (poolLoans || []).reduce(function (s, l) { return s + (Number((l.property && l.property.units_total) || (l.property && l.property.hc_unit_mix && l.property.hc_unit_mix.total_units)) || 0); }, 0);
+    var rawPct = currentBid != null && currentBid.rawPct != null ? currentBid.rawPct : '';
     var ccBanner = renderCrossCollatBanner(pool, poolLoans);
     var flagSummary = renderFlaggedSummary(poolLoans);
+    var entry = HSG.bidding.deal.validateAssetEntry(rawPct === '' ? undefined : rawPct, pool);
+    var usdCell = entry.state === 'ok' ? u.currency(entry.usd) : '—';
+    var errAttr = entry.state === 'error' ? ' style="border-color: var(--color-error);" title="' + esc(entry.message) + '"' : '';
 
     return '<article class="card" style="padding: var(--space-5); margin-bottom: var(--space-4);" data-pool-id="' + esc(poolId) + '">' +
       '<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-3);">' +
         '<div>' +
-          '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.06em;">POOL ' + esc(poolId) + '</div>' +
+          '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.06em;">ASSET POOL ' + esc(poolId) + '</div>' +
           '<h4 style="font-family: var(--font-heading); font-size: var(--text-lg);">' + esc(poolName) + '</h4>' +
           '<div style="font-size: var(--text-sm); color: var(--color-text-muted);">' + esc(states) + '</div>' +
         '</div>' +
         '<div>' + flagSummary + '</div>' +
       '</div>' +
       ccBanner +
-      '<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); margin-bottom: var(--space-4); padding: var(--space-3); background: var(--color-grey-50); border-radius: var(--radius-md);">' +
-        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">LOANS</div><div style="font-weight: 600;">' + esc(loanCount) + '</div></div>' +
-        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">UPB</div><div style="font-weight: 600;">' + esc(u.currencyCompact(aggUpb)) + '</div></div>' +
+      '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-bottom: var(--space-4); padding: var(--space-3); background: var(--color-grey-50); border-radius: var(--radius-md);">' +
+        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">NOTES</div><div style="font-weight: 600;">' + esc(loanCount) + '</div></div>' +
+        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">UPB (BID BASIS)</div><div style="font-weight: 600;">' + esc(u.currency(aggUpb)) + '</div></div>' +
         '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">AVG DSCR</div><div style="font-weight: 600;">' + (avgDscr != null ? Number(avgDscr).toFixed(2) + 'x' : '—') + '</div></div>' +
-        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">UNITS</div><div style="font-weight: 600;">' + esc(u.number(perUnitTotal)) + '</div></div>' +
       '</div>' +
       '<div class="form-grid form-grid--2" style="align-items: end;">' +
         '<div class="wizard__field" style="margin-bottom: 0;">' +
-          '<label class="wizard__label">Your bid (USD, aggregate UPB basis)</label>' +
-          '<input class="form-input" type="number" step="1000" min="0" name="bid-amount" value="' + esc(bidUSD) + '" data-pool-id="' + esc(poolId) + '" />' +
+          '<label class="wizard__label">BID % of UPB <span style="color: var(--color-text-muted); font-weight: 400;">(up to 5 decimals · blank = no bid)</span></label>' +
+          '<input class="form-input" type="number" step="0.00001" min="0" inputmode="decimal" name="bid-pct" value="' + esc(rawPct) + '" data-pool-id="' + esc(poolId) + '"' + errAttr + ' />' +
         '</div>' +
-        '<div style="display: flex; gap: var(--space-2); font-size: var(--text-sm);">' +
-          '<div style="flex: 1;"><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">% UPB</div><div data-pool-id="' + esc(poolId) + '" data-role="pct-upb-display" style="font-weight: 600;">' + (bidUSD && aggUpb ? ((Number(bidUSD) / aggUpb) * 100).toFixed(2) + '%' : '—') + '</div></div>' +
-          '<div style="flex: 1;"><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">$/UNIT</div><div data-pool-id="' + esc(poolId) + '" data-role="per-unit-display" style="font-weight: 600;">' + (bidUSD && perUnitTotal ? u.currency(Math.round(Number(bidUSD) / perUnitTotal)) : '—') + '</div></div>' +
-        '</div>' +
-      '</div>' +
-    '</article>';
-  }
-
-  function renderDealCard(deal, sale, currentBid) {
-    var bidUSD = currentBid && currentBid.bidAmountUSD ? currentBid.bidAmountUSD : '';
-    var perUnit = bidUSD ? HSG.bidding.deal.pricePerUnit(bidUSD, deal) : null;
-    var cap = bidUSD ? HSG.bidding.deal.impliedCapRate(bidUSD, deal) : null;
-    var pctUPB = bidUSD ? HSG.bidding.deal.pctOfUPB(bidUSD, deal) : null;
-
-    var healthcareFlags = '';
-    if (sale.programType === 'HLS') {
-      healthcareFlags = '<div style="margin-top: var(--space-3); padding: var(--space-3); background: var(--color-grey-50); border-radius: var(--radius-md); font-size: var(--text-sm);">' +
-        '<strong>Healthcare flags:</strong> ' +
-        (deal.cmsCcn ? 'CMS CCN ' + esc(deal.cmsCcn) + ' · ' : '') +
-        (deal.cmsStarRating ? esc(deal.cmsStarRating) + ' star · ' : '') +
-        (deal.requiresOperatorContinuity ? '<span style="color: var(--color-warning); font-weight: 600;">Operator continuity required</span>' : '') +
-      '</div>';
-    }
-
-    return '<article class="card" style="padding: var(--space-5); margin-bottom: var(--space-4);" data-deal-id="' + esc(deal.dealId) + '">' +
-      '<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-3);">' +
-        '<div>' +
-          '<div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); letter-spacing: 0.06em;">DEAL ' + esc(deal.dealId) + (deal.fhaProjectNumber ? ' · FHA ' + esc(deal.fhaProjectNumber) : '') + '</div>' +
-          '<h4 style="font-family: var(--font-heading); font-size: var(--text-lg);">' + esc(deal.name || deal.propertyName || deal.dealId) + '</h4>' +
-          '<div style="font-size: var(--text-sm); color: var(--color-text-muted);">' + esc(deal.propertyCity || '') + (deal.propertyState ? ', ' + esc(deal.propertyState) : '') + '</div>' +
-        '</div>' +
-        (deal.cutoutsApplied ? '<span class="badge" style="background: var(--color-warning-bg); color: var(--color-warning);">CUTOUTS</span>' : '') +
-      '</div>' +
-      '<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); margin-bottom: var(--space-4); padding: var(--space-3); background: var(--color-grey-50); border-radius: var(--radius-md);">' +
-        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">UNITS</div><div style="font-weight: 600;">' + esc(u.number(deal.unitCount || 0)) + '</div></div>' +
-        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">UPB</div><div style="font-weight: 600;">' + esc(u.currencyCompact(deal.upb || 0)) + '</div></div>' +
-        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">DSCR</div><div style="font-weight: 600;">' + esc(deal.dscr != null ? deal.dscr.toFixed(2) : '—') + '</div></div>' +
-        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">OCCUPANCY</div><div style="font-weight: 600;">' + esc(deal.occupancyRate != null ? (deal.occupancyRate * 100).toFixed(0) + '%' : '—') + '</div></div>' +
-      '</div>' +
-      '<div class="form-grid form-grid--2" style="align-items: end;">' +
         '<div class="wizard__field" style="margin-bottom: 0;">' +
-          '<label class="wizard__label">Your bid (USD)</label>' +
-          '<input class="form-input" type="number" step="1000" min="0" name="bid-amount" value="' + esc(bidUSD) + '" data-deal-id="' + esc(deal.dealId) + '" />' +
-        '</div>' +
-        '<div style="display: flex; gap: var(--space-2); font-size: var(--text-sm);">' +
-          '<div style="flex: 1;"><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">$/UNIT</div><div data-deal-id="' + esc(deal.dealId) + '" data-role="per-unit-display" style="font-weight: 600;">' + (perUnit != null ? u.currency(perUnit) : '—') + '</div></div>' +
-          '<div style="flex: 1;"><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">CAP RATE</div><div data-deal-id="' + esc(deal.dealId) + '" data-role="cap-rate-display" style="font-weight: 600;">' + (cap != null ? cap.toFixed(2) + '%' : '—') + '</div></div>' +
-          '<div style="flex: 1;"><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">% UPB</div><div data-deal-id="' + esc(deal.dealId) + '" data-role="pct-upb-display" style="font-weight: 600;">' + (pctUPB != null ? pctUPB.toFixed(2) + '%' : '—') + '</div></div>' +
+          '<label class="wizard__label">BID $ (derived — read-only)</label>' +
+          '<div style="padding: var(--space-3); background: var(--color-grey-50); border-radius: var(--radius-md); font-weight: 600; text-align: right;" data-role="usd-cell" data-pool-id="' + esc(poolId) + '">' + esc(usdCell) + '</div>' +
         '</div>' +
       '</div>' +
-      healthcareFlags +
+      (entry.state === 'error' ? '<div class="auth-error" style="margin-top: var(--space-2); font-size: var(--text-sm);" data-role="pool-error" data-pool-id="' + esc(poolId) + '">' + esc(entry.message) + '</div>' : '<div data-role="pool-error" data-pool-id="' + esc(poolId) + '" style="display:none;"></div>') +
     '</article>';
   }
 
@@ -456,27 +412,32 @@ HSG.commercial.components = (function () {
     '</div>';
   }
 
-  function renderBidSlip(bids, sale) {
-    var summary = HSG.bidding.deal.slipTotal(bids);
-    if (summary.dealCount === 0) {
+  /** sheet = HSG.bidding.deal.validateSheet(...) result; bids carry { assetId, pct, usd }. */
+  function renderBidSlip(sheet, sale) {
+    var saleId = sale.sale_id || sale.saleId;
+    var terms = sale.deposit_terms || sale.depositTerms;
+    var bids = (sheet && sheet.bids) || [];
+    if (bids.length === 0) {
       return '<div class="card" style="padding: var(--space-5);">' +
-        '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-2);">Bid slip</h3>' +
-        '<p style="color: var(--color-text-muted); font-size: var(--text-sm);">No bids in your slip yet. Enter a $ amount on a deal above to add it.</p>' +
+        '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-2);">Bid form</h3>' +
+        '<p style="color: var(--color-text-muted); font-size: var(--text-sm);">Enter a BID % of UPB on an asset above to add it. Assets left blank are simply not bid.</p>' +
       '</div>';
     }
+    var s = HSG.bidding.deal.slipTotal(bids, terms);
     return '<div class="card" style="padding: var(--space-5);">' +
-      '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-3);">Bid slip — ' + esc(sale.saleId) + '</h3>' +
+      '<h3 style="font-family: var(--font-heading); margin-bottom: var(--space-3);">Bid form — ' + esc(saleId) + '</h3>' +
       '<table class="data-table" style="margin-bottom: var(--space-3);">' +
-        '<thead><tr><th>Deal</th><th style="text-align:right;">Bid</th><th style="text-align:right;">$/Unit</th></tr></thead>' +
+        '<thead><tr><th>Asset</th><th style="text-align:right;">BID %</th><th style="text-align:right;">BID $ (derived)</th></tr></thead>' +
         '<tbody>' + bids.map(function (b) {
-          return '<tr><td>' + esc(b.dealId) + '</td><td style="text-align:right;">' + esc(u.currency(b.bidAmountUSD)) + '</td><td style="text-align:right;">' + esc(b.pricePerUnit ? u.currency(b.pricePerUnit) : '—') + '</td></tr>';
+          return '<tr><td>' + esc(b.assetId) + '</td><td style="text-align:right;">' + esc(b.pct) + '%</td><td style="text-align:right;">' + esc(u.currency(b.usd)) + '</td></tr>';
         }).join('') + '</tbody>' +
       '</table>' +
       '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); padding: var(--space-3); background: var(--color-portal-soft); border-radius: var(--radius-md);">' +
-        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">DEALS</div><div style="font-weight: 600;">' + summary.dealCount + '</div></div>' +
-        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">TOTAL</div><div style="font-weight: 600;">' + esc(u.currency(summary.totalUSD)) + '</div></div>' +
-        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">DEPOSIT (10%)</div><div style="font-weight: 600;">' + esc(u.currency(summary.depositUSD)) + '</div></div>' +
+        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">ASSETS</div><div style="font-weight: 600;">' + s.assetCount + '</div></div>' +
+        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">TOTAL (DERIVED)</div><div style="font-weight: 600;">' + esc(u.currency(s.totalUSD)) + '</div></div>' +
+        '<div><div style="font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted);">DEPOSIT</div><div style="font-weight: 600;">' + esc(u.currency(s.depositUSD)) + '</div></div>' +
       '</div>' +
+      '<p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: var(--space-2);">Deposit per the BIP: the greater of the floor or the stated percentage of your aggregate bid. Final figures are confirmed on your platform receipt.</p>' +
     '</div>';
   }
 
@@ -486,7 +447,6 @@ HSG.commercial.components = (function () {
     FLAG_META: FLAG_META,
     poolHasCrossCollat: poolHasCrossCollat,
     renderSaleCard: renderSaleCard,
-    renderDealCard: renderDealCard,
     renderDealRow: renderDealRow,
     renderPoolCard: renderPoolCard,
     renderBidSlip: renderBidSlip,

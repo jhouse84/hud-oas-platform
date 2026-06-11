@@ -1,10 +1,12 @@
 /**
- * HSG.forms90092 — HUD-90092 Qualification Statement (MHLS / HLS)
+ * HSG.formsCommercialQS — Commercial Qualification Statement (MHLS / HLS)
  *
+ * The commercial QS is sale-specific and carries NO public form number —
+ * it is modeled on the Qualification Statement published with each BIP.
  * Schema, defaults, and validators for the commercial portal qualification
- * wizard. Tailored for multifamily and healthcare loan sale bidders. Adds
- * Section 232 healthcare-specific certifications and operator track-record
- * disclosures.
+ * wizard: multifamily and healthcare bidders, Section 232 operator
+ * track-record disclosures, plus the CA/NDA and BTAF/BAUF steps that
+ * complete the qualification stack.
  *
  * Steps:
  *   1. Entity & contact information
@@ -16,7 +18,7 @@
  */
 window.HSG = window.HSG || {};
 
-HSG.forms90092 = (function () {
+HSG.formsCommercialQS = (function () {
   'use strict';
 
   var ENTITY_TYPES = [
@@ -32,18 +34,32 @@ HSG.forms90092 = (function () {
   ];
 
   var STEPS = [
-    { key: 'entity',     label: '1. Entity', desc: 'Legal name, organization, contact' },
-    { key: 'ownership',  label: '2. Ownership', desc: 'Beneficial owners (25%+)' },
-    { key: 'financial',  label: '3. Financial', desc: 'Capital, AUM, track record' },
-    { key: 'operator',   label: '4. Operator', desc: 'Healthcare operations (HLS only)' },
-    { key: 'related',    label: '5. Related Parties', desc: 'Disclosures' },
-    { key: 'certify',    label: '6. Certify', desc: 'Signature + submit' }
+    { key: 'ca',         label: '1. CA / NDA', desc: 'Confidentiality Agreement' },
+    { key: 'entity',     label: '2. Entity', desc: 'Legal name, organization, contact' },
+    { key: 'ownership',  label: '3. Ownership', desc: 'Beneficial owners (25%+)' },
+    { key: 'financial',  label: '4. Financial', desc: 'Capital, AUM, track record' },
+    { key: 'operator',   label: '5. Operator', desc: 'Healthcare operations (HLS only)' },
+    { key: 'related',    label: '6. Related Parties', desc: 'Disclosures' },
+    { key: 'bauf',       label: '7. Bid Terms & User', desc: 'BTAF + authorized user (BAUF)' },
+    { key: 'certify',    label: '8. Certify', desc: 'Signature + submit' }
   ];
 
   function defaults() {
     return {
       portal: 'commercial',
       programTypes: [],
+      ca: {
+        acknowledged: false,        // executes the sale Confidentiality Agreement / NDA
+        signerName: '',
+        signerTitle: ''
+      },
+      bauf: {
+        btafAcknowledged: false,    // Bid Terms Acknowledgement Form — BIP terms as published
+        authorizedUserName: '',     // BAUF — the single authorized submitter for this bidder
+        authorizedUserTitle: '',
+        authorizedUserEmail: '',
+        authorizedUserPhone: ''
+      },
       entity: {
         legalName: '',
         dba: '',
@@ -187,6 +203,24 @@ HSG.forms90092 = (function () {
     return { valid: Object.keys(errors).length === 0, errors: errors };
   }
 
+  function validateCA(ca) {
+    var errors = {};
+    if (!ca.acknowledged) errors['ca.acknowledged'] = 'The Confidentiality Agreement must be executed before sale materials open';
+    if (!ca.signerName) errors['ca.signerName'] = 'Signer name is required';
+    if (!ca.signerTitle) errors['ca.signerTitle'] = 'Signer title is required';
+    return { valid: Object.keys(errors).length === 0, errors: errors };
+  }
+
+  function validateBAUF(b) {
+    var errors = {};
+    if (!b.btafAcknowledged) errors['bauf.btafAcknowledged'] = 'The Bid Terms Acknowledgement is required';
+    if (!b.authorizedUserName) errors['bauf.authorizedUserName'] = 'Designate the authorized user who will submit the bid';
+    if (!b.authorizedUserTitle) errors['bauf.authorizedUserTitle'] = 'Authorized user title is required';
+    if (!isEmail(b.authorizedUserEmail)) errors['bauf.authorizedUserEmail'] = 'Enter a valid email for the authorized user';
+    if (!b.authorizedUserPhone) errors['bauf.authorizedUserPhone'] = 'Authorized user phone is required';
+    return { valid: Object.keys(errors).length === 0, errors: errors };
+  }
+
   function validateCertify(c) {
     var errors = {};
     if (!c.certifierName) errors['certify.certifierName'] = 'Name is required';
@@ -202,11 +236,13 @@ HSG.forms90092 = (function () {
   function validateAll(form) {
     var allErrors = {};
     var v;
+    v = validateCA(form.ca || {});                              Object.assign(allErrors, v.errors);
     v = validateEntity(form.entity);                            Object.assign(allErrors, v.errors);
     v = validateOwnership(form.ownership);                      Object.assign(allErrors, v.errors);
     v = validateFinancial(form.financial);                      Object.assign(allErrors, v.errors);
     v = validateOperator(form.operator, form.programTypes);     Object.assign(allErrors, v.errors);
     v = validateRelated(form.related);                          Object.assign(allErrors, v.errors);
+    v = validateBAUF(form.bauf || {});                          Object.assign(allErrors, v.errors);
     v = validateCertify(form.certify);                          Object.assign(allErrors, v.errors);
     if (!form.programTypes || form.programTypes.length === 0) {
       allErrors['programTypes'] = 'Select at least one program (MHLS or HLS)';
@@ -218,11 +254,13 @@ HSG.forms90092 = (function () {
     ENTITY_TYPES: ENTITY_TYPES,
     STEPS: STEPS,
     defaults: defaults,
+    validateCA: validateCA,
     validateEntity: validateEntity,
     validateOwnership: validateOwnership,
     validateFinancial: validateFinancial,
     validateOperator: validateOperator,
     validateRelated: validateRelated,
+    validateBAUF: validateBAUF,
     validateCertify: validateCertify,
     validateAll: validateAll,
     isEmail: isEmail, isEIN: isEIN, isUEI: isUEI, isZip: isZip

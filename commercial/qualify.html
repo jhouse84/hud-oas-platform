@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>HUD-90092 Qualification · Commercial Loan Sales</title>
+  <title>Bidder Qualification · Commercial Loan Sales</title>
   <link rel="stylesheet" href="../shared/design-system.css" />
   <script src="../shared/config.js"></script>
 </head>
@@ -11,7 +11,7 @@
 
   <header class="portal-banner">
     <div>
-      <span class="portal-banner__label">HUD-90092 Qualification</span>
+      <span class="portal-banner__label">Bidder Qualification</span>
       <span class="portal-banner__programs"> · MHLS · HLS</span>
     </div>
     <nav class="portal-banner__nav">
@@ -22,8 +22,8 @@
 
   <main class="wizard">
     <div class="wizard__header">
-      <h1 style="font-family: var(--font-heading); font-size: var(--text-3xl); margin-bottom: var(--space-2);">Bidder Qualification — HUD-90092</h1>
-      <p style="color: var(--color-text-muted);">Complete this digital HUD-90092 to qualify for Multifamily and Healthcare loan sales. Includes track-record, beneficial ownership, and (for HLS) Section 232 operator certifications. Allow ~20 minutes.</p>
+      <h1 style="font-family: var(--font-heading); font-size: var(--text-3xl); margin-bottom: var(--space-2);">Bidder Qualification — Commercial QS</h1>
+      <p style="color: var(--color-text-muted);">Complete this digital Qualification Statement (the commercial QS published with each BIP) to qualify for Multifamily and Healthcare loan sales. Includes track-record, beneficial ownership, and (for HLS) Section 232 operator certifications. Allow ~20 minutes.</p>
     </div>
 
     <div class="wizard__steps" id="steps"></div>
@@ -36,10 +36,10 @@
   <script src="../shared/cognito.js"></script>
   <script src="../shared/api.js"></script>
   <script src="../shared/screening.js"></script>
-  <script src="../shared/forms-90092.js"></script>
+  <script src="../shared/forms-qs-commercial.js"></script>
   <script>
   (function () {
-    var form = HSG.forms90092.defaults();
+    var form = HSG.formsCommercialQS.defaults();
     var stepIdx = 0;
     var stepsEl = document.getElementById('steps');
     var panelEl = document.getElementById('panel');
@@ -47,7 +47,7 @@
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
 
     function renderSteps() {
-      stepsEl.innerHTML = HSG.forms90092.STEPS.map(function (s, i) {
+      stepsEl.innerHTML = HSG.formsCommercialQS.STEPS.map(function (s, i) {
         var skip = (s.key === 'operator' && (form.programTypes || []).indexOf('HLS') < 0);
         var cls = 'wizard__step' + (i === stepIdx ? ' wizard__step--active' : (i < stepIdx ? ' wizard__step--done' : ''));
         return '<div class="' + cls + '" style="' + (skip ? 'opacity: 0.4;' : '') + '">' +
@@ -92,7 +92,7 @@
           '<div class="wizard__field"><label class="wizard__label">Entity type</label>' +
             '<select class="form-select' + (errors['entity.entityType'] ? ' form-select--error' : '') + '" name="entityType">' +
               '<option value="">Select…</option>' +
-              HSG.forms90092.ENTITY_TYPES.map(function (t) { return '<option value="' + esc(t.value) + '"' + (e.entityType === t.value ? ' selected' : '') + '>' + esc(t.label) + '</option>'; }).join('') +
+              HSG.formsCommercialQS.ENTITY_TYPES.map(function (t) { return '<option value="' + esc(t.value) + '"' + (e.entityType === t.value ? ' selected' : '') + '>' + esc(t.label) + '</option>'; }).join('') +
             '</select>' +
             (errors['entity.entityType'] ? '<p class="wizard__error">' + esc(errors['entity.entityType']) + '</p>' : '') +
           '</div>' +
@@ -239,7 +239,7 @@
       return '<div class="wizard__actions">' +
         '<button type="button" class="btn-portal btn-portal--ghost" data-action="back"' + (stepIdx === 0 ? ' disabled' : '') + '>← Back</button>' +
         '<div style="display:flex; gap: var(--space-2);">' +
-          (stepIdx < HSG.forms90092.STEPS.length - 1 ? '<button type="button" class="btn-portal" data-action="next">Continue →</button>' : '') +
+          (stepIdx < HSG.formsCommercialQS.STEPS.length - 1 ? '<button type="button" class="btn-portal" data-action="next">Continue →</button>' : '') +
           (extra || '') +
         '</div>' +
       '</div>';
@@ -248,13 +248,15 @@
     function render(errors, screening) {
       errors = errors || {};
       renderSteps();
-      var key = HSG.forms90092.STEPS[stepIdx].key;
+      var key = HSG.formsCommercialQS.STEPS[stepIdx].key;
       var content = '';
-      if (key === 'entity')      content = renderEntity(errors);
+      if (key === 'ca')        content = renderCA(errors);
+      else if (key === 'entity')      content = renderEntity(errors);
       else if (key === 'ownership') content = renderOwnership(errors);
       else if (key === 'financial') content = renderFinancial(errors);
       else if (key === 'operator')  content = renderOperator(errors);
       else if (key === 'related')   content = renderRelated(errors);
+      else if (key === 'bauf')      content = renderBAUF(errors);
       else if (key === 'certify')   content = renderCertify(errors, screening);
       var extra = key === 'certify' ? '<button type="button" class="btn-portal" data-action="submit">Submit qualification →</button>' : '';
       panelEl.innerHTML = content + actions(extra);
@@ -352,29 +354,86 @@
       });
     }
 
+
+    function renderCA(errors) {
+      var ca = form.ca;
+      return '<h2 class="wizard__panel-title">Confidentiality Agreement (CA / NDA)</h2>' +
+        '<p class="wizard__panel-subtitle">The Confidentiality Agreement governs every sale document you will receive. It is executed once per sale and must be in place before the data room opens to you.</p>' +
+        '<div class="card" style="padding: var(--space-4); margin-bottom: var(--space-4); background: var(--color-grey-50); font-size: var(--text-sm); max-height: 220px; overflow-y: auto;">' +
+          '<p style="margin-bottom: var(--space-2);"><strong>Key terms.</strong> Sale materials (the tape, valuation files, loan documents, and supplements) are furnished solely to evaluate and bid the offered assets. They may be shared only with your directors, officers, employees, and retained advisors with a need to know, each bound to the same obligations. Bid information is sealed: you will not disclose your participation, your bid, or any sale document to any other bidder or third party, and you will return or destroy materials on request if you do not close.</p>' +
+          '<p>The executed agreement for the specific sale is the governing document; this acknowledgment executes it electronically with the signature below.</p>' +
+        '</div>' +
+        '<label class="form-checkbox"><input type="checkbox" name="ca.acknowledged"' + (ca.acknowledged ? ' checked' : '') + ' /><span><span class="form-checkbox__label">I execute the Confidentiality Agreement</span><span class="form-checkbox__desc">On behalf of the entity, with authority to bind it.</span></span></label>' +
+        (errors['ca.acknowledged'] ? '<p class="wizard__error">' + esc(errors['ca.acknowledged']) + '</p>' : '') +
+        '<div class="form-grid form-grid--2" style="margin-top: var(--space-4);">' +
+          renderField('ca.signerName', 'Signer name', 'text', ca.signerName, null, errors['ca.signerName']) +
+          renderField('ca.signerTitle', 'Signer title', 'text', ca.signerTitle, null, errors['ca.signerTitle']) +
+        '</div>';
+    }
+
+    function renderBAUF(errors) {
+      var b = form.bauf;
+      return '<h2 class="wizard__panel-title">Bid Terms &amp; Authorized User (BTAF + BAUF)</h2>' +
+        '<p class="wizard__panel-subtitle">Two short forms complete the qualification stack: acknowledge the bid terms as published, and designate the single authorized user who will submit your bid.</p>' +
+        '<label class="form-checkbox"><input type="checkbox" name="bauf.btafAcknowledged"' + (b.btafAcknowledged ? ' checked' : '') + ' /><span><span class="form-checkbox__label">Bid Terms Acknowledgement (BTAF)</span><span class="form-checkbox__desc">I have read the Bidder Information Package for the sale and accept the bid terms as published &mdash; sealed bidding, the bid window, the deposit terms, and the award and settlement timeline.</span></span></label>' +
+        (errors['bauf.btafAcknowledged'] ? '<p class="wizard__error">' + esc(errors['bauf.btafAcknowledged']) + '</p>' : '') +
+        '<h3 style="font-family: var(--font-heading); margin: var(--space-5) 0 var(--space-2);">Bidder Authorized User Form (BAUF)</h3>' +
+        '<p style="color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--space-3);">The authorized user is the one person who may enter and submit bids for your entity on this platform. Their account carries the bid; everything they submit binds the bidder.</p>' +
+        '<div class="form-grid form-grid--2">' +
+          renderField('bauf.authorizedUserName', 'Authorized user &mdash; full name', 'text', b.authorizedUserName, null, errors['bauf.authorizedUserName']) +
+          renderField('bauf.authorizedUserTitle', 'Title', 'text', b.authorizedUserTitle, null, errors['bauf.authorizedUserTitle']) +
+          renderField('bauf.authorizedUserEmail', 'Email (their sign-in identity)', 'email', b.authorizedUserEmail, null, errors['bauf.authorizedUserEmail']) +
+          renderField('bauf.authorizedUserPhone', 'Phone', 'tel', b.authorizedUserPhone, null, errors['bauf.authorizedUserPhone']) +
+        '</div>';
+    }
+
+    function readCA() {
+      panelEl.querySelectorAll('input').forEach(function (el) {
+        var n = el.name;
+        if (n === 'ca.acknowledged') form.ca.acknowledged = el.checked;
+        else if (n === 'ca.signerName') form.ca.signerName = el.value;
+        else if (n === 'ca.signerTitle') form.ca.signerTitle = el.value;
+      });
+    }
+
+    function readBAUF() {
+      panelEl.querySelectorAll('input').forEach(function (el) {
+        var n = el.name;
+        if (n === 'bauf.btafAcknowledged') form.bauf.btafAcknowledged = el.checked;
+        else if (n === 'bauf.authorizedUserName') form.bauf.authorizedUserName = el.value;
+        else if (n === 'bauf.authorizedUserTitle') form.bauf.authorizedUserTitle = el.value;
+        else if (n === 'bauf.authorizedUserEmail') form.bauf.authorizedUserEmail = el.value;
+        else if (n === 'bauf.authorizedUserPhone') form.bauf.authorizedUserPhone = el.value;
+      });
+    }
+
     function readCurrentStep() {
-      var k = HSG.forms90092.STEPS[stepIdx].key;
-      if (k === 'entity') readEntity();
+      var k = HSG.formsCommercialQS.STEPS[stepIdx].key;
+      if (k === 'ca') readCA();
+      else if (k === 'entity') readEntity();
       else if (k === 'ownership') readOwnership();
       else if (k === 'financial') readFinancial();
       else if (k === 'operator') readOperator();
       else if (k === 'related') readRelated();
+      else if (k === 'bauf') readBAUF();
       else if (k === 'certify') readCertify();
     }
 
     function validateCurrent() {
-      var k = HSG.forms90092.STEPS[stepIdx].key;
+      var k = HSG.formsCommercialQS.STEPS[stepIdx].key;
       var v;
-      if (k === 'entity') {
-        v = HSG.forms90092.validateEntity(form.entity);
+      if (k === 'ca') v = HSG.formsCommercialQS.validateCA(form.ca);
+      else if (k === 'entity') {
+        v = HSG.formsCommercialQS.validateEntity(form.entity);
         if (form.programTypes.length === 0) v.errors['programTypes'] = 'Select at least one program';
         v.valid = Object.keys(v.errors).length === 0;
       }
-      else if (k === 'ownership') v = HSG.forms90092.validateOwnership(form.ownership);
-      else if (k === 'financial') v = HSG.forms90092.validateFinancial(form.financial);
-      else if (k === 'operator')  v = HSG.forms90092.validateOperator(form.operator, form.programTypes);
-      else if (k === 'related')   v = HSG.forms90092.validateRelated(form.related);
-      else if (k === 'certify')   v = HSG.forms90092.validateCertify(form.certify);
+      else if (k === 'ownership') v = HSG.formsCommercialQS.validateOwnership(form.ownership);
+      else if (k === 'financial') v = HSG.formsCommercialQS.validateFinancial(form.financial);
+      else if (k === 'operator')  v = HSG.formsCommercialQS.validateOperator(form.operator, form.programTypes);
+      else if (k === 'related')   v = HSG.formsCommercialQS.validateRelated(form.related);
+      else if (k === 'bauf')      v = HSG.formsCommercialQS.validateBAUF(form.bauf);
+      else if (k === 'certify')   v = HSG.formsCommercialQS.validateCertify(form.certify);
       return v;
     }
 
@@ -386,7 +445,7 @@
             readCurrentStep();
             var v = validateCurrent();
             if (!v.valid) { render(v.errors); return; }
-            stepIdx = Math.min(stepIdx + 1, HSG.forms90092.STEPS.length - 1);
+            stepIdx = Math.min(stepIdx + 1, HSG.formsCommercialQS.STEPS.length - 1);
             render();
           } else if (a === 'back') {
             readCurrentStep();
@@ -414,7 +473,7 @@
 
     function submit() {
       readCertify();
-      var v = HSG.forms90092.validateAll(form);
+      var v = HSG.formsCommercialQS.validateAll(form);
       if (!v.valid) {
         var keys = Object.keys(v.errors);
         var first = 5;

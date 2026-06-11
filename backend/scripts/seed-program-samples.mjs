@@ -665,9 +665,35 @@ async function batchWrite(table, items) {
   }
 }
 
+// Spec fields (OAS config spec): per-sale form completion CODE, full deposit
+// terms, and the HUD-furnished ETD-adjusted BPO basis for HNVLS loans.
+var COMPLETION_CODES = {
+  'HVLS-2026-DEMO': 'HVLS26D742',
+  'HNVLS-2026-DEMO': 'HNVLS26D851',
+  'SFLS-2026-DEMO': 'SFLS26D119',
+  'MHLS-2026-DEMO': 'MHLS26DMF63',
+  'HLS-2026-DEMO': 'HLS26DHC84'
+};
+
+function applySpecFields(bundle) {
+  var s = bundle.sale;
+  s.completion_code = COMPLETION_CODES[s.saleId] || ((s.programType || 'SALE') + '26D');
+  s.deposit_terms = Object.assign(
+    { minimum_deposit_floor: 100000, deposit_pct_of_aggregate_bid: 0.10 },
+    s.deposit_terms || {},
+    { under_floor_pct: 0.50 }
+  );
+  (bundle.loans || []).forEach(function (l) {
+    if (l.program === 'HNVLS' && l.bpo_value && l.estimated_time_to_disposition_months != null && l.etd_adjusted_bpo == null) {
+      l.etd_adjusted_bpo = Math.round(l.bpo_value * (1 - 0.0075 * l.estimated_time_to_disposition_months));
+    }
+  });
+  return bundle;
+}
+
 async function main() {
   console.log('Generating program-sample seeds for stage=' + stage + '...');
-  var bundles = [makeHvlsSale(), makeHnvlsSale(), makeSflsSale(), makeHlsSale()];
+  var bundles = [makeHvlsSale(), makeHnvlsSale(), makeSflsSale(), makeHlsSale()].map(applySpecFields);
 
   for (var b of bundles) {
     console.log('  ' + b.sale.saleId + ': ' + b.loans.length + ' loans, ' + b.sale.pools.length + ' pools');

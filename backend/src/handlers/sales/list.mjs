@@ -28,6 +28,23 @@ export const handler = wrap(async (event) => {
 
   if (status) items = items.filter(s => s.status === status);
 
+  // Bidders receive the offering as published — reserve / floor / BEM fields
+  // and the unearned completion CODE stay server-side (SB-04 / BE-01).
+  const ADMIN_ONLY_KEY = /reserve|floor|bem|completion_code|completionCode/i;
+  const redact = (obj) => {
+    if (Array.isArray(obj)) return obj.map(redact);
+    if (obj && typeof obj === 'object') {
+      const out = {};
+      for (const k of Object.keys(obj)) {
+        if (ADMIN_ONLY_KEY.test(k)) continue;
+        out[k] = redact(obj[k]);
+      }
+      return out;
+    }
+    return obj;
+  };
+  if (!me.isAdmin) items = items.map(redact);
+
   items.sort((a, b) => (b.bidDate || '').localeCompare(a.bidDate || ''));
   return ok({ sales: items, count: items.length, portal });
 });

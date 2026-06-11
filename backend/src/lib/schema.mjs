@@ -48,7 +48,35 @@ export function validatePresignUpload(body) {
 }
 
 export function validateBidSubmission(body) {
-  required(body, ['saleId', 'poolId', 'bidAmount', 'bidAmountUnit', 'bidderId']);
+  required(body, ['saleId']);
+  const hasPool = Array.isArray(body.poolBids) && body.poolBids.length > 0;
+  const hasAsset = Array.isArray(body.assetBids) && body.assetBids.length > 0;
+  if (!hasPool && !hasAsset) {
+    throw new HttpError('A bid form needs poolBids (residential) or assetBids (commercial)', 400, 'ValidationError');
+  }
+  if (hasPool && hasAsset) {
+    throw new HttpError('Submit either poolBids or assetBids, not both', 400, 'ValidationError');
+  }
+  if (hasPool) {
+    for (const pb of body.poolBids) {
+      if (!pb || !pb.poolId) throw new HttpError('Every poolBid needs a poolId', 400, 'ValidationError');
+      if (!Array.isArray(pb.loans) || pb.loans.length === 0) {
+        throw new HttpError(`Pool ${pb.poolId}: loan-level entries required (a BID % per loan)`, 400, 'ValidationError');
+      }
+      for (const e of pb.loans) {
+        if (!e || !e.loanId || e.bidPct == null) {
+          throw new HttpError(`Pool ${pb.poolId}: each loan entry needs loanId and bidPct`, 400, 'ValidationError');
+        }
+      }
+    }
+  }
+  if (hasAsset) {
+    for (const ab of body.assetBids) {
+      if (!ab || !ab.assetId || ab.bidPct == null) {
+        throw new HttpError('Each assetBid needs assetId and bidPct', 400, 'ValidationError');
+      }
+    }
+  }
 }
 
 export function validateQA(body) {

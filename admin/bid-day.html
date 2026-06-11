@@ -239,7 +239,7 @@
       var conforming = bids.filter(function (b) { return /Conforming|conforming/i.test(b.conformingStatus || 'Conforming') && !b.withdrawn; });
       var nonConforming = bids.filter(function (b) { return /Non-Conforming|non.conforming/i.test(b.conformingStatus || ''); });
       var uniqueBidders = new Set(bids.filter(function (b) { return !b.sandbox; }).map(function (b) { return b.bidderId; }));
-      var totalAmt = bids.reduce(function (s, b) { return s + Number(b.bidAmount || b.bidAmountUSD || 0); }, 0);
+      var totalAmt = bids.reduce(function (s, b) { return s + Number(b.aggregateUsd || b.bidAmount || b.bidAmountUSD || 0); }, 0);
 
       var html = '';
 
@@ -325,8 +325,8 @@
 
     function renderFeedRow(b) {
       var conforming = /Conforming|conforming/i.test(b.conformingStatus || 'Conforming') && !/Non/i.test(b.conformingStatus || '');
-      var amount = b.bidAmount || b.bidAmountUSD || 0;
-      var pct = b.bidAmountUnit && /%/.test(b.bidAmountUnit) ? b.bidAmount + '%' : (b.pctOfUPB != null ? b.pctOfUPB.toFixed(2) + '%' : '—');
+      var amount = b.aggregateUsd || b.bidAmount || b.bidAmountUSD || 0;
+      var pct = b.bidPct != null ? b.bidPct + '%' : (b.loanBids && b.loanBids.length ? b.loanBids.length + ' loans' : (b.bidAmountUnit && /%/.test(b.bidAmountUnit) ? b.bidAmount + '%' : (b.pctOfUPB != null ? b.pctOfUPB.toFixed(2) + '%' : '—')));
       var newClass = prevBidIds.has(b.bidId) ? '' : ' new';
       var ncClass = conforming ? '' : ' non-conforming';
       return '<div class="feed-row' + newClass + ncClass + '">' +
@@ -347,7 +347,7 @@
         var pid = p.pool_id || p.poolId;
         var poolBids = bids.filter(function (b) { return b.poolId === pid; });
         var top = poolBids.reduce(function (max, b) {
-          var amt = Number(b.bidAmountUSD || b.bidAmount || 0);
+          var amt = Number(b.aggregateUsd || b.bidAmountUSD || b.bidAmount || 0);
           return amt > max ? amt : max;
         }, 0);
         var aggUpb = (p.summary && p.summary.aggregate_upb) || 0;
@@ -369,7 +369,7 @@
       return '<ul class="issues-list">' + nonConforming.slice(0, 8).map(function (b) {
         return '<li>' +
           '<span class="issues-list__sev issues-list__sev--high">NON-CONF</span>' +
-          esc(b.bidderName) + ' · ' + esc(b.poolId || b.dealId) + ' · ' + esc(u.currency(b.bidAmount || b.bidAmountUSD || 0)) +
+          esc(b.bidderName) + ' · ' + esc(b.poolId || b.dealId) + ' · ' + esc(u.currency(b.aggregateUsd || b.bidAmount || b.bidAmountUSD || 0)) +
           (b.conformingReason ? '<div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px;">' + esc(b.conformingReason) + '</div>' : '') +
         '</li>';
       }).join('') + '</ul>';
@@ -379,9 +379,9 @@
       if (bids.length === 0) {
         return 'Bid window has not opened yet. ' + ((sale && sale.summary && sale.summary.loan_count) || 0) + ' loans across ' + ((sale && sale.pools) || []).length + ' pools queued for bidding. Floor pricing review and OGC BEM certification complete.';
       }
-      var top = bids.slice().sort(function (a, b) { return Number(b.bidAmountUSD || b.bidAmount || 0) - Number(a.bidAmountUSD || a.bidAmount || 0); })[0];
+      var top = bids.slice().sort(function (a, b) { return Number(b.aggregateUsd || b.bidAmountUSD || b.bidAmount || 0) - Number(a.aggregateUsd || a.bidAmountUSD || a.bidAmount || 0); })[0];
       var poolCount = new Set(bids.map(function (b) { return b.poolId || b.dealId; })).size;
-      return 'Strongest single bid: <strong>' + esc(top.bidderName) + '</strong> at ' + esc(u.currency(top.bidAmountUSD || top.bidAmount || 0)) +
+      return 'Strongest single bid: <strong>' + esc(top.bidderName) + '</strong> at ' + esc(u.currency(top.aggregateUsd || top.bidAmountUSD || top.bidAmount || 0)) +
         ' on ' + esc(top.poolId || top.dealId) + '. ' + poolCount + ' of ' + ((sale && sale.pools) || []).length + ' pools have at least one bid. Cross-collat enforcement holding.';
     }
 

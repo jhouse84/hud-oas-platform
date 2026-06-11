@@ -1,142 +1,197 @@
 /**
- * HSG.bidding.pool — Pool-based percentage bidding (HVLS / HNVLS / SFLS).
+ * HSG.bidding.pool — Loan-level percentage bidding (HVLS / HNVLS / SFLS).
  *
- * Residential portal bidding mechanics:
- *   - HVLS / HNVLS bid as % of aggregate BPO (Broker Opinion of Value).
- *   - SFLS bids as % of aggregate UPB (Unpaid Principal Balance).
- *   - Bid amount can be displayed in % or $ — the calc engine maintains
- *     dual representation and the same bid record stores both.
- *   - Mission bids are flagged on the bid record and may be subject to
- *     reserve discounts in BEM.
+ * Mirrors the HUD bid form exactly:
+ *   - The bidder enters ONE number per loan: a BID % (up to 5 decimals).
+ *   - BID $ is DERIVED (BID % × the HUD-furnished per-loan basis) and read-only.
+ *   - Basis by program: HVLS = per-loan BPO · HNVLS = ETD-adjusted BPO (tape value,
+ *     never recomputed here) · SFLS = per-loan UPB.
+ *   - Whole-pool participation: to bid a pool, EVERY loan in it needs a valid %;
+ *     a pool is declined by leaving all of its loans blank.
+ *   - Blank = NO BID (allowed). A literal 0 = error. Derived $ below the per-loan
+ *     minimum = error. HNVLS BID % capped at 175.
+ *   - Deposit (per sale deposit_terms): greater of the floor ($100,000) or 10% of
+ *     the aggregate bid, rounded up to the whole dollar; aggregates under the
+ *     floor take a 50%-of-bid deposit instead.
  *
- * A bid record has shape:
- *   {
- *     bidderId, saleId, poolId, programType,
- *     bidPct,        // 25.5  (always populated)
- *     bidAmountUSD,  // 2_550_000  (derived from pct × aggregate)
- *     valuationBasis,// 'BPO' | 'UPB' | 'ETD'
- *     missionBid,    // bool
- *     conditional,   // optional: { dependsOnPool, dependsOnAward }
- *     submittedAt, status, confirmationCode
- *   }
+ * Receipts and the form-completion CODE are issued by the server at submit;
+ * nothing here invents codes or reveals reserves.
+ *
+ * A loan entry: { loanId, pct, usd }
+ * A pool result: { poolId, participation: 'COMPLETE'|'NO_BID'|'INCOMPLETE',
+ *                  loans, aggregateUsd, missionBid, errors, missing }
  */
-window.HSG = window.HSG || HSG;
+window.HSG = window.HSG || {};
 HSG.bidding = HSG.bidding || {};
 
 HSG.bidding.pool = (function () {
   'use strict';
 
-  var DEFAULT_RANGE = { min: 5, max: 105 };  // % range — caller can override per program
+  var CONFIG = {
+    pctDecimals: 5,
+    minDerivedUSD: 100,
+    maxPctByProgram: { HNVLS: 175 },   // others: no cap unless the sale supplies one
+    deposit: { rate: 0.10, floor: 100000, underFloorRate: 0.50 }
+  };
 
-  function valuationBasis(programType) {
-    if (programType === 'HVLS' || programType === 'HNVLS') return 'BPO';
+  function basisField(programType) {
+    if (programType === 'HNVLS') return 'etd_adjusted_bpo';
+    if (programType === 'SFLS') return 'current_upb';
+    return 'bpo_value'; // HVLS
+  }
+
+  function basisLabel(programType) {
+    if (programType === 'HNVLS') return 'ETD-adj. BPO';
     if (programType === 'SFLS') return 'UPB';
     return 'BPO';
   }
 
-  function aggregateForBasis(pool, basis) {
-    if (!pool) return 0;
-    if (basis === 'BPO') return pool.aggregateBPO || 0;
-    if (basis === 'UPB') return pool.aggregateUPB || 0;
-    if (basis === 'ETD') return pool.aggregateETD || 0;
-    return pool.aggregateBPO || pool.aggregateUPB || 0;
+  /** HUD-furnished per-loan basis value. Never derived or corrected client-side. */
+  function loanBasis(loan, programType) {
+    if (!loan) return 0;
+    var f = basisField(programType);
+    var v = Number(loan[f]);
+    if (!v && programType === 'HNVLS') v = Number(loan.etdAdjustedBpo); // camelCase fallback
+    return v || 0;
   }
 
-  function pctToUsd(pct, pool, basis) {
-    var agg = aggregateForBasis(pool, basis || valuationBasis(pool && pool.programType));
-    return Math.round(((Number(pct) || 0) / 100) * agg);
+  function roundPct(n) {
+    var m = Math.pow(10, CONFIG.pctDecimals);
+    return Math.round(Number(n) * m) / m;
   }
 
-  function usdToPct(usd, pool, basis) {
-    var agg = aggregateForBasis(pool, basis || valuationBasis(pool && pool.programType));
-    if (!agg) return 0;
-    return Number(((Number(usd) || 0) / agg) * 100);
+  function maxPct(programType, saleConfig) {
+    if (saleConfig && saleConfig.maxPct != null) return Number(saleConfig.maxPct);
+    var cap = CONFIG.maxPctByProgram[programType];
+    return cap != null ? cap : null;
   }
 
   /**
-   * Validate a bid before submission. Returns { valid, errors, warnings }.
-   * Errors block submission; warnings are surfaced but submission proceeds.
+   * Parse one raw input value.
+   * Returns { state: 'blank' | 'invalid' | 'ok', pct, message }.
    */
-  function validate(bid, pool, opts) {
-    opts = opts || {};
-    var errors = [];
-    var warnings = [];
-    var range = opts.range || pool && pool.bidRange || DEFAULT_RANGE;
+  function parsePct(raw) {
+    if (raw === '' || raw == null) return { state: 'blank' };
+    var n = Number(raw);
+    if (typeof raw === 'string' && raw.trim() === '') return { state: 'blank' };
+    if (isNaN(n)) return { state: 'invalid', message: 'Enter a numeric percentage' };
+    if (n === 0) return { state: 'invalid', message: 'A bid of 0 is not valid — leave the loan blank to decline the pool' };
+    if (n < 0) return { state: 'invalid', message: 'Percentage must be positive' };
+    return { state: 'ok', pct: roundPct(n) };
+  }
 
-    if (!bid.bidderId)  errors.push({ field: 'bidderId',  message: 'Bidder ID is required' });
-    if (!bid.saleId)    errors.push({ field: 'saleId',    message: 'Sale ID is required' });
-    if (!bid.poolId)    errors.push({ field: 'poolId',    message: 'Pool ID is required' });
-    if (!bid.programType) errors.push({ field: 'programType', message: 'Program type is required' });
+  /** Derived BID $ for one loan (read-only on the sheet). */
+  function deriveUsd(pct, loan, programType) {
+    var basis = loanBasis(loan, programType);
+    return Math.round((Number(pct) / 100) * basis * 100) / 100;
+  }
 
-    if (typeof bid.bidPct !== 'number' || isNaN(bid.bidPct)) {
-      errors.push({ field: 'bidPct', message: 'Bid percentage is required' });
-    } else if (bid.bidPct < range.min) {
-      errors.push({ field: 'bidPct', message: 'Bid is below the minimum threshold (' + range.min + '%)' });
-    } else if (bid.bidPct > range.max) {
-      errors.push({ field: 'bidPct', message: 'Bid exceeds the maximum threshold (' + range.max + '%)' });
+  /**
+   * Validate one loan's entry.
+   * Returns { state: 'NO_BID' | 'error' | 'ok', pct, usd, message }.
+   */
+  function validateLoanEntry(raw, loan, programType, saleConfig) {
+    var parsed = parsePct(raw);
+    if (parsed.state === 'blank') return { state: 'NO_BID' };
+    if (parsed.state === 'invalid') return { state: 'error', message: parsed.message };
+    var cap = maxPct(programType, saleConfig);
+    if (cap != null && parsed.pct > cap) {
+      return { state: 'error', message: 'BID % exceeds the ' + programType + ' maximum (' + cap + '%)' };
     }
+    var usd = deriveUsd(parsed.pct, loan, programType);
+    if (usd < CONFIG.minDerivedUSD) {
+      return { state: 'error', message: 'Derived bid $' + usd.toLocaleString() + ' is below the per-loan minimum ($' + CONFIG.minDerivedUSD + ')' };
+    }
+    return { state: 'ok', pct: parsed.pct, usd: usd };
+  }
 
-    // Cross-check derived USD vs aggregate
-    var basis = bid.valuationBasis || valuationBasis(bid.programType);
-    var agg = aggregateForBasis(pool, basis);
-    if (agg) {
-      var derived = pctToUsd(bid.bidPct, pool, basis);
-      if (typeof bid.bidAmountUSD === 'number' && Math.abs(derived - bid.bidAmountUSD) > Math.max(100, agg * 0.0001)) {
-        warnings.push({ field: 'bidAmountUSD', message: 'USD amount and percentage do not match — recalculating' });
-        bid.bidAmountUSD = derived;
-      } else if (typeof bid.bidAmountUSD !== 'number') {
-        bid.bidAmountUSD = derived;
+  /**
+   * Whole-pool participation check across every loan in the pool.
+   * entries: { loanId → raw input value }. poolLoans: full roster for the pool.
+   */
+  function validatePool(entries, poolLoans, programType, opts) {
+    opts = opts || {};
+    var results = [], errors = [], missing = [], aggregate = 0;
+    var loans = poolLoans || [];
+    var enteredCount = 0;
+
+    loans.forEach(function (loan) {
+      var id = loan.loan_id || loan.loanId;
+      var raw = entries ? entries[id] : undefined;
+      var r = validateLoanEntry(raw, loan, programType, opts.saleConfig);
+      if (r.state === 'ok') {
+        enteredCount++;
+        aggregate += r.usd;
+        results.push({ loanId: id, pct: r.pct, usd: r.usd });
+      } else if (r.state === 'error') {
+        enteredCount++;
+        errors.push({ loanId: id, message: r.message });
+      } else {
+        missing.push(id);
       }
-    }
+    });
 
-    // Reserve price check (warning only — bidder may still bid below)
-    if (pool && pool.reservePct != null && bid.bidPct < pool.reservePct) {
-      warnings.push({ field: 'bidPct', message: 'Bid is below reserve (' + pool.reservePct + '%) — may be ineligible' });
+    if (enteredCount === 0) {
+      return { participation: 'NO_BID', loans: [], aggregateUsd: 0, errors: [], missing: [] };
     }
-
-    // Mission bid eligibility
-    if (bid.missionBid && !pool.missionEligible) {
-      errors.push({ field: 'missionBid', message: 'This pool is not designated mission-eligible' });
+    if (errors.length === 0 && missing.length === 0) {
+      return {
+        participation: 'COMPLETE',
+        loans: results,
+        aggregateUsd: Math.round(aggregate * 100) / 100,
+        missionBid: !!opts.missionBid,
+        errors: [], missing: []
+      };
     }
-
-    return { valid: errors.length === 0, errors: errors, warnings: warnings, bid: bid };
+    return {
+      participation: 'INCOMPLETE',
+      loans: results,
+      aggregateUsd: Math.round(aggregate * 100) / 100,
+      errors: errors,
+      missing: missing
+    };
   }
 
   /**
-   * Build a slip total for an array of pool bids.
+   * Deposit per the sale's published terms (DP-01):
+   * greater of floor or rate × aggregate, rounded UP; under the floor, 50% of bid.
    */
-  function slipTotal(bids, opts) {
-    opts = opts || {};
-    var depositRate = (opts.depositRate != null) ? opts.depositRate : 0.10;  // 10% standard
-    var pools = (bids || []).reduce(function (acc, b) {
-      acc.totalUSD += Number(b.bidAmountUSD || 0);
+  function deposit(aggregateUsd, terms) {
+    var t = terms || {};
+    var rate = Number(t.deposit_pct_of_aggregate_bid != null ? t.deposit_pct_of_aggregate_bid : CONFIG.deposit.rate);
+    var floor = Number(t.minimum_deposit_floor != null ? t.minimum_deposit_floor : CONFIG.deposit.floor);
+    var underRate = Number(t.under_floor_pct != null ? t.under_floor_pct : CONFIG.deposit.underFloorRate);
+    var agg = Number(aggregateUsd) || 0;
+    if (agg <= 0) return 0;
+    if (agg < floor) return Math.ceil(agg * underRate);
+    return Math.max(floor, Math.ceil(agg * rate));
+  }
+
+  /** Slip totals across complete pool results. */
+  function slipTotal(poolResults, terms) {
+    var s = (poolResults || []).reduce(function (acc, p) {
+      if (p.participation !== 'COMPLETE') return acc;
       acc.poolCount += 1;
-      if (b.missionBid) acc.missionCount += 1;
+      acc.loanCount += (p.loans || []).length;
+      acc.totalUSD += p.aggregateUsd || 0;
+      if (p.missionBid) acc.missionCount += 1;
       return acc;
-    }, { totalUSD: 0, poolCount: 0, missionCount: 0 });
-    pools.depositUSD = Math.round(pools.totalUSD * depositRate);
-    pools.depositRate = depositRate;
-    return pools;
-  }
-
-  /**
-   * Generate a confirmation code (HUD-YYYY-XXXXX).
-   */
-  function confirmationCode() {
-    var y = new Date().getFullYear();
-    var rand = Math.random().toString(36).replace(/[^A-Z0-9]/gi, '').toUpperCase().slice(0, 5);
-    while (rand.length < 5) rand += Math.floor(Math.random() * 36).toString(36).toUpperCase();
-    return 'HUD-' + y + '-' + rand;
+    }, { poolCount: 0, loanCount: 0, totalUSD: 0, missionCount: 0 });
+    s.totalUSD = Math.round(s.totalUSD * 100) / 100;
+    s.depositUSD = deposit(s.totalUSD, terms);
+    return s;
   }
 
   return {
-    valuationBasis: valuationBasis,
-    aggregateForBasis: aggregateForBasis,
-    pctToUsd: pctToUsd,
-    usdToPct: usdToPct,
-    validate: validate,
-    slipTotal: slipTotal,
-    confirmationCode: confirmationCode,
-    DEFAULT_RANGE: DEFAULT_RANGE
+    CONFIG: CONFIG,
+    basisField: basisField,
+    basisLabel: basisLabel,
+    loanBasis: loanBasis,
+    parsePct: parsePct,
+    deriveUsd: deriveUsd,
+    validateLoanEntry: validateLoanEntry,
+    validatePool: validatePool,
+    deposit: deposit,
+    slipTotal: slipTotal
   };
 })();

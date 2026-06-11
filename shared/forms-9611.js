@@ -31,18 +31,32 @@ HSG.forms9611 = (function () {
   ];
 
   var STEPS = [
-    { key: 'entity',     label: '1. Entity', desc: 'Legal name, organization, contact' },
-    { key: 'ownership',  label: '2. Ownership', desc: 'Beneficial owners (25%+)' },
-    { key: 'financial',  label: '3. Financial', desc: 'Capital, servicer, capacity' },
-    { key: 'mission',    label: '4. Mission', desc: 'NSO commitments (optional)' },
-    { key: 'related',    label: '5. Related Parties', desc: 'Disclosures' },
-    { key: 'certify',    label: '6. Certify', desc: 'Signature + submit' }
+    { key: 'ca',         label: '1. CA / NDA', desc: 'Confidentiality Agreement' },
+    { key: 'entity',     label: '2. Entity', desc: 'Legal name, organization, contact' },
+    { key: 'ownership',  label: '3. Ownership', desc: 'Beneficial owners (25%+)' },
+    { key: 'financial',  label: '4. Financial', desc: 'Capital, servicer, capacity' },
+    { key: 'mission',    label: '5. Mission', desc: 'NSO commitments (optional)' },
+    { key: 'related',    label: '6. Related Parties', desc: 'Disclosures' },
+    { key: 'bauf',       label: '7. Bid Terms & User', desc: 'BTAF + authorized user (BAUF)' },
+    { key: 'certify',    label: '8. Certify', desc: 'Signature + submit' }
   ];
 
   function defaults() {
     return {
       portal: 'residential',
       programTypes: [],
+      ca: {
+        acknowledged: false,        // executes the sale Confidentiality Agreement / NDA
+        signerName: '',
+        signerTitle: ''
+      },
+      bauf: {
+        btafAcknowledged: false,    // Bid Terms Acknowledgement Form — BIP terms as published
+        authorizedUserName: '',     // BAUF — the single authorized submitter for this bidder
+        authorizedUserTitle: '',
+        authorizedUserEmail: '',
+        authorizedUserPhone: ''
+      },
       entity: {
         legalName: '',
         dba: '',
@@ -185,6 +199,24 @@ HSG.forms9611 = (function () {
     return { valid: Object.keys(errors).length === 0, errors: errors };
   }
 
+  function validateCA(ca) {
+    var errors = {};
+    if (!ca.acknowledged) errors['ca.acknowledged'] = 'The Confidentiality Agreement must be executed before sale materials open';
+    if (!ca.signerName) errors['ca.signerName'] = 'Signer name is required';
+    if (!ca.signerTitle) errors['ca.signerTitle'] = 'Signer title is required';
+    return { valid: Object.keys(errors).length === 0, errors: errors };
+  }
+
+  function validateBAUF(b) {
+    var errors = {};
+    if (!b.btafAcknowledged) errors['bauf.btafAcknowledged'] = 'The Bid Terms Acknowledgement is required';
+    if (!b.authorizedUserName) errors['bauf.authorizedUserName'] = 'Designate the authorized user who will submit the bid';
+    if (!b.authorizedUserTitle) errors['bauf.authorizedUserTitle'] = 'Authorized user title is required';
+    if (!isEmail(b.authorizedUserEmail)) errors['bauf.authorizedUserEmail'] = 'Enter a valid email for the authorized user';
+    if (!b.authorizedUserPhone) errors['bauf.authorizedUserPhone'] = 'Authorized user phone is required';
+    return { valid: Object.keys(errors).length === 0, errors: errors };
+  }
+
   function validateCertify(c) {
     var errors = {};
     if (!c.certifierName) errors['certify.certifierName'] = 'Name is required';
@@ -200,11 +232,13 @@ HSG.forms9611 = (function () {
   function validateAll(form) {
     var allErrors = {};
     var v;
+    v = validateCA(form.ca || {});       Object.assign(allErrors, v.errors);
     v = validateEntity(form.entity);     Object.assign(allErrors, v.errors);
     v = validateOwnership(form.ownership); Object.assign(allErrors, v.errors);
     v = validateFinancial(form.financial); Object.assign(allErrors, v.errors);
     v = validateMission(form.mission, form.entity && form.entity.entityType); Object.assign(allErrors, v.errors);
     v = validateRelated(form.related);   Object.assign(allErrors, v.errors);
+    v = validateBAUF(form.bauf || {});   Object.assign(allErrors, v.errors);
     v = validateCertify(form.certify);   Object.assign(allErrors, v.errors);
     if (!form.programTypes || form.programTypes.length === 0) {
       allErrors['programTypes'] = 'Select at least one program (HVLS, HNVLS, or SFLS)';
@@ -216,11 +250,13 @@ HSG.forms9611 = (function () {
     ENTITY_TYPES: ENTITY_TYPES,
     STEPS: STEPS,
     defaults: defaults,
+    validateCA: validateCA,
     validateEntity: validateEntity,
     validateOwnership: validateOwnership,
     validateFinancial: validateFinancial,
     validateMission: validateMission,
     validateRelated: validateRelated,
+    validateBAUF: validateBAUF,
     validateCertify: validateCertify,
     validateAll: validateAll,
     isEmail: isEmail, isEIN: isEIN, isUEI: isUEI, isZip: isZip

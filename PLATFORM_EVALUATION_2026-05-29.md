@@ -99,6 +99,29 @@ These are divergences from the corrected v3 spec, which was validated against th
 
 **Estimate:** Phase A is 2–3 focused sessions (the bidding modules are small and well-factored — `bidding-pool.js` 5.6KB, `bidding-deal.js` 7.8KB; the UIs consume them cleanly). Phase B 1–2 sessions. Phase C runs parallel to demo scheduling.
 
+## 5a. Phase A execution record (2026-06-11)
+
+Phase A ran to completion in a single session. Every P0/P1 finding in section 3 is resolved:
+
+| Fix | Where |
+|---|---|
+| Per-loan BID % engine (blank=NO BID, 0=error, $100 min derived, 5 decimals, HNVLS ≤175, whole-pool validate) | `shared/bidding-pool.js` (rewrite) — unit-tested |
+| Per-asset %-of-UPB engine + DP-01 deposit (floor/rate/under-floor, round-up) | `shared/bidding-deal.js` (rewrite) — unit-tested |
+| Loan-level bid sheet UI, reserve stripped, fill-down, live pills + deposit | `residential/components.js` + `portal.html` — verified live in browser |
+| Commercial % input + derived $ readout; cap-rate/per-unit/yield off the bid surface; legacy deal-card removed | `commercial/components.js` + `portal.html` |
+| Server-side derivation from the loans table, whole-pool completeness, receipt + sale completion CODE, supersede chain, deposit | `backend/src/handlers/bids/submit.mjs` (rewrite) + `schema.mjs` |
+| Reserve/floor/BEM + unearned CODE redaction for non-admins | `sales/get.mjs`, `sales/list.mjs`, `sales/pools.mjs` |
+| CA/NDA step + BTAF/BAUF step in both wizards; HUD-90092 → Commercial QS (`forms-qs-commercial.js`) | both `qualify.html` + form modules — verified live in browser |
+| Seeds: per-sale completion CODEs, full deposit terms, HNVLS `etd_adjusted_bpo` | `seed-program-samples.mjs` + `patch-spec-fields.mjs` (applied to live tables) |
+| Admin console reads new bid shape (`aggregateUsd`, `bidPct`, `loanBids`) | `admin/bem.html`, `admin/bid-day.html` |
+| Root landing page (fixes the 403) | `index.html` |
+| **Custom domain LIVE**: `https://hudloansales.housestrategiesgroup.com` (cert attached via stage-2 deploy) | template deploy w/ `UseCustomDomain=true` |
+| FnBidsSubmit IAM: added Sales + Loans read (old role couldn't read the sale record at all) | `template.yaml` |
+
+Verified live: sales/pools redaction (no reserve keys, no completion_code to bidders), per-loan sheet rendering on real HVLS data, fill-down derivation, COMPLETE/INCOMPLETE/NO BID pills, 0-bid rejection with spec message, deposit floor math ($100K on a $620K aggregate), submit gating. Browser console clean.
+
+Build notes: `sam build` requires `--build-dir`/`--cache-dir` OUTSIDE OneDrive (file-lock PermissionErrors otherwise). Preview server config lives in `Documents\.claude\launch.json` ("platform" entry, port 8765) — updated post-reorg.
+
 ## 6. Reference
 
 - Platform root: `C:\Users\jelan\OneDrive\Documents\House Strategies\Product Development\Website Development\platform\`
