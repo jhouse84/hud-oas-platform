@@ -553,17 +553,21 @@ Resources:
       AutoVerifiedAttributes: [email]
       UsernameAttributes: [email]
       UsernameConfiguration: { CaseSensitive: false }
-      # MFA is ON (AAL2). The email-OTP + TOTP factor config is applied out-of-band
-      # via SetUserPoolMfaConfig (backend/scripts/set-email-mfa.py) because
-      # CloudFormation's UserPool resource can't express EMAIL_OTP and races Cognito's
-      # recovery/MFA cross-validation. Account recovery is admin-assisted below —
-      # Cognito forbids email being both the recovery channel and an MFA factor.
+      # ⚠ MFA / RECOVERY / EMAIL SENDING ARE MANAGED OUT-OF-BAND — DO NOT EDIT HERE.
+      # The LIVE pool actually runs: email-OTP + TOTP MFA, admin_only recovery, and
+      # DEVELOPER (SES) email sending — applied by backend/scripts/set-email-mfa.py.
+      # These three properties are INTENTIONALLY left at CloudFormation's last-good
+      # baseline (TOTP-only, verified_email, default sending) so CFN computes NO diff
+      # and never calls UpdateUserPool. CloudFormation CANNOT manage email MFA: its
+      # only EnabledMfas option is SOFTWARE_TOKEN_MFA (no EMAIL_OTP), and any
+      # UpdateUserPool call either strips email MFA or deadlocks Cognito's
+      # recovery↔MFA validation (UPDATE_ROLLBACK_FAILED). If you must change other
+      # UserPool properties: first run set-user-pool-mfa-config to disable email MFA
+      # and update-user-pool to restore verified_email recovery, deploy, then re-run
+      # backend/scripts/set-email-mfa.py to re-apply the email-OTP layer.
       MfaConfiguration: 'ON'
-      EmailConfiguration:
-        EmailSendingAccount: DEVELOPER   # send via our DKIM-verified SES domain
-        SourceArn: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/hudloansales.housestrategiesgroup.com'
-        From: 'HUD OAS Platform <no-reply@hudloansales.housestrategiesgroup.com>'
-      UserPoolTier: PLUS       # required for email MFA + threat protection (audit S-8)
+      EnabledMfas: [SOFTWARE_TOKEN_MFA]
+      UserPoolTier: PLUS       # threat protection (audit S-8); also enables email MFA at runtime
       UserPoolAddOns:
         AdvancedSecurityMode: ENFORCED
       Policies:
@@ -574,11 +578,9 @@ Resources:
           RequireSymbols: true
           RequireUppercase: true
           TemporaryPasswordValidityDays: 3
-      # Admin-assisted recovery: email can't be both the recovery channel and the
-      # MFA factor (Cognito blocks it), and email OTP is the chosen second factor.
       AccountRecoverySetting:
         RecoveryMechanisms:
-          - { Name: admin_only, Priority: 1 }
+          - { Name: verified_email, Priority: 1 }
       AdminCreateUserConfig:
         AllowAdminCreateUserOnly: false
         InviteMessageTemplate:
