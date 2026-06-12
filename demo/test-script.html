@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Demo Test Script · HUD OAS Transaction Platform</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <style>
+    body { min-height: 100vh; }
+    .ts { max-width: 980px; margin: 0 auto; padding: clamp(32px, 6vh, 64px) var(--space-6) var(--space-16); }
+    .ts__eyebrow { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-portal); padding: 7px 14px; border-radius: 999px; background: var(--color-portal-soft); border: 1px solid var(--color-border); }
+    .ts__title { font-family: var(--font-heading); font-size: clamp(30px, 5vw, 44px); letter-spacing: -0.018em; color: var(--color-ink); margin: 18px 0 0; }
+    .ts__sub { color: var(--color-text-muted); font-size: 15.5px; line-height: 1.65; max-width: 68ch; margin-top: 14px; }
+
+    .ts__bar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 16px; margin-top: 26px; padding: 13px 18px; background: rgba(255,255,255,0.92); backdrop-filter: blur(6px); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+    .ts__count { font-family: var(--font-mono); font-size: 13px; color: var(--color-text); }
+    .ts__count b { color: var(--color-portal); }
+    .ts__bar .btn-portal { font-size: 13px; padding: 8px 16px; color: #fff; }
+    .ts__bar .ghost { font-size: 13px; padding: 8px 16px; border-radius: var(--radius-md); border: 1px solid var(--color-border-strong); background: var(--color-surface); cursor: pointer; }
+
+    .sec { margin-top: 40px; }
+    .sec__title { font-family: var(--font-heading); font-size: 24px; color: var(--color-ink); margin-bottom: 4px; }
+    .sec__sub { font-size: 13.5px; color: var(--color-text-muted); margin-bottom: 14px; }
+    .sec__sub a { color: var(--color-portal); font-weight: 600; }
+
+    .case { display: grid; grid-template-columns: 64px 1fr 168px; gap: 16px; padding: 16px 18px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 10px; align-items: start; }
+    .case__id { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--color-portal); padding-top: 2px; }
+    .case__do { font-size: 14px; color: var(--color-text); line-height: 1.55; }
+    .case__do b { color: var(--color-ink); }
+    .case__expect { font-size: 13px; color: var(--color-text-muted); line-height: 1.55; margin-top: 5px; }
+    .case__expect::before { content: 'EXPECT  '; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; color: var(--color-portal); }
+    .case__ref { font-family: var(--font-mono); font-size: 10.5px; color: var(--color-text-muted); margin-top: 5px; letter-spacing: 0.04em; }
+    .case__verdict { display: flex; flex-direction: column; gap: 7px; }
+    .case__verdict label { display: flex; align-items: center; gap: 7px; font-size: 13px; cursor: pointer; }
+    .case__verdict input[type="radio"] { accent-color: var(--color-portal); width: 15px; height: 15px; }
+    .case__verdict .fail input[type="radio"] { accent-color: #A0321A; }
+    .case__notes { grid-column: 1 / -1; }
+    .case__notes input { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 13px; background: var(--color-grey-50); }
+    .case.passed { border-color: #BBE3C9; background: #FAFFFB; }
+    .case.failed { border-color: #EFC4B8; background: #FFFBFA; }
+
+    @media print {
+      .ts__bar { display: none; }
+      .case { break-inside: avoid; box-shadow: none; }
+      body { background: #fff !important; }
+    }
+    @media (max-width: 720px) { .case { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="ts">
+    <span class="ts__eyebrow">Internal — Jelani + Trish · before anything goes external</span>
+    <h1 class="ts__title">Demo acceptance test script</h1>
+    <p class="ts__sub">Work through each case in order in a separate tab — start at the <a href="index.html" style="color: var(--color-portal); font-weight: 600;">Demo Center</a>. Mark Pass or Fail and add a note on anything that feels off (wording, numbers, look, speed — all of it). Your marks save in this browser; use <b>Copy results</b> when you're done and email them to Jelani/Claude to fix.</p>
+
+    <div class="ts__bar">
+      <span class="ts__count" id="counter">0 / 0 checked</span>
+      <button class="btn-portal" id="copy-btn">Copy results</button>
+      <button class="ghost" id="reset-btn">Reset all</button>
+      <button class="ghost" onclick="window.print()">Print</button>
+    </div>
+
+    <div id="sections"></div>
+  </main>
+
+  <script>
+  (function () {
+    var SECTIONS = [
+      { name: 'A. First impressions', sub: 'Open the <a href="index.html" target="_blank">Demo Center</a> fresh.', cases: [
+        ['A1', 'Open the Demo Center link as if you were John Lucey — cold, no context.', 'Within ~10 seconds you understand what this is, that it takes ~15 minutes, and that nothing touches live systems.', 'Positioning'],
+        ['A2', 'Read the page top to bottom.', 'The two-act structure is obvious; every step has a button; the language is plain and confident — typos, overclaims, or anything off-brand get a Fail.', 'Voice / accuracy'],
+        ['A3', 'Click the first "Open the wizard" button.', 'The qualification wizard opens with a DEMONSTRATION MODE banner pinned at the bottom; EXIT returns you to the landing page.', 'Demo banner']
+      ]},
+      { name: 'B. Act I — qualification', sub: 'From Demo Center step 1.', cases: [
+        ['B1', 'Try to advance step 1 (CA/NDA) without checking or signing anything.', 'The wizard refuses with clear field-level errors — the Confidentiality Agreement gates everything behind it.', 'QL-01 / CA-first'],
+        ['B2', 'Walk the step rail left to right.', 'Eight steps in order: CA/NDA → Entity → Ownership → Financial → Mission → Related Parties → Bid Terms & User (BTAF/BAUF) → Certify. No "HUD-90092" anywhere.', 'QL-01 stack'],
+        ['B3', 'Fill the minimum to pass step 1 and continue a few steps.', 'Each gate validates before advancing; error messages are specific, not generic.', 'Validation UX']
+      ]},
+      { name: 'C. Act I — the HVLS bid sheet', sub: 'Demo Center step 2 (or <a href="../residential/portal.html?demo=1#/sale/HVLS-2026-DEMO" target="_blank">open directly</a>).', cases: [
+        ['C1', 'Look at the bid sheet columns.', 'Every HUD figure (case #, state, BPO) is locked — the only editable cell on each row is BID %. No reserve, no optimizer, no suggested price anywhere.', 'BS-02 / BS-08 / SB-04'],
+        ['C2', 'Type 55.12345 in "Apply % to all loans" and click apply on Pool 1.', 'Every loan fills; each derived BID $ computes instantly; the pool pill flips to COMPLETE with the aggregate; the slip shows TOTAL and DEPOSIT $100,000 (the floor beats 10% on this small pool).', 'BS-04/05/07 · DP-01'],
+        ['C3', 'Type 0 on any single loan.', 'Red border + message that 0 is not a valid bid (blank the pool to decline); submit disables; pill shows the problem.', 'Appendix B — zero'],
+        ['C4', 'Clear one loan (leave it blank) with the rest filled.', 'Pool goes INCOMPLETE — whole-pool participation enforced; submit stays disabled until every loan has a % or the pool is fully blank.', 'BS-09'],
+        ['C5', 'Restore the pool to COMPLETE and submit (type SUBMIT to confirm).', 'Receipt appears with a receipt ID, form completion CODE HVLS26D742, total $619,588, deposit $100,000.', 'BS-15/16 · AU-01'],
+        ['C6', 'Change one % and submit again, then open My Bids.', 'Exactly one LIVE bid; the earlier form shows SUPERSEDED — latest validated form governs.', 'SM-05'],
+        ['C7', 'Withdraw the live bid (give a reason).', 'Status flips to WITHDRAWN; a notification appears; you can submit a fresh form afterward.', 'SB-05']
+      ]},
+      { name: 'D. Act I — data room, Q&A, commercial', sub: 'Same sale, Data Room tab; then Demo Center step 5.', cases: [
+        ['D1', 'Open the Data Room tab and download any document.', 'A PDF opens stamped to "Lucey Demonstration Capital, LLC" with a retrieval timestamp — the per-bidder watermark story is visible.', 'VD-04 / S-5'],
+        ['D2', 'Ask a question in Q&A.', 'It posts as your demo entity and shows "awaiting answer"; existing answered questions display the published answer.', 'Fair disclosure'],
+        ['D3', 'Open the HLS sale and enter 72.5 on the first asset.', 'Derived BID $ computes as % of that asset\'s UPB ($40,024,350); submitting returns CODE HLS26DHC84 with deposit $4,002,435 (10% beats the floor here).', 'BS-05 · DP-01'],
+        ['D4', 'Check the commercial bid surface.', 'No cap rate, price-per-unit, NOI, or yield on the bid sheet — UPB, BID %, derived $ only.', 'BS-07 / BM-03']
+      ]},
+      { name: 'E. Act II — the admin console', sub: 'Demo Center steps 6–10.', cases: [
+        ['E1', 'Open the dashboard.', 'Both portals\' KPIs populate (5 sales, loan counts, pipeline); the layout reads like a command center, not a prototype.', 'Console'],
+        ['E2', 'Open Bidders and approve the pending bidder.', 'Status moves to Qualified in the pipeline immediately; counts update.', 'Pipeline'],
+        ['E3', 'Open Bid Day and switch the sale selector to the HVLS demo sale.', 'The bid YOU submitted in Act I is in the feed under your demo entity, marked Conforming — the loop from bidder to TS closes.', 'Bid day'],
+        ['E4', 'Open BEM & awards, set a reserve, run the evaluation.', 'Reserves are settable here (and only here — they never appeared in the bidder portal); results rank against your own bids.', 'BE-01 / SB-04'],
+        ['E5', 'Open Settlements.', 'The seeded HLS settlement shows milestones and deliverables; items are checkable.', 'Settlement'],
+        ['E6', 'Open Q&A inbox and answer the question you asked in D2.', 'Answer publishes; flipping back to the bidder portal Q&A shows it.', 'Q&A loop'],
+        ['E7', 'Open Compliance & QC.', 'QC findings render per sale with statuses.', 'QC']
+      ]},
+      { name: 'F. Look, feel, and trust', sub: 'Throughout.', cases: [
+        ['F1', 'Overall visual impression across every page you touched.', 'Premium and institutional — would not embarrass us next to any incumbent federal platform. Anything that looks unfinished gets a Fail with a note.', 'Design'],
+        ['F2', 'The DEMO banner.', 'Present on every demo screen; EXIT works; the banner never covers content you need.', 'Demo integrity'],
+        ['F3', 'Try to find another bidder\'s information anywhere in the bidder portal.', 'Impossible — no other bidders, bids, counts, or reserves are visible anywhere bidder-facing.', 'Sealed-bid'],
+        ['F4', 'Read the closing card on the Demo Center.', 'The live-account offer and contact info are right; the tone matches how Jelani actually talks.', 'CTA / voice']
+      ]}
+    ];
+
+    var KEY = 'hsg.demo.testscript.v1';
+    var state = {};
+    try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+    function persist() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+    var host = document.getElementById('sections');
+    var total = 0;
+    SECTIONS.forEach(function (sec) {
+      var s = document.createElement('section'); s.className = 'sec';
+      s.innerHTML = '<h2 class="sec__title">' + sec.name + '</h2><p class="sec__sub">' + sec.sub + '</p>';
+      sec.cases.forEach(function (c) {
+        total++;
+        var id = c[0], v = state[id] || {};
+        var el = document.createElement('div');
+        el.className = 'case' + (v.r === 'pass' ? ' passed' : v.r === 'fail' ? ' failed' : '');
+        el.innerHTML =
+          '<div class="case__id">' + id + '</div>' +
+          '<div><div class="case__do">' + c[1] + '</div>' +
+          '<div class="case__expect">' + c[2] + '</div>' +
+          '<div class="case__ref">' + c[3] + '</div></div>' +
+          '<div class="case__verdict">' +
+            '<label><input type="radio" name="' + id + '" value="pass"' + (v.r === 'pass' ? ' checked' : '') + '/> Pass</label>' +
+            '<label class="fail"><input type="radio" name="' + id + '" value="fail"' + (v.r === 'fail' ? ' checked' : '') + '/> Fail</label>' +
+          '</div>' +
+          '<div class="case__notes"><input type="text" placeholder="Notes (what was off, exact wording, etc.)" data-note="' + id + '" value="' + (v.n ? String(v.n).replace(/"/g, '&quot;') : '') + '"/></div>';
+        s.appendChild(el);
+        el.querySelectorAll('input[type="radio"]').forEach(function (r) {
+          r.addEventListener('change', function () {
+            state[id] = state[id] || {}; state[id].r = r.value; persist();
+            el.className = 'case ' + (r.value === 'pass' ? 'passed' : 'failed'); update();
+          });
+        });
+        el.querySelector('[data-note="' + id + '"]').addEventListener('input', function (e) {
+          state[id] = state[id] || {}; state[id].n = e.target.value; persist();
+        });
+      });
+      host.appendChild(s);
+    });
+
+    function update() {
+      var done = 0, fails = 0;
+      Object.keys(state).forEach(function (k) { if (state[k].r) { done++; if (state[k].r === 'fail') fails++; } });
+      document.getElementById('counter').innerHTML = '<b>' + done + ' / ' + total + '</b> checked' + (fails ? ' · <b style="color:#A0321A;">' + fails + ' fail</b>' : '');
+    }
+    update();
+
+    document.getElementById('copy-btn').addEventListener('click', function () {
+      var lines = ['HUD OAS demo test results — ' + new Date().toLocaleString(), ''];
+      SECTIONS.forEach(function (sec) {
+        sec.cases.forEach(function (c) {
+          var v = state[c[0]] || {};
+          lines.push(c[0] + ' [' + (v.r ? v.r.toUpperCase() : '—') + '] ' + (v.n ? '· ' + v.n : ''));
+        });
+      });
+      var txt = lines.join('\n');
+      (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () {
+        document.getElementById('copy-btn').textContent = 'Copied ✓';
+        setTimeout(function () { document.getElementById('copy-btn').textContent = 'Copy results'; }, 1600);
+      }).catch(function () { window.prompt('Copy your results:', txt); });
+    });
+    document.getElementById('reset-btn').addEventListener('click', function () {
+      if (!window.confirm('Clear all marks and notes?')) return;
+      state = {}; persist(); window.location.reload();
+    });
+  })();
+  </script>
+</body>
+</html>
