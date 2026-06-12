@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Guided Demonstration · HUD OAS Transaction Platform</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <style>
+    body { min-height: 100vh; }
+    .demo { max-width: 1040px; margin: 0 auto; padding: clamp(36px, 7vh, 84px) var(--space-6) var(--space-16); }
+
+    .demo__eyebrow { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-portal); padding: 7px 14px; border-radius: 999px; background: var(--color-portal-soft); border: 1px solid var(--color-border); }
+    .demo__eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #1E7E3E; }
+    .demo__title { font-family: var(--font-heading); font-size: clamp(34px, 5.5vw, 54px); line-height: 1.05; letter-spacing: -0.02em; color: var(--color-ink); margin: 20px 0 0; font-weight: 600; }
+    .demo__sub { color: var(--color-text-muted); font-size: 17px; line-height: 1.65; max-width: 66ch; margin-top: 18px; }
+    .demo__sub strong { color: var(--color-text); }
+
+    .demo__notice { display: flex; gap: 14px; align-items: flex-start; margin-top: 26px; padding: 16px 18px; border-radius: var(--radius-lg); background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); font-size: 14px; color: var(--color-text-muted); line-height: 1.6; }
+    .demo__notice b { color: var(--color-text); }
+
+    .chapter { margin-top: 56px; }
+    .chapter__kicker { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-portal); }
+    .chapter__title { font-family: var(--font-heading); font-size: 30px; letter-spacing: -0.012em; color: var(--color-ink); margin: 6px 0 4px; }
+    .chapter__sub { color: var(--color-text-muted); font-size: 15px; max-width: 70ch; line-height: 1.6; }
+
+    .steps { margin-top: 22px; display: grid; gap: 14px; }
+    .step { display: grid; grid-template-columns: 46px 1fr auto; gap: 18px; align-items: start; padding: 20px 22px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+    .step__num { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: var(--color-portal-soft); color: var(--color-portal); font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
+    .step__name { font-weight: 600; font-size: 15.5px; color: var(--color-ink); margin-bottom: 4px; }
+    .step__desc { font-size: 14px; color: var(--color-text-muted); line-height: 1.62; max-width: 64ch; }
+    .step__desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--color-grey-100); padding: 1.5px 7px; border-radius: 6px; color: var(--color-text); white-space: nowrap; }
+    .step__try { font-size: 13.5px; margin-top: 8px; padding: 10px 13px; background: var(--color-portal-soft); border-radius: var(--radius-md); color: var(--color-portal-dark); line-height: 1.55; }
+    .step__try b { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+    .step__go { align-self: center; white-space: nowrap; }
+
+    .rules { margin-top: 22px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+    .rule { padding: 18px 20px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+    .rule__name { font-weight: 600; font-size: 14.5px; color: var(--color-ink); margin-bottom: 5px; }
+    .rule__desc { font-size: 13.5px; color: var(--color-text-muted); line-height: 1.6; }
+
+    .closing { margin-top: 60px; padding: 30px; border-radius: var(--radius-xl); color: #fff; background: linear-gradient(150deg, var(--color-primary-dark) 0%, var(--color-ink) 120%); box-shadow: var(--shadow-lg); }
+    .closing__title { font-family: var(--font-heading); font-size: 26px; margin-bottom: 8px; }
+    .closing__body { color: rgba(255,255,255,0.82); font-size: 15px; line-height: 1.65; max-width: 70ch; }
+    .closing__foot { margin-top: 16px; font-size: 13px; color: rgba(255,255,255,0.55); }
+
+    @media (max-width: 720px) { .step { grid-template-columns: 1fr; } .step__go { justify-self: start; } }
+  </style>
+</head>
+<body>
+  <main class="demo">
+    <span class="demo__eyebrow">Guided demonstration · ~15 minutes, self-paced</span>
+    <h1 class="demo__title">See a HUD loan sale run<br/>front to back.</h1>
+    <p class="demo__sub">This is the HUD OAS Transaction Platform — qualification, secure data room, sealed bidding, evaluation, and settlement in one place. The demonstration runs on <strong>sample sales for all five programs</strong> (HVLS, HNVLS, SFLS, MHLS, HLS) with the <strong>same rules, bid math, and sequence as the published Bidder Information Package</strong>. Every button below opens the real interface, signed in as a qualified demonstration bidder.</p>
+
+    <div class="demo__notice">
+      <div>
+        <b>Nothing here touches a live system.</b> Demonstration mode runs on sample data in your browser — bid, withdraw, approve, and evaluate freely. A banner stays at the bottom of every screen while you're in it, and <b>Exit</b> returns you here. Your actions persist while the tab is open and reset when you leave.
+      </div>
+    </div>
+
+    <!-- ============================== ACT 1 — BIDDER ============================== -->
+    <section class="chapter">
+      <div class="chapter__kicker">Act I — The bidder's experience</div>
+      <h2 class="chapter__title">Your sale, exactly as it runs today</h2>
+      <p class="chapter__sub">The same sequence a bidder follows now: qualify, work the data room, price the assets, transmit a sealed bid. Same bid math, same validations, same discipline — in a modern workspace.</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step__num">1</div>
+          <div>
+            <div class="step__name">Qualification — the full stack, digital</div>
+            <div class="step__desc">The eight-step intake walks the complete qualification file: the Confidentiality Agreement first, then entity, beneficial ownership, financial capacity, disclosures, and the Bid Terms Acknowledgement and Authorized User designation (BTAF / BAUF) before certification. OFAC and SAM screening fire before submission reaches the Transaction Specialist.</div>
+            <div class="step__try"><b>Try this</b>Click through the steps without filling anything — watch each gate refuse to advance until its requirements are met.</div>
+          </div>
+          <a class="btn-portal step__go" href="../residential/qualify.html?demo=1">Open the wizard →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">2</div>
+          <div>
+            <div class="step__name">The residential bid sheet — one percentage per loan</div>
+            <div class="step__desc">Open the HVLS sale. The bid form is loan-level: every HUD figure is locked; the only thing a bidder can type is a <code>BID %</code> per loan (to five decimals). The dollar bid derives on screen — bidders never type a dollar amount — and pools participate whole: a percentage on every loan, or the pool entirely blank.</div>
+            <div class="step__try"><b>Try this</b>Use "Apply % to all loans" with <code>55.12345</code> — the pool goes COMPLETE and the deposit floor kicks in. Then type <code>0</code> on any loan, or blank one loan out, and watch the form refuse it.</div>
+          </div>
+          <a class="btn-portal step__go" href="../residential/portal.html?demo=1#/sale/HVLS-2026-DEMO">Open the HVLS sale →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">3</div>
+          <div>
+            <div class="step__name">Submit — receipt and completion CODE</div>
+            <div class="step__desc">A validated form returns a timestamped platform receipt with the sale's form-completion CODE, the derived total, and the exact deposit due under the BIP — the greater of the floor or the stated percentage of the aggregate bid. Until the window closes, resubmitting supersedes the prior form; the latest validated form governs.</div>
+            <div class="step__try"><b>Try this</b>Submit, note the CODE on your receipt, then change a percentage and submit again — My Bids shows the prior form superseded and exactly one live bid.</div>
+          </div>
+          <a class="btn-portal step__go" href="../residential/portal.html?demo=1#/my-bids">My bids →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">4</div>
+          <div>
+            <div class="step__name">The data room — watermarked, logged, fair</div>
+            <div class="step__desc">The curated VDR carries the BIP, tape, procedures, and executed qualification documents. Every download is watermarked to the requesting bidder and access-logged with identity, time, IP, and user agent. The Q&amp;A publishes every answer to all qualified bidders from one timestamped record.</div>
+            <div class="step__try"><b>Try this</b>Download any document from the sale's Data Room tab and open it — your demonstration entity is stamped on it. Ask a question in Q&amp;A, then answer it later from the admin console.</div>
+          </div>
+          <a class="btn-portal step__go" href="../residential/portal.html?demo=1#/sale/HVLS-2026-DEMO">Data room →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">5</div>
+          <div>
+            <div class="step__name">Commercial — percentage of UPB per asset</div>
+            <div class="step__desc">The Healthcare sale prices each asset pool as a <code>BID %</code> of its unpaid principal balance, derived dollars read-only — the same single-input discipline as residential. Each asset stands alone: bid the ones you want, leave the rest blank.</div>
+            <div class="step__try"><b>Try this</b>Enter <code>72.5</code> on the first asset — the derived bid computes against the pool's UPB and the deposit is 10% of the aggregate, exactly per the BIP.</div>
+          </div>
+          <a class="btn-portal step__go" href="../commercial/portal.html?demo=1#/sale/HLS-2026-DEMO">Open the HLS sale →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== ACT 2 — ADMIN ============================== -->
+    <section class="chapter">
+      <div class="chapter__kicker">Act II — The Transaction Specialist console</div>
+      <h2 class="chapter__title">Bid day, evaluation, and everything after</h2>
+      <p class="chapter__sub">The other side of the table: the pipeline, live bid operations, confidential evaluation, and settlement tracking — with reserves and evaluation logic visible only here, never to bidders.</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step__num">6</div>
+          <div>
+            <div class="step__name">Operations dashboard</div>
+            <div class="step__desc">Both portals at a glance — active sales, qualification pipeline, deadlines, and bid activity across all five programs.</div>
+          </div>
+          <a class="btn-portal step__go" href="../admin/index.html?demo=1">Open the console →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">7</div>
+          <div>
+            <div class="step__name">Bidder pipeline — review and approve</div>
+            <div class="step__desc">Every application with its screening evidence. Approval provisions portal access automatically; requests for more information and declinations are one action each, all logged.</div>
+            <div class="step__try"><b>Try this</b>Approve a pending bidder and watch the status move through the pipeline.</div>
+          </div>
+          <a class="btn-portal step__go" href="../admin/bidders.html?demo=1">Pipeline →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">8</div>
+          <div>
+            <div class="step__name">Bid day — the live feed</div>
+            <div class="step__desc">Bids arrive with conformance checks already run. The bids you submitted in Act I appear here under your demonstration entity — sealed from other bidders, fully visible to the Transaction Specialist.</div>
+          </div>
+          <a class="btn-portal step__go" href="../admin/bid-day.html?demo=1">Bid day →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">9</div>
+          <div>
+            <div class="step__name">Evaluation — confidential reserves, scenario modeling</div>
+            <div class="step__desc">Reserves live only in this room. Set them per pool, run the evaluation against the live conforming bid set, compare scenarios, and approve awards — which spawn settlement records automatically.</div>
+            <div class="step__try"><b>Try this</b>Set a reserve, run the scenario against your own Act-I bids, and approve the award. Then open Settlements to see the record it created.</div>
+          </div>
+          <a class="btn-portal step__go" href="../admin/bem.html?demo=1">Evaluation →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">10</div>
+          <div>
+            <div class="step__name">Settlement & compliance</div>
+            <div class="step__desc">Program-specific milestone timelines, deliverables checklists, and the post-sale reporting queue — through final settlement and the Commissioner's Report.</div>
+          </div>
+          <a class="btn-portal step__go" href="../admin/settlements.html?demo=1">Settlements →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== WHAT'S ENFORCED ============================== -->
+    <section class="chapter">
+      <div class="chapter__kicker">Underneath it all</div>
+      <h2 class="chapter__title">The rules the platform refuses to break</h2>
+      <p class="chapter__sub">The production system enforces the sealed-bid discipline end to end — these are running on the live platform today.</p>
+
+      <div class="rules">
+        <div class="rule"><div class="rule__name">Sealed bids, structurally</div><div class="rule__desc">No bidder can see another's bids, the bid count, or any reserve — not in the interface, the API, exports, or error messages.</div></div>
+        <div class="rule"><div class="rule__name">Server-derived math</div><div class="rule__desc">Every dollar figure is recomputed server-side from the HUD-furnished tape. Client-supplied amounts are ignored.</div></div>
+        <div class="rule"><div class="rule__name">Whole-pool participation</div><div class="rule__desc">A percentage on every loan in the pool, or the pool entirely blank — partial pools are rejected at submission.</div></div>
+        <div class="rule"><div class="rule__name">Emailed-code sign-in</div><div class="rule__desc">Every account requires a second factor: a one-time code emailed at sign-in. No authenticator app to install.</div></div>
+        <div class="rule"><div class="rule__name">Per-bidder watermarking</div><div class="rule__desc">Documents download stamped with the requesting bidder's identity and timestamp, and every access is logged with IP.</div></div>
+        <div class="rule"><div class="rule__name">Audited infrastructure</div><div class="rule__desc">WAF at the edge, CloudTrail audit logging, encrypted storage with key rotation, alarms on the bid-critical path.</div></div>
+      </div>
+    </section>
+
+    <div class="closing">
+      <div class="closing__title">Want to go deeper?</div>
+      <p class="closing__body">Everything you just used is the production system — the demonstration simply swaps in sample data. We can provision you a live, authenticated account (sign-in code to your own inbox), walk the platform together on a call, or run a full mock sale on data you choose.</p>
+      <p class="closing__foot">House Strategies Group LLC · jelani.house@housestrategiesgroup.com · hudloansales.housestrategiesgroup.com</p>
+    </div>
+  </main>
+</body>
+</html>
