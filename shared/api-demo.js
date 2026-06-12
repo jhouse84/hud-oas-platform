@@ -139,15 +139,109 @@
       '5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\ntrailer<</Size 6/Root 1 0 R>>\n%%EOF';
     return URL.createObjectURL(new Blob([pdf], { type: 'application/pdf' }));
   }
-  function docsForSale(saleId) {
+  // -------------------------------------------------------------------
+  // Virtual Data Room — modeled on the canonical HUD sale workspace:
+  // sale-level documents (BIP + supplements, tape, procedures, forms) plus
+  // a per-asset file set split into Due Diligence Files and Collateral
+  // Files, named with the real convention: {STATE}_{FHA#}_{DOCTYPE}.pdf
+  // -------------------------------------------------------------------
+  function hashNum(str, lo, hi) {
+    var h = 0;
+    for (var i = 0; i < str.length; i++) { h = ((h << 5) - h + str.charCodeAt(i)) | 0; }
+    return lo + (Math.abs(h) % (hi - lo + 1));
+  }
+
+  var DOC_SETS = {
+    HVLS: {
+      dd: ['BPO', 'AVM', 'Title Search', 'Occupancy Inspection', 'Servicing Comments'],
+      collateral: ['Note', 'Mortgage', 'Assignment Chain', 'Title Policy', 'HECM Loan Agreement']
+    },
+    HNVLS: {
+      dd: ['BPO', 'ETD-Adjusted BPO Worksheet', 'AVM', 'Title Search', 'Occupancy Inspection', 'Servicing Comments'],
+      collateral: ['Note', 'Mortgage', 'Assignment Chain', 'Title Policy', 'HECM Loan Agreement']
+    },
+    SFLS: {
+      dd: ['BPO', 'AVM', 'Payoff Statement', 'Escrow Analysis', 'Servicing Comments'],
+      collateral: ['Note', 'Mortgage', 'Assignment Chain', 'Title Policy']
+    },
+    MHLS: {
+      dd: ['Appraisal', 'Phase I Environmental', 'Physical Needs Assessment', 'Site Inspection', 'Rent Roll', 'Operating Statements'],
+      collateral: ['Note', 'Mortgage', 'Regulatory Agreement', 'Assignment Chain', 'Title Policy', 'UCC Filings']
+    },
+    HLS: {
+      dd: ['Appraisal', 'Phase I Environmental', 'Physical Needs Assessment', 'Site Inspection', 'Operator Financials', 'CMS Survey Report'],
+      collateral: ['Note', 'Mortgage', 'Regulatory Agreement', 'Operator Lease', 'AR Security Agreement', 'Assignment Chain', 'Title Policy']
+    }
+  };
+
+  function assetDocs(loan, programType, goLive) {
+    var set = DOC_SETS[programType] || DOC_SETS.HVLS;
+    var st = (loan.property && loan.property.state) || 'XX';
+    var fha = (loan.fha_case_number || loan.loan_id || '').replace(/\s+/g, '');
+    function files(types, group) {
+      return types.map(function (t) {
+        var slug = t.replace(/[^A-Za-z0-9]+/g, '-');
+        var fname = st + '_' + fha + '_' + slug + '.pdf';
+        return {
+          docId: group + ':' + fha + ':' + slug,
+          key: 'assets/' + (loan.loan_id || loan.loanId) + '/' + group + '/' + fname,
+          name: fname,
+          title: t,
+          group: group,
+          contentType: 'PDF',
+          size: hashNum(fname, 180, 2400) * 1024,
+          modified: goLive
+        };
+      });
+    }
+    return { dd: files(set.dd, 'due-diligence'), collateral: files(set.collateral, 'collateral') };
+  }
+
+  function vdrForSale(saleId) {
     var s = saleById(saleId) || {};
     var name = s.sale_name || saleId;
-    return [
-      { docId: 'bip', key: 'BIP/' + saleId + '-Bidder-Information-Package.pdf', name: name + ' — Bidder Information Package', folder: 'Bidder Information Package', contentType: 'PDF', size: 24576 },
-      { docId: 'tape', key: 'Tape/' + saleId + '-ALD-SALD-Tape.pdf', name: name + ' — Loan Tape (ALD/SALD)', folder: 'Loan Tape', contentType: 'PDF', size: 18432 },
-      { docId: 'proc', key: 'Procedures/' + saleId + '-Bid-Day-Procedures.pdf', name: name + ' — Sale & Bid-Day Procedures', folder: 'Procedures', contentType: 'PDF', size: 15360 },
-      { docId: 'ca', key: 'Qualification/' + saleId + '-Confidentiality-Agreement.pdf', name: name + ' — Confidentiality Agreement (executed)', folder: 'Qualification', contentType: 'PDF', size: 9216 }
+    var programType = s.programType || s.program;
+    var goLive = (s.key_dates && (s.key_dates.go_live_data_room || s.key_dates.bid_day)) || null;
+    var saleDocs = [
+      { docId: 'bip', key: 'BIP/' + saleId + '-Bidder-Information-Package.pdf', name: name + ' — Bidder Information Package (Go-Live)', folder: 'Bidder Information Package', contentType: 'PDF', size: 2511360, modified: goLive },
+      { docId: 'bip-s1', key: 'BIP/Supplement-1/' + saleId + '-BIP-Supplement-1.pdf', name: name + ' — BIP Supplement 1', folder: 'Bidder Information Package', contentType: 'PDF', size: 412672, modified: goLive },
+      { docId: 'tape', key: 'Tape/Go-Live/' + saleId + '-' + (programType === 'HLS' || programType === 'MHLS' ? 'SALD' : 'ALD') + '.pdf', name: name + ' — Loan Tape (' + (programType === 'HLS' || programType === 'MHLS' ? 'SALD' : 'ALD') + ', Go-Live)', folder: 'Loan Tape', contentType: 'PDF', size: 1843200, modified: goLive },
+      { docId: 'proc', key: 'Procedures/' + saleId + '-Sale-and-Bid-Day-Procedures.pdf', name: name + ' — Sale & Bid-Day Procedures', folder: 'Procedures', contentType: 'PDF', size: 624640, modified: goLive },
+      { docId: 'instr', key: 'Procedures/' + saleId + '-Bidder-Instructions.pdf', name: name + ' — Bidder Instructions', folder: 'Procedures', contentType: 'PDF', size: 287744, modified: goLive },
+      { docId: 'forms', key: 'Forms/' + saleId + '-BAUF-BTAF-Change-Deposit-Forms.pdf', name: name + ' — BAUF, BTAF, Change & Deposit Forms', folder: 'Forms & Agreements', contentType: 'PDF', size: 198656, modified: goLive },
+      { docId: 'agmt', key: 'Forms/' + saleId + (programType === 'HLS' || programType === 'MHLS' ? '-Loan-Sale-Agreement' : '-CAA') + '-Template.pdf', name: name + (programType === 'HLS' || programType === 'MHLS' ? ' — Loan Sale Agreement (template)' : ' — Conditional Acceptance Agreement (template)'), folder: 'Forms & Agreements', contentType: 'PDF', size: 745472, modified: goLive },
+      { docId: 'ca', key: 'Qualification/' + saleId + '-Confidentiality-Agreement.pdf', name: name + ' — Confidentiality Agreement (executed)', folder: 'Forms & Agreements', contentType: 'PDF', size: 156672, modified: goLive }
     ];
+    if (programType === 'HLS' || programType === 'MHLS') {
+      saleDocs.push({ docId: 'asum', key: 'Asset-Summaries/' + saleId + '-Asset-Summaries-Go-Live.pdf', name: name + ' — Asset Summaries (Go-Live)', folder: 'Asset Summaries', contentType: 'PDF', size: 3145728, modified: goLive });
+    }
+    var assets = loansFor(saleId).map(function (loan) {
+      var docs = assetDocs(loan, programType, goLive);
+      return {
+        loanId: loan.loan_id || loan.loanId,
+        fhaCase: loan.fha_case_number || loan.loan_id,
+        label: loan.property_name || (loan.loan_id || ''),
+        state: (loan.property && loan.property.state) || '—',
+        city: (loan.property && loan.property.city) || '',
+        assetClass: loan.asset_class || programType,
+        dd: docs.dd,
+        collateral: docs.collateral,
+        docCount: docs.dd.length + docs.collateral.length
+      };
+    });
+    return { saleDocs: saleDocs, assets: assets };
+  }
+
+  function findVdrDoc(saleId, docKey) {
+    var v = vdrForSale(saleId);
+    var hit = v.saleDocs.find(function (d) { return d.key === docKey; });
+    if (hit) return hit;
+    for (var i = 0; i < v.assets.length; i++) {
+      var a = v.assets[i];
+      var all = a.dd.concat(a.collateral);
+      for (var j = 0; j < all.length; j++) if (all[j].key === docKey) return all[j];
+    }
+    return null;
   }
 
   // ---------------------------------------------------------------------
@@ -390,13 +484,20 @@
     },
 
     docs: {
-      listForSale: function (saleId) { return Promise.resolve({ saleId: saleId, docs: docsForSale(saleId) }); },
+      listForSale: function (saleId) {
+        var v = vdrForSale(saleId);
+        // Legacy flat list retained for any caller still expecting `docs`
+        var flat = v.saleDocs.slice();
+        v.assets.forEach(function (a) { flat = flat.concat(a.dd, a.collateral); });
+        return Promise.resolve({ saleId: saleId, saleDocs: v.saleDocs, assets: v.assets, docs: flat, count: flat.length });
+      },
       presignDownload: function (saleId, docKey) {
-        var doc = docsForSale(saleId).find(function (d) { return d.key === docKey; }) || { name: docKey };
-        var url = demoPdf(doc.name || docKey, [
+        var doc = findVdrDoc(saleId, docKey) || { name: docKey, title: docKey };
+        var url = demoPdf(doc.title || doc.name || docKey, [
           'Sale: ' + saleId,
-          'Document class: ' + (doc.folder || 'VDR'),
-          'This demonstration document stands in for the real sale file.',
+          'File: ' + (doc.name || docKey),
+          'Class: ' + (doc.group === 'collateral' ? 'Collateral File' : doc.group === 'due-diligence' ? 'Due Diligence File' : (doc.folder || 'Sale Document')),
+          'This demonstration document stands in for the real file.',
           'In production this download is the per-bidder watermarked copy,',
           'served by a 5-minute presigned URL and access-logged with IP + UA.'
         ]);

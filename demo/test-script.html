@@ -86,7 +86,9 @@
         ['C7', 'Withdraw the live bid (give a reason).', 'Status flips to WITHDRAWN; a notification appears; you can submit a fresh form afterward.', 'SB-05']
       ]},
       { name: 'D. Act I — data room, Q&A, commercial', sub: 'Same sale, Data Room tab; then Demo Center step 5.', cases: [
-        ['D1', 'Open the Data Room tab and download any document.', 'A PDF opens stamped to "Lucey Demonstration Capital, LLC" with a retrieval timestamp — the per-bidder watermark story is visible.', 'VD-04 / S-5'],
+        ['D1', 'Open the Data Room tab and read the structure top to bottom.', 'Sale documents (BIP + supplement, tape, procedures, forms) on top; below, EVERY asset has its own expandable file set split into Due Diligence Files and Collateral Files, with filenames like AZ_024-5777326_BPO.pdf. HVLS shows 14 assets / ~148 files.', 'VDR structure'],
+        ['D1b', 'Expand an asset and download one collateral file (e.g. the Note); then search a state code (e.g. AZ) and a case number.', 'The PDF opens stamped to "Lucey Demonstration Capital, LLC" with class + timestamp; search filters assets live and auto-expands matches; the state dropdown narrows the list.', 'VD-04 / S-5 / search'],
+        ['D1c', 'Open the HLS sale\'s Data Room and expand an asset.', 'Healthcare-specific files: Operator Financials, CMS Survey Report, Phase I Environmental in Due Diligence; Regulatory Agreement, Operator Lease, AR Security Agreement in Collateral. Asset Summaries appear at sale level.', 'Program-aware VDR'],
         ['D2', 'Ask a question in Q&A.', 'It posts as your demo entity and shows "awaiting answer"; existing answered questions display the published answer.', 'Fair disclosure'],
         ['D3', 'Open the HLS sale and enter 72.5 on the first asset.', 'Derived BID $ computes as % of that asset\'s UPB ($40,024,350); submitting returns CODE HLS26DHC84 with deposit $4,002,435 (10% beats the floor here).', 'BS-05 · DP-01'],
         ['D4', 'Check the commercial bid surface.', 'No cap rate, price-per-unit, NOI, or yield on the bid sheet — UPB, BID %, derived $ only.', 'BS-07 / BM-03']

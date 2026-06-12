@@ -78,6 +78,7 @@
   <script src="../shared/api-demo.js"></script>
   <script src="../shared/state.js"></script>
   <script src="../shared/bidding-deal.js"></script>
+  <script src="../shared/vdr-room.js"></script>
   <script src="components.js"></script>
 
   <script>
@@ -406,52 +407,7 @@
     }
 
     function renderDataRoom(container, sale) {
-      container.innerHTML = '<p class="empty">Loading data room…</p>';
-      HSG.api.docs.listForSale(sale.saleId).then(function (r) {
-        var docs = (r && r.docs) || [];
-        if (docs.length === 0) {
-          container.innerHTML = '<div class="empty"><p>No documents published yet.</p></div>';
-          return;
-        }
-        var folders = {};
-        docs.forEach(function (d) { (folders[d.folder || 'Other'] = folders[d.folder || 'Other'] || []).push(d); });
-        var html = '<input class="form-input" placeholder="Search documents…" id="doc-search" style="margin-bottom: var(--space-4);" />';
-        Object.keys(folders).sort().forEach(function (f) {
-          html += '<details open style="margin-bottom: var(--space-3);"><summary style="font-family: var(--font-mono); font-size: var(--text-sm); padding: var(--space-2); cursor: pointer; background: var(--color-grey-50); border-radius: var(--radius-sm);">' + c.esc(f) + ' (' + folders[f].length + ')</summary>';
-          html += '<table class="data-table" style="margin-top: var(--space-2);"><thead><tr><th>Document</th><th>Type</th><th>Size</th><th></th></tr></thead><tbody>';
-          html += folders[f].map(function (d) {
-            return '<tr data-doc="' + c.esc(d.docId || d.key) + '">' +
-              '<td>' + c.esc(d.title || d.name || d.key) + '</td>' +
-              '<td>' + c.esc(d.contentType || d.category || '—') + '</td>' +
-              '<td>' + c.esc(d.size ? (Math.round(d.size / 1024) + ' KB') : '—') + '</td>' +
-              '<td><a href="#" data-action="download" data-key="' + c.esc(d.key) + '">Download</a></td>' +
-            '</tr>';
-          }).join('');
-          html += '</tbody></table></details>';
-        });
-        container.innerHTML = html;
-        container.querySelectorAll('[data-action="download"]').forEach(function (a) {
-          a.addEventListener('click', function (e) {
-            e.preventDefault();
-            var key = a.getAttribute('data-key');
-            HSG.api.docs.presignDownload(sale.saleId, key).then(function (r) {
-              if (r && r.url) {
-                HSG.api.docs.logAccess({ saleId: sale.saleId, docKey: key, action: 'download', actor: claims.email });
-                window.open(r.url, '_blank');
-              } else { alert('Document not available.'); }
-            }).catch(function (err) { alert(err.message); });
-          });
-        });
-        var search = document.getElementById('doc-search');
-        if (search) {
-          search.addEventListener('input', u.debounce(function () {
-            var q = search.value.toLowerCase();
-            container.querySelectorAll('tr[data-doc]').forEach(function (row) {
-              row.style.display = row.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
-            });
-          }));
-        }
-      }).catch(function (err) { container.innerHTML = '<div class="auth-error">' + c.esc(err.message) + '</div>'; });
+      HSG.vdrRoom.render(container, sale, { actorEmail: claims.email });
     }
 
     function renderQa(container, sale) {
