@@ -15,24 +15,39 @@
   'use strict';
 
   var qs = new URLSearchParams(window.location.search);
-  if (qs.get('demo') === '1') { try { sessionStorage.setItem('hsg.demo.active', '1'); } catch (e) {} }
-  var ACTIVE = false;
-  try { ACTIVE = sessionStorage.getItem('hsg.demo.active') === '1'; } catch (e) {}
+  // Variants: ?demo=1 → the HUD OAS demonstration · ?demo=gnma → the Ginnie Mae
+  // demonstration (separate dataset + session store). The variant is sticky for
+  // the session; arriving with an explicit ?demo= switches it.
+  var qsDemo = qs.get('demo');
+  if (qsDemo === '1' || qsDemo === 'gnma') {
+    try {
+      sessionStorage.setItem('hsg.demo.active', '1');
+      sessionStorage.setItem('hsg.demo.variant', qsDemo === 'gnma' ? 'gnma' : '');
+    } catch (e) {}
+  }
+  var ACTIVE = false, VARIANT = '';
+  try {
+    ACTIVE = sessionStorage.getItem('hsg.demo.active') === '1';
+    VARIANT = sessionStorage.getItem('hsg.demo.variant') || '';
+  } catch (e) {}
   if (!ACTIVE) return;                       // no-op outside demo sessions
-  if (!window.HSG_DEMO_DATA) { console.warn('Demo mode active but data.js missing'); return; }
+  var D = (VARIANT === 'gnma' && window.HSG_DEMO_DATA_GNMA) ? window.HSG_DEMO_DATA_GNMA : window.HSG_DEMO_DATA;
+  if (VARIANT === 'gnma' && !window.HSG_DEMO_DATA_GNMA) console.warn('GNMA demo data missing on this page; using default dataset');
+  if (!D) { console.warn('Demo mode active but data.js missing'); return; }
 
-  var D = window.HSG_DEMO_DATA;
   window.HSG = window.HSG || {};
   window.HSG_DEMO = true;
+  window.HSG_DEMO_VARIANT = VARIANT;
 
   // ---------------------------------------------------------------------
   // Session store — reviewer actions live here for the visit
   // ---------------------------------------------------------------------
+  var NS = 'hsg.demo.' + (VARIANT ? VARIANT + '.' : '');   // per-variant session store
   function load(key, fallback) {
-    try { var v = sessionStorage.getItem('hsg.demo.' + key); return v ? JSON.parse(v) : fallback; }
+    try { var v = sessionStorage.getItem(NS + key); return v ? JSON.parse(v) : fallback; }
     catch (e) { return fallback; }
   }
-  function save(key, val) { try { sessionStorage.setItem('hsg.demo.' + key, JSON.stringify(val)); } catch (e) {} }
+  function save(key, val) { try { sessionStorage.setItem(NS + key, JSON.stringify(val)); } catch (e) {} }
   function uid(p) { return p + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8); }
   function now() { return new Date().toISOString(); }
   function round2(n) { return Math.round(Number(n) * 100) / 100; }
@@ -46,7 +61,7 @@
       message: 'You are signed in as a qualified demo bidder. Everything here runs on sample data — explore freely.',
       createdAt: now()
     }]),
-    settlements: load('settlements', [{
+    settlements: load('settlements', D.seedSettlements || [{
       awardId: 'AWD-DEMO-1', saleId: 'HLS-2026-DEMO', poolOrDealId: 'HLS-2026-DEMO-P2',
       bidderId: 'BDR-DEMO', programType: 'HLS', awardAmountUSD: 18250000,
       status: 'On track', expectedSettlementDate: new Date(Date.now() + 86400000 * 41).toISOString(),
@@ -64,11 +79,18 @@
       ]
     }]),
     scenarios: load('scenarios', []),
-    bidders: load('bidders', (D.bidders || []).slice())
+    bidders: load('bidders', (D.bidders || []).slice()),
+    audit: load('audit', [])
   };
   function persist() {
     save('bids', store.bids); save('qa', store.qa); save('notifications', store.notifications);
     save('settlements', store.settlements); save('scenarios', store.scenarios); save('bidders', store.bidders);
+    save('audit', store.audit);
+  }
+  /** Append-only audit trail of everything the reviewer does in the session. */
+  function record(action, detail) {
+    store.audit.push({ at: now(), actor: (D.demoBidder && D.demoBidder.entityName) || 'Demo Reviewer', action: action, detail: detail || '' });
+    if (store.audit.length > 500) store.audit = store.audit.slice(-500);
   }
 
   // ---------------------------------------------------------------------
@@ -341,6 +363,7 @@
       });
     });
     records.forEach(function (r) { r.totalFormUsd = totalUSD; r.depositUsd = depositUSD; store.bids.push(r); });
+    record('bid-form-submitted', body.saleId + ' · receipt ' + receiptId + ' · ' + records.length + ' pool(s) · total $' + totalUSD.toLocaleString());
 
     store.notifications.unshift({
       notifId: uid('NTF'), recipientId: 'BDR-DEMO', type: 'bid-received',
@@ -436,7 +459,7 @@
       approve: function (bidderId, body) {
         var b = store.bidders.find(function (x) { return x.bidderId === bidderId; });
         if (!b) return fail('Bidder not found', 404);
-        b.qualificationStatus = 'Qualified'; b.approvedAt = now(); persist();
+        b.qualificationStatus = 'Qualified'; b.approvedAt = now(); record('bidder-approved', b.entityName || bidderId); persist();
         return Promise.resolve({ bidder: b });
       },
       reject: function (bidderId, body) {
@@ -469,6 +492,7 @@
         if (b.withdrawn) return Promise.resolve({ bid: b, alreadyWithdrawn: true });
         if (b.status === 'superseded') return fail('This bid was superseded by a later submission — withdraw the live bid instead', 409);
         b.withdrawn = true; b.status = 'withdrawn'; b.withdrawnAt = now(); b.withdrawalReason = reason || '';
+        record('bid-withdrawn', (b.poolLabel || b.poolId) + ' (' + b.saleId + ') · ' + (reason || ''));
         store.notifications.unshift({
           notifId: uid('NTF'), recipientId: 'BDR-DEMO', type: 'bid-withdrawn', title: 'Bid withdrawn',
           message: 'Your bid on ' + (b.poolLabel || b.poolId) + ' (' + b.saleId + ') was withdrawn. You may submit a new bid form any time before the window closes.',
@@ -501,6 +525,8 @@
           'In production this download is the per-bidder watermarked copy,',
           'served by a 5-minute presigned URL and access-logged with IP + UA.'
         ]);
+        record('document-downloaded', saleId + ' · ' + (doc.name || docKey) + ' · watermarked');
+        persist();
         return Promise.resolve({ url: url, expiresIn: 300, watermarked: true, accessId: uid('ACC') });
       },
       logAccess: function () { return Promise.resolve({ ok: true }); },
@@ -516,7 +542,7 @@
       ask: function (saleId, body) {
         var q = { qaId: uid('QA'), saleId: saleId, question: body.question, bidderId: 'BDR-DEMO',
                   bidderName: D.demoBidder.entityName, status: 'pending', visibility: 'all', askedAt: now() };
-        store.qa.unshift(q); persist();
+        store.qa.unshift(q); record('question-submitted', saleId + ' · "' + String(body.question).slice(0, 80) + '"'); persist();
         return Promise.resolve({ qa: q });
       },
       answer: function (qaId, body) {
@@ -645,10 +671,14 @@
       'position:fixed;bottom:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:14px;' +
       'padding:9px 18px;background:linear-gradient(90deg,#0D1220,#1E1F6B);color:#fff;' +
       'font:600 12px/1 "IBM Plex Mono",monospace;letter-spacing:0.08em;box-shadow:0 -6px 18px rgba(16,24,40,0.25);');
+    var label = VARIANT === 'gnma'
+      ? 'GINNIE MAE DEMONSTRATION — SYNTHETIC DATA · MARKET RESEARCH (APP-T-2027-125) · NO LIVE SYSTEMS'
+      : 'DEMONSTRATION MODE — SAMPLE DATA · NO LIVE SYSTEMS';
+    var guide = VARIANT === 'gnma' ? '/demo/gnma/index.html' : '/demo/index.html';
     bar.innerHTML =
       '<span style="display:inline-flex;align-items:center;gap:7px;"><span style="width:8px;height:8px;border-radius:50%;background:#7DD3A8;display:inline-block;"></span>' +
-      'DEMONSTRATION MODE — SAMPLE DATA · NO LIVE SYSTEMS</span>' +
-      '<a href="/demo/index.html" style="color:#A9B7FF;text-decoration:underline;">DEMO GUIDE</a>' +
+      label + '</span>' +
+      '<a href="' + guide + '" style="color:#A9B7FF;text-decoration:underline;">DEMO GUIDE</a>' +
       '<a href="#" id="hsg-demo-exit" style="color:rgba(255,255,255,0.65);text-decoration:underline;">EXIT</a>';
     document.body.appendChild(bar);
     document.body.style.paddingBottom = '46px';

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ginnie Mae Portfolio Advisory & Asset Disposition · Platform Demonstration</title>
+  <link rel="stylesheet" href="../../shared/design-system.css" />
+  <style>
+    body { min-height: 100vh; }
+    .demo { max-width: 1040px; margin: 0 auto; padding: clamp(36px, 7vh, 84px) var(--space-6) var(--space-16); }
+    .demo__eyebrow { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-portal); padding: 7px 14px; border-radius: 999px; background: var(--color-portal-soft); border: 1px solid var(--color-border); }
+    .demo__eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #1E7E3E; }
+    .demo__title { font-family: var(--font-heading); font-size: clamp(34px, 5.5vw, 54px); line-height: 1.05; letter-spacing: -0.02em; color: var(--color-ink); margin: 20px 0 0; font-weight: 600; }
+    .demo__sub { color: var(--color-text-muted); font-size: 17px; line-height: 1.65; max-width: 68ch; margin-top: 18px; }
+    .demo__sub strong { color: var(--color-text); }
+
+    .soo { margin-top: 26px; padding: 22px 26px; border-radius: var(--radius-xl); background: linear-gradient(150deg, var(--color-primary-dark) 0%, var(--color-ink) 130%); color: #fff; box-shadow: var(--shadow-lg); }
+    .soo__k { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 10px; }
+    .soo blockquote { font-family: var(--font-heading); font-size: 18.5px; line-height: 1.6; font-style: italic; color: rgba(255,255,255,0.92); }
+    .soo__src { margin-top: 10px; font-size: 12px; color: rgba(255,255,255,0.5); }
+
+    .demo__notice { display: flex; gap: 14px; align-items: flex-start; margin-top: 22px; padding: 16px 18px; border-radius: var(--radius-lg); background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); font-size: 14px; color: var(--color-text-muted); line-height: 1.6; }
+    .demo__notice b { color: var(--color-text); }
+
+    .chapter { margin-top: 52px; }
+    .chapter__kicker { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-portal); }
+    .chapter__title { font-family: var(--font-heading); font-size: 30px; letter-spacing: -0.012em; color: var(--color-ink); margin: 6px 0 4px; }
+    .chapter__sub { color: var(--color-text-muted); font-size: 15px; max-width: 70ch; line-height: 1.6; }
+
+    .steps { margin-top: 22px; display: grid; gap: 14px; }
+    .step { display: grid; grid-template-columns: 46px 1fr auto; gap: 18px; align-items: start; padding: 20px 22px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+    .step__num { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: var(--color-portal-soft); color: var(--color-portal); font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
+    .step__name { font-weight: 600; font-size: 15.5px; color: var(--color-ink); margin-bottom: 4px; }
+    .step__desc { font-size: 14px; color: var(--color-text-muted); line-height: 1.62; max-width: 64ch; }
+    .step__desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--color-grey-100); padding: 1.5px 7px; border-radius: 6px; color: var(--color-text); white-space: nowrap; }
+    .step__try { font-size: 13.5px; margin-top: 8px; padding: 10px 13px; background: var(--color-portal-soft); border-radius: var(--radius-md); color: var(--color-portal-dark); line-height: 1.55; }
+    .step__try b { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+    .step__go { align-self: center; white-space: nowrap; }
+
+    .closing { margin-top: 60px; padding: 30px; border-radius: var(--radius-xl); color: #fff; background: linear-gradient(150deg, var(--color-primary-dark) 0%, var(--color-ink) 120%); box-shadow: var(--shadow-lg); }
+    .closing__title { font-family: var(--font-heading); font-size: 26px; margin-bottom: 8px; }
+    .closing__body { color: rgba(255,255,255,0.82); font-size: 15px; line-height: 1.65; max-width: 70ch; }
+    .closing__foot { margin-top: 16px; font-size: 13px; color: rgba(255,255,255,0.55); }
+
+    .truth { margin-top: 40px; font-size: 12px; color: var(--color-text-muted); line-height: 1.65; border-top: 1px solid var(--color-border); padding-top: var(--space-4); max-width: 86ch; }
+    @media (max-width: 720px) { .step { grid-template-columns: 1fr; } .step__go { justify-self: start; } }
+  </style>
+</head>
+<body>
+  <main class="demo">
+    <span class="demo__eyebrow">Platform demonstration · ~15 minutes, self-paced · no sign-in</span>
+    <h1 class="demo__title">Ginnie Mae Portfolio Advisory<br/>& Asset Disposition</h1>
+    <p class="demo__sub">A working demonstration of the <strong>secured, integrated workflow</strong> behind a defaulted-issuer disposition: portfolio recommendations routed for decision, executed as a sealed-bid sale, settled, and fed to the repository — <strong>end to end, with every step audited</strong>. Configured for Sources Sought <strong>APP-T-2027-125</strong> market research; every record is synthetic.</p>
+
+    <div class="soo">
+      <div class="soo__k">What the draft Statement of Objectives asks for</div>
+      <blockquote>"The contractor shall utilize a secured integrated workflow solution to manage advisory tasks, ensuring end-to-end transparency, auditability, and real-time status tracking of all portfolio recommendations and remediation activities… [and shall] ingest all relevant advisory data, market analysis, and portfolio metrics into the Ginnie Mae secured repository… formatted and delivered to support advanced downstream analytics, automated reporting, and trend analysis."</blockquote>
+      <div class="soo__src">Draft SOO, Ginnie Mae Portfolio Advisory & Asset Disposition Services — this demonstration walks that requirement, stop by stop.</div>
+    </div>
+
+    <div class="demo__notice">
+      <div>
+        <b>Nothing here touches a live system, and no Ginnie Mae data is present.</b> The book is ~340 synthetic HECM loans shaped to the public disclosure profile of a defaulted-issuer portfolio (balances, rates, vintages, geography). A banner stays on every screen while you're in the demonstration; your actions persist for the visit and reset when you leave.
+      </div>
+    </div>
+
+    <!-- ================= THE ADVISORY LIFECYCLE ================= -->
+    <section class="chapter">
+      <div class="chapter__kicker">The advisory lifecycle, end to end</div>
+      <h2 class="chapter__title">From recommendation to repository in seven stops</h2>
+      <p class="chapter__sub">The storyline follows one recommendation — selling the non-assignable vacant cohort — from drafting and Ginnie Mae approval through sale execution, settlement, and the audit/repository record it leaves behind.</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step__num">1</div>
+          <div>
+            <div class="step__name">The Portfolio Recommendations Register</div>
+            <div class="step__desc">The advisory system of record: every recommendation carries its lifecycle state (<code>Draft → Under Review → Approved → In Execution → Closed</code>), its evidence package, its decision routing with actors and dates, and an append-only audit trail. Real-time status, not a quarterly deck.</div>
+            <div class="step__try"><b>Look for</b>Four live recommendations — the vacant-cohort sale in execution, hold-to-assignment approved, the data-remediation sprint mid-flight, and a litigation-contingent perimeter under Ginnie Mae review.</div>
+          </div>
+          <a class="btn-portal step__go" href="register.html">Open the register →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">2</div>
+          <div>
+            <div class="step__name">One recommendation, fully routed</div>
+            <div class="step__desc">Expand REC-2026-004: the evidence pane links the live analysis modules; the routing shows submission by the HSG Advisor and approval by the Ginnie Mae COR, dated; the execution pointer hands off to the sale workstream this platform spawned.</div>
+            <div class="step__try"><b>Try this</b>Follow an evidence link — it opens the companion analysis portal module the recommendation was built on.</div>
+          </div>
+          <a class="btn-portal step__go" href="register.html#REC-2026-004">Open REC-2026-004 →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">3</div>
+          <div>
+            <div class="step__name">The sale — two pools, sealed bids, loan-level pricing</div>
+            <div class="step__desc">The approved recommendation becomes <code>GNMA HECM Disposition 2027-1</code>: Pool 1 carries ~220 non-judicial-state loans, Pool 2 the ~120 judicial-state loans priced separately. HVLS-style mechanics throughout — a BID % per loan with the dollar derived, whole-pool participation, sealed reserves, $100 floors.</div>
+            <div class="step__try"><b>Try this</b>Apply <code>54.25</code> to all of Pool 1 — every loan's derived $ computes and the deposit calculates per the published terms. Type <code>0</code> anywhere and watch it refuse.</div>
+          </div>
+          <a class="btn-portal step__go" href="../../residential/portal.html?demo=gnma#/sale/GNMA-HECM-2027-1-DEMO">Open the sale →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">4</div>
+          <div>
+            <div class="step__name">Qualified investors + the data room</div>
+            <div class="step__desc">The SOO's "ensure that investors are qualified to purchase": a gated qualification stack (confidentiality agreement first, screening before submission), then an asset-centric data room — every loan with its own Due Diligence Files and Collateral Files, named <code>STATE_FHA#_DOCTYPE.pdf</code>. Downloads are watermarked to the requesting bidder and access-logged with IP.</div>
+            <div class="step__try"><b>Try this</b>From the sale, open the Data Room tab, expand a loan, and download a collateral file — your demonstration entity is burned into the page.</div>
+          </div>
+          <a class="btn-portal step__go" href="../../residential/qualify.html?demo=gnma">See qualification →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">5</div>
+          <div>
+            <div class="step__name">Bid day — the operations console</div>
+            <div class="step__desc">The bid you placed in stop 3 lands in the live feed with conformance already checked — sealed from other bidders, fully visible to sale operations. Your receipt carried the form completion CODE; the console carries the same record.</div>
+            <div class="step__try"><b>Try this</b>Switch the sale selector to the GNMA disposition and find your own bid in the feed.</div>
+          </div>
+          <a class="btn-portal step__go" href="../../admin/bid-day.html?demo=gnma">Open bid day →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">6</div>
+          <div>
+            <div class="step__name">Settlement & post-sale tracking</div>
+            <div class="step__desc">Award through conveyance on milestone timelines with deliverables checklists — and every resolved asset rolls into a post-sale outcomes register by resolution path (assigned, sold-settled, REO, loss-mit, remediation pending).</div>
+          </div>
+          <a class="btn-portal step__go" href="../../admin/settlements.html?demo=gnma">Open settlements →</a>
+        </div>
+
+        <div class="step">
+          <div class="step__num">7</div>
+          <div>
+            <div class="step__name">Audit & repository integration</div>
+            <div class="step__desc">Everything you just did — every download, bid, and approval — is in the append-only audit stream, and four standing feeds deliver the workflow's outputs to the secured repository in analytics-ready formats with per-event hash manifests.</div>
+            <div class="step__try"><b>Try this</b>Download a sample export — the delivery manifest computes the real SHA-256 of your file, in your browser, on the spot.</div>
+          </div>
+          <a class="btn-portal step__go" href="repository.html">Open the repository view →</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="closing">
+      <div class="closing__title">The companion analysis</div>
+      <p class="closing__body">This workflow demonstration pairs with the portfolio analysis portal — the reconstruction of the defaulted-issuer book, the disposition funnel, and the economics behind each recommendation in the register. Together they are the two halves of the SOO: the analysis that produces recommendations, and the secured workflow that routes, executes, and audits them.</p>
+      <p class="closing__foot">gnma-portfolio-advisory.housestrategiesgroup.com · House Strategies Group LLC · jelani.house@housestrategiesgroup.com</p>
+    </div>
+
+    <p class="truth">Ginnie Mae Portfolio Advisory &amp; Asset Disposition — Platform Demonstration, configured for Sources Sought APP-T-2027-125 market research. All data is synthetic; no Ginnie Mae data is present, and nothing here implies an award, engagement, or endorsement. Agency names appear in plain text only. House Strategies Group LLC.</p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Repository Integration & Audit · Ginnie Mae Demonstration</title>
+  <link rel="stylesheet" href="../../shared/design-system.css" />
+  <style>
+    body { min-height: 100vh; }
+    .rp { max-width: 1020px; margin: 0 auto; padding: clamp(32px, 6vh, 64px) var(--space-6) 110px; }
+    .rp__eyebrow { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--color-portal); padding: 7px 14px; border-radius: 999px; background: var(--color-portal-soft); border: 1px solid var(--color-border); }
+    .rp__title { font-family: var(--font-heading); font-size: clamp(30px, 5vw, 44px); letter-spacing: -0.018em; color: var(--color-ink); margin: 16px 0 0; }
+    .rp__sub { color: var(--color-text-muted); font-size: 15px; line-height: 1.65; max-width: 72ch; margin-top: 12px; }
+    .rp h2 { font-family: var(--font-heading); font-size: 24px; color: var(--color-ink); margin: 40px 0 6px; }
+    .rp .lede { font-size: 13.5px; color: var(--color-text-muted); margin-bottom: 16px; max-width: 70ch; line-height: 1.6; }
+
+    .outcomes { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+    .oc { padding: 16px 18px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+    .oc__n { font-family: var(--font-heading); font-size: 28px; color: var(--color-ink); }
+    .oc__l { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-text-muted); margin-top: 2px; line-height: 1.5; }
+
+    .feed { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; padding: 16px 20px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); margin-bottom: 10px; }
+    .feed__name { font-weight: 600; font-size: 15px; color: var(--color-ink); }
+    .feed__spec { font-family: var(--font-mono); font-size: 11.5px; color: var(--color-text-muted); margin-top: 4px; letter-spacing: 0.02em; }
+    .feed__desc { font-size: 13px; color: var(--color-text-muted); margin-top: 5px; line-height: 1.55; max-width: 64ch; }
+    .feed button { padding: 9px 16px; border-radius: var(--radius-md); font-weight: 600; font-size: 13px; color: #fff; cursor: pointer; background: linear-gradient(180deg, var(--color-portal-bright) -20%, var(--color-portal) 75%); white-space: nowrap; }
+    .feed button:hover { background: linear-gradient(180deg, var(--color-portal) -20%, var(--color-portal-dark) 95%); }
+
+    .manifest { font-family: var(--font-mono); font-size: 11.5px; background: #0D1220; color: #B6C2D9; border-radius: var(--radius-lg); padding: 16px 18px; overflow-x: auto; line-height: 1.7; margin-top: 10px; display: none; }
+    .manifest b { color: #7DD3A8; }
+
+    .audit table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+    .audit th { text-align: left; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); padding: 10px 14px; border-bottom: 1px solid var(--color-border); background: var(--color-surface-2, #F8FAFD); }
+    .audit td { padding: 9px 14px; border-bottom: 1px solid var(--color-grey-100); vertical-align: top; }
+    .audit td:first-child { font-family: var(--font-mono); font-size: 11.5px; white-space: nowrap; color: var(--color-text-muted); }
+    .audit .empty-row td { text-align: center; color: var(--color-text-muted); padding: 22px; }
+
+    .foot { margin-top: 36px; font-size: 12px; color: var(--color-text-muted); line-height: 1.6; border-top: 1px solid var(--color-border); padding-top: var(--space-4); }
+    .demo-banner { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 9px 18px; background: linear-gradient(90deg, #0D1220, #1E1F6B); color: #fff; font: 600 12px/1 'IBM Plex Mono', monospace; letter-spacing: 0.08em; }
+    .demo-banner a { color: #A9B7FF; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <main class="rp">
+    <span class="rp__eyebrow">Ginnie Mae demonstration · synthetic data · APP-T-2027-125 market research</span>
+    <h1 class="rp__title">Repository integration & the audit trail</h1>
+    <p class="rp__sub">Everything the platform produces is structured for the Ginnie Mae secured repository — formatted and delivered to support advanced downstream analytics, automated reporting, and trend analysis. The exports below are working samples generated from this demonstration session, hash-manifested the way production deliveries are.</p>
+
+    <h2 id="outcomes">Post-sale outcomes register</h2>
+    <p class="lede">Every disposed or resolved asset lands in an outcomes register by resolution path — the Commissioner's-Report-style rollup Ginnie Mae sees after each event. Counts below are the demonstration book's synthetic state.</p>
+    <div class="outcomes">
+      <div class="oc"><div class="oc__n">412</div><div class="oc__l">Assigned to HUD<br/>(threshold crossed)</div></div>
+      <div class="oc"><div class="oc__n">186</div><div class="oc__l">Sold — settled<br/>(prior disposition)</div></div>
+      <div class="oc"><div class="oc__n">340</div><div class="oc__l">In sale execution<br/>(2027-1 perimeter)</div></div>
+      <div class="oc"><div class="oc__n">57</div><div class="oc__l">REO conveyed</div></div>
+      <div class="oc"><div class="oc__n">94</div><div class="oc__l">Loss-mitigation<br/>resolution</div></div>
+      <div class="oc"><div class="oc__n">208</div><div class="oc__l">Remediation pending<br/>(data quality)</div></div>
+    </div>
+
+    <h2>Repository feeds</h2>
+    <p class="lede">Four standing feeds; each sample downloads with content generated from this session, and the manifest panel shows the real SHA-256 of what you just exported.</p>
+
+    <div class="feed">
+      <div>
+        <div class="feed__name">Portfolio reconstruction & disposition funnel</div>
+        <div class="feed__spec">FORMAT Parquet/CSV + JSON · CADENCE monthly · sample: CSV</div>
+        <div class="feed__desc">Loan-level portfolio state with funnel stage, balance/MCA band, occupancy, and valuation freshness — the substrate for trend analysis and automated reporting.</div>
+      </div>
+      <button data-export="funnel">Download sample</button>
+    </div>
+    <div class="feed">
+      <div>
+        <div class="feed__name">Recommendation register</div>
+        <div class="feed__spec">FORMAT JSON / API · CADENCE real-time · sample: JSON</div>
+        <div class="feed__desc">The full advisory register — recommendation states, decision routing, actors, timestamps, and audit events — as the machine-readable record.</div>
+      </div>
+      <button data-export="register">Download sample</button>
+    </div>
+    <div class="feed">
+      <div>
+        <div class="feed__name">Sale artifacts</div>
+        <div class="feed__spec">FORMAT per-event package · CADENCE per sale event · sample: JSON manifest</div>
+        <div class="feed__desc">Bid receipts, completion CODEs, award and settlement records — hash-manifested per event so every artifact is verifiable downstream.</div>
+      </div>
+      <button data-export="artifacts">Download sample</button>
+    </div>
+    <div class="feed">
+      <div>
+        <div class="feed__name">Audit log</div>
+        <div class="feed__spec">FORMAT JSON lines · CADENCE append-only continuous · sample: JSON</div>
+        <div class="feed__desc">Every action in the workflow — recommendations, downloads, bids, approvals — timestamped with actor attribution.</div>
+      </div>
+      <button data-export="audit">Download sample</button>
+    </div>
+
+    <div class="manifest" id="manifest"></div>
+
+    <h2>This session's audit trail</h2>
+    <p class="lede">A live view of what you have done in this demonstration — the same append-only stream the audit-log feed exports. Place a bid or download a document in the tour and it appears here.</p>
+    <div class="audit"><table>
+      <thead><tr><th>Timestamp (UTC)</th><th>Actor</th><th>Action</th><th>Detail</th></tr></thead>
+      <tbody id="audit-rows"></tbody>
+    </table></div>
+
+    <p class="foot">Platform demonstration configured for Sources Sought APP-T-2027-125 market research. All data is synthetic — no Ginnie Mae data is present. House Strategies Group LLC.</p>
+  </main>
+
+  <div class="demo-banner">
+    <span>GINNIE MAE DEMONSTRATION — SYNTHETIC DATA · NO LIVE SYSTEMS</span>
+    <a href="index.html">DEMO GUIDE</a>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+  (function () {
+    var D = window.HSG_DEMO_DATA_GNMA || {};
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+    function loadSession(key) {
+      try { var v = sessionStorage.getItem('hsg.demo.gnma.' + key); return v ? JSON.parse(v) : []; } catch (e) { return []; }
+    }
+
+    // ---- Session audit table ----
+    var audit = loadSession('audit');
+    var rows = document.getElementById('audit-rows');
+    if (!audit.length) {
+      rows.innerHTML = '<tr class="empty-row"><td colspan="4">Nothing yet this session — open the demo sale from the guide, place a bid or download a document, then return here.</td></tr>';
+    } else {
+      rows.innerHTML = audit.slice().reverse().map(function (a) {
+        return '<tr><td>' + esc((a.at || '').replace('T', ' ').slice(0, 19)) + '</td><td>' + esc(a.actor) + '</td><td style="font-weight:600;">' + esc(a.action) + '</td><td>' + esc(a.detail) + '</td></tr>';
+      }).join('');
+    }
+
+    // ---- Exports ----
+    function csvFunnel() {
+      var head = 'loan_id,state,vintage,balance,mca,bal_mca_pct,note_rate,rate_type,est_value,bpo_date,occupancy,pool,funnel_stage\n';
+      return head + (D.loans || []).map(function (l) {
+        return [l.loan_id, l.property.state, l.vintage_year, l.current_upb, l.max_claim_amount, l.bal_mca_pct,
+                l.note_rate, l.rate_type, l.est_value, l.bpo_date, l.occupancy_status, l.pool_tag, 'sale-execution'].join(',');
+      }).join('\n');
+    }
+    function exportPayload(kind) {
+      if (kind === 'funnel') return { name: 'gnma-demo-portfolio-funnel-sample.csv', mime: 'text/csv', body: csvFunnel() };
+      if (kind === 'register') return { name: 'gnma-demo-recommendation-register-sample.json', mime: 'application/json', body: JSON.stringify({ asOf: D.generatedAt, register: D.recommendations || [] }, null, 2) };
+      if (kind === 'artifacts') {
+        var bids = loadSession('bids');
+        return { name: 'gnma-demo-sale-artifacts-sample.json', mime: 'application/json',
+                 body: JSON.stringify({ saleId: (D.sales && D.sales[0] || {}).saleId, artifacts: bids.map(function (b) {
+                   return { type: 'bid-record', bidId: b.bidId, poolId: b.poolId, receiptId: b.receiptId, completionCode: b.completionCode, aggregateUsd: b.aggregateUsd, status: b.status, timestamp: b.timestamp };
+                 }) }, null, 2) };
+      }
+      return { name: 'gnma-demo-audit-log-sample.json', mime: 'application/json', body: JSON.stringify({ stream: 'append-only', events: loadSession('audit') }, null, 2) };
+    }
+    function sha256hex(text) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function (buf) {
+        return [...new Uint8Array(buf)].map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      });
+    }
+    document.querySelectorAll('[data-export]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var p = exportPayload(btn.getAttribute('data-export'));
+        var blob = new Blob([p.body], { type: p.mime });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = p.name;
+        document.body.appendChild(a); a.click(); a.remove();
+        sha256hex(p.body).then(function (hex) {
+          var m = document.getElementById('manifest');
+          m.style.display = 'block';
+          m.innerHTML = '<b>DELIVERY MANIFEST</b> (computed in your browser, just now)<br/>' +
+            'file: ' + esc(p.name) + '<br/>bytes: ' + p.body.length + '<br/>sha256: ' + hex +
+            '<br/>posture: production deliveries carry this manifest per event into the secured repository';
+        });
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

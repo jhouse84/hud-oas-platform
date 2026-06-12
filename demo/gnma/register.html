@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portfolio Recommendations Register · Ginnie Mae Demonstration</title>
+  <link rel="stylesheet" href="../../shared/design-system.css" />
+  <style>
+    body { min-height: 100vh; }
+    .reg { max-width: 1020px; margin: 0 auto; padding: clamp(32px, 6vh, 64px) var(--space-6) 110px; }
+    .reg__eyebrow { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--color-portal); padding: 7px 14px; border-radius: 999px; background: var(--color-portal-soft); border: 1px solid var(--color-border); }
+    .reg__title { font-family: var(--font-heading); font-size: clamp(30px, 5vw, 44px); letter-spacing: -0.018em; color: var(--color-ink); margin: 16px 0 0; }
+    .reg__sub { color: var(--color-text-muted); font-size: 15px; line-height: 1.65; max-width: 72ch; margin-top: 12px; }
+    .reg__sub b { color: var(--color-text); }
+    .reg__pipeline { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; color: var(--color-text-muted); align-items: center; }
+    .reg__pipeline span.stage { padding: 5px 11px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); }
+
+    .rec { margin-top: 18px; border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-surface); box-shadow: var(--shadow-sm); overflow: hidden; }
+    .rec summary { list-style: none; cursor: pointer; padding: 18px 22px; display: grid; grid-template-columns: 110px 1fr auto; gap: 16px; align-items: center; }
+    .rec summary::-webkit-details-marker { display: none; }
+    .rec__id { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--color-portal); }
+    .rec__meta { font-family: var(--font-mono); font-size: 10.5px; color: var(--color-text-muted); margin-top: 4px; }
+    .rec__title { font-weight: 600; font-size: 15.5px; color: var(--color-ink); line-height: 1.45; }
+    .rec__sub { font-size: 12.5px; color: var(--color-text-muted); margin-top: 3px; }
+    .rec__state { font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+    .st-exec { background: #E7F0FB; color: #1F4E79; }
+    .st-approved { background: #ECFDF5; color: #1E7E3E; }
+    .st-review { background: #FFFBEB; color: #B45309; }
+    .st-closed { background: var(--color-grey-100); color: var(--color-text-muted); }
+    .rec__body { border-top: 1px solid var(--color-divider); padding: 20px 22px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; }
+    .rec__h { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 8px; }
+    .rec__summary { font-size: 14px; line-height: 1.65; color: var(--color-text); }
+    .rec__evidence a { display: flex; align-items: center; gap: 8px; padding: 9px 12px; margin-bottom: 6px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 13px; color: var(--color-portal); font-weight: 500; background: var(--color-surface-2, #F8FAFD); }
+    .rec__evidence a:hover { border-color: var(--color-portal); }
+    .rec__routing { font-size: 13px; line-height: 1.7; color: var(--color-text); }
+    .rec__routing b { font-family: var(--font-mono); font-size: 11px; }
+    .rec__exec { margin-top: 14px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--color-portal-soft); font-size: 13.5px; color: var(--color-portal-dark); }
+    .rec__exec a { color: var(--color-portal-dark); font-weight: 700; text-decoration: underline; }
+    .audit { grid-column: 1 / -1; }
+    .audit table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .audit th { text-align: left; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); padding: 7px 10px; border-bottom: 1px solid var(--color-border); }
+    .audit td { padding: 8px 10px; border-bottom: 1px solid var(--color-grey-100); vertical-align: top; }
+    .audit td:first-child { font-family: var(--font-mono); font-size: 11.5px; white-space: nowrap; color: var(--color-text-muted); }
+    .audit td:nth-child(2) { white-space: nowrap; font-weight: 600; }
+
+    .foot { margin-top: 36px; font-size: 12px; color: var(--color-text-muted); line-height: 1.6; border-top: 1px solid var(--color-border); padding-top: var(--space-4); }
+    .demo-banner { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 9px 18px; background: linear-gradient(90deg, #0D1220, #1E1F6B); color: #fff; font: 600 12px/1 'IBM Plex Mono', monospace; letter-spacing: 0.08em; }
+    .demo-banner a { color: #A9B7FF; text-decoration: underline; }
+    @media (max-width: 760px) { .rec summary { grid-template-columns: 1fr; } .rec__body { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="reg">
+    <span class="reg__eyebrow">Ginnie Mae demonstration · synthetic data · APP-T-2027-125 market research</span>
+    <h1 class="reg__title">Portfolio Recommendations Register</h1>
+    <p class="reg__sub">The advisory system of record: every portfolio recommendation is <b>drafted with its evidence attached, routed to Ginnie Mae for decision, and tracked through execution</b> — end-to-end transparency, auditability, and real-time status, with each entry feeding the secured repository for downstream analytics. Expand a recommendation to see its evidence, decision routing, and audit trail.</p>
+    <div class="reg__pipeline">
+      LIFECYCLE
+      <span class="stage">Draft</span> →
+      <span class="stage">Under Ginnie Mae Review</span> →
+      <span class="stage">Approved</span> →
+      <span class="stage">In Execution</span> →
+      <span class="stage">Closed</span>
+    </div>
+    <div id="recs"></div>
+    <p class="foot">Platform demonstration configured for Sources Sought APP-T-2027-125 market research. All recommendations, parties, dates, and figures are synthetic — no Ginnie Mae data is present. House Strategies Group LLC.</p>
+  </main>
+
+  <div class="demo-banner">
+    <span>GINNIE MAE DEMONSTRATION — SYNTHETIC DATA · NO LIVE SYSTEMS</span>
+    <a href="index.html">DEMO GUIDE</a>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+  (function () {
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+    function dt(iso) { if (!iso) return '—'; var d = new Date(iso); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+    var STATE_CLS = { 'In Execution': 'st-exec', 'Approved': 'st-approved', 'Under Ginnie Mae Review': 'st-review', 'Draft': 'st-review', 'Closed': 'st-closed' };
+
+    var recs = (window.HSG_DEMO_DATA_GNMA && window.HSG_DEMO_DATA_GNMA.recommendations) || [];
+    var host = document.getElementById('recs');
+
+    host.innerHTML = recs.map(function (r) {
+      var execHtml = '';
+      if (r.execution && r.execution.type === 'sale') {
+        execHtml = '<div class="rec__exec">Execution workstream spawned → <a href="../../residential/portal.html?demo=gnma#/sale/' + esc(r.execution.saleId) + '">' + esc(r.execution.label) + '</a> — qualification, data room, sealed bid, and settlement all run on this platform and post back to this register.</div>';
+      } else if (r.execution) {
+        execHtml = '<div class="rec__exec">' + esc(r.execution.label) + '</div>';
+      }
+      return '<details class="rec" id="' + esc(r.recId) + '">' +
+        '<summary>' +
+          '<div><div class="rec__id">' + esc(r.recId) + '</div><div class="rec__meta">' + (r.audit || []).length + ' audit events</div></div>' +
+          '<div><div class="rec__title">' + esc(r.title) + '</div>' +
+          '<div class="rec__sub">Submitted ' + dt(r.submittedAt) + ' by ' + esc(r.actorSubmitted) + (r.approvedAt ? ' · Approved ' + dt(r.approvedAt) + ' by ' + esc(r.actorApproved) : '') + '</div></div>' +
+          '<span class="rec__state ' + (STATE_CLS[r.state] || 'st-review') + '">' + esc(r.state).toUpperCase() + '</span>' +
+        '</summary>' +
+        '<div class="rec__body">' +
+          '<div><div class="rec__h">Recommendation</div><div class="rec__summary">' + esc(r.summary) + '</div>' + execHtml + '</div>' +
+          '<div>' +
+            '<div class="rec__h">Evidence package</div>' +
+            '<div class="rec__evidence">' + (r.evidence || []).map(function (e) {
+              return '<a href="' + esc(e.url) + '" target="_blank" rel="noopener">↗ ' + esc(e.label) + '</a>';
+            }).join('') + '</div>' +
+            '<div class="rec__h" style="margin-top: 14px;">Decision routing</div>' +
+            '<div class="rec__routing"><b>SUBMITTED</b> ' + dt(r.submittedAt) + ' — ' + esc(r.actorSubmitted) + '<br/>' +
+              (r.approvedAt ? '<b>APPROVED</b> ' + dt(r.approvedAt) + ' — ' + esc(r.actorApproved) : '<b>PENDING</b> — with Ginnie Mae for determination') + '</div>' +
+          '</div>' +
+          '<div class="audit"><div class="rec__h">Audit trail (append-only)</div>' +
+            '<table><thead><tr><th>Timestamp</th><th>Actor</th><th>Event</th></tr></thead><tbody>' +
+            (r.audit || []).map(function (a) {
+              return '<tr><td>' + esc(a[0]).replace('T', ' ').replace('Z', ' UTC') + '</td><td>' + esc(a[1]) + '</td><td>' + esc(a[2]) + '</td></tr>';
+            }).join('') + '</tbody></table></div>' +
+        '</div>' +
+      '</details>';
+    }).join('');
+
+    // Deep-link expansion (#REC-2026-004)
+    if (location.hash) {
+      var target = document.getElementById(location.hash.slice(1));
+      if (target) { target.open = true; target.scrollIntoView({ block: 'start' }); }
+    }
+  })();
+  </script>
+</body>
+</html>
