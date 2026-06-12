@@ -6,43 +6,95 @@
   <title>HUD OAS Transaction Platform · House Strategies Group</title>
   <link rel="stylesheet" href="shared/design-system.css" />
   <style>
-    body { background: var(--color-grey-50); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .gateway { max-width: 920px; width: 100%; padding: var(--space-8); }
-    .gateway__brand { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.12em; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: var(--space-2); }
-    .gateway__title { font-family: var(--font-heading); font-size: var(--text-3xl); margin-bottom: var(--space-2); }
-    .gateway__sub { color: var(--color-text-muted); margin-bottom: var(--space-8); max-width: 60ch; }
-    .gateway__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-4); }
-    .portal-card { display: block; padding: var(--space-6); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); text-decoration: none; color: inherit; transition: transform var(--duration-fast), box-shadow var(--duration-fast); border-top: 4px solid var(--accent); }
-    .portal-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.08)); }
-    .portal-card__kicker { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--accent); margin-bottom: var(--space-2); }
-    .portal-card__name { font-family: var(--font-heading); font-size: var(--text-xl); margin-bottom: var(--space-2); }
-    .portal-card__desc { font-size: var(--text-sm); color: var(--color-text-muted); }
-    .gateway__foot { margin-top: var(--space-8); font-size: var(--text-xs); color: var(--color-text-muted); }
+    body { min-height: 100vh; }
+    .gw { max-width: 1080px; margin: 0 auto; padding: clamp(40px, 8vh, 96px) var(--space-6) var(--space-12); }
+
+    .gw__head { max-width: 760px; }
+    .gw__eyebrow {
+      display: inline-flex; align-items: center; gap: 9px;
+      font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--color-portal); padding: 7px 14px; border-radius: 999px;
+      background: var(--color-portal-soft); border: 1px solid var(--color-border);
+    }
+    .gw__eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--color-portal); }
+    .gw__title { font-family: var(--font-heading); font-size: clamp(36px, 6vw, 60px); line-height: 1.04; letter-spacing: -0.02em; color: var(--color-ink); margin: 22px 0 0; font-weight: 600; }
+    .gw__title em { font-style: italic; color: var(--color-portal); }
+    .gw__sub { color: var(--color-text-muted); font-size: clamp(16px, 2vw, 19px); line-height: 1.6; max-width: 62ch; margin-top: 20px; }
+
+    .gw__strip { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    .gw__pill { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-muted); padding: 7px 13px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); }
+
+    .gw__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: var(--space-5); margin-top: 48px; }
+    .pcard {
+      position: relative; display: flex; flex-direction: column; min-height: 250px;
+      padding: 28px; background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl); text-decoration: none; color: inherit; overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out), border-color var(--duration-base) var(--ease-out);
+    }
+    .pcard::before { content: ''; position: absolute; left: 0; top: 0; right: 0; height: 4px; background: var(--accent); }
+    .pcard::after {
+      content: ''; position: absolute; right: -40px; top: -40px; width: 180px; height: 180px; border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-soft), transparent 70%); opacity: 0; transition: opacity var(--duration-base) var(--ease-out);
+    }
+    .pcard:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--accent); }
+    .pcard:hover::after { opacity: 0.6; }
+    .pcard__icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); margin-bottom: 18px; position: relative; z-index: 1; }
+    .pcard__icon svg { width: 23px; height: 23px; }
+    .pcard__kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); position: relative; z-index: 1; }
+    .pcard__name { font-family: var(--font-heading); font-size: 23px; letter-spacing: -0.01em; margin: 6px 0 10px; color: var(--color-ink); position: relative; z-index: 1; }
+    .pcard__desc { font-size: 14px; line-height: 1.6; color: var(--color-text-muted); position: relative; z-index: 1; }
+    .pcard__enter { margin-top: auto; padding-top: 18px; display: inline-flex; align-items: center; gap: 7px; font-weight: 600; font-size: 14px; color: var(--accent); position: relative; z-index: 1; }
+    .pcard__enter svg { width: 16px; height: 16px; transition: transform var(--duration-base) var(--ease-out); }
+    .pcard:hover .pcard__enter svg { transform: translateX(4px); }
+
+    .gw__foot { margin-top: 56px; padding-top: var(--space-6); border-top: 1px solid var(--color-border); font-size: 12.5px; color: var(--color-text-muted); max-width: 80ch; line-height: 1.6; }
   </style>
 </head>
 <body>
-  <main class="gateway">
-    <div class="gateway__brand">House Strategies Group · HUD Office of Asset Sales</div>
-    <h1 class="gateway__title">HUD OAS Transaction Platform</h1>
-    <p class="gateway__sub">Qualification, data room, sealed bidding, and settlement for HUD loan sales — the same rules, math, and sequence as the published Bidder Information Package, in one place.</p>
-    <div class="gateway__grid">
-      <a class="portal-card" style="--accent: var(--color-hvls, #3B82F6);" href="residential/index.html">
-        <div class="portal-card__kicker">RESIDENTIAL</div>
-        <div class="portal-card__name">HVLS · HNVLS · SFLS</div>
-        <p class="portal-card__desc">HECM vacant and occupied pools and single-family forward loans. Loan-level percentage bidding with whole-pool participation.</p>
+  <main class="gw">
+    <header class="gw__head">
+      <span class="gw__eyebrow">House Strategies Group · HUD Office of Asset Sales</span>
+      <h1 class="gw__title">The HUD OAS<br/><em>Transaction Platform</em></h1>
+      <p class="gw__sub">Qualification, secure data room, sealed bidding, and settlement for HUD loan sales — the same rules, bid math, and sequence as the published Bidder Information Package, in one modern place.</p>
+      <div class="gw__strip">
+        <span class="gw__pill">5 programs</span>
+        <span class="gw__pill">Sealed-bid · whole-pool</span>
+        <span class="gw__pill">Watermarked VDR</span>
+        <span class="gw__pill">MFA-secured</span>
+        <span class="gw__pill">Full audit trail</span>
+      </div>
+    </header>
+
+    <section class="gw__grid">
+      <a class="pcard" style="--accent: var(--color-portal-residential); --accent-soft: var(--color-portal-residential-soft);" href="residential/index.html">
+        <span class="pcard__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg></span>
+        <div class="pcard__kicker">Residential</div>
+        <div class="pcard__name">HVLS · HNVLS · SFLS</div>
+        <p class="pcard__desc">HECM vacant and occupied pools and single-family forward loans. Loan-level percentage bidding with whole-pool participation.</p>
+        <span class="pcard__enter">Enter portal <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
       </a>
-      <a class="portal-card" style="--accent: var(--color-hls, #DC2626);" href="commercial/index.html">
-        <div class="portal-card__kicker">COMMERCIAL</div>
-        <div class="portal-card__name">MHLS · HLS</div>
-        <p class="portal-card__desc">Multifamily and healthcare notes. Percentage-of-UPB bidding per asset, with HUD-furnished related-note groupings honored as offered.</p>
+
+      <a class="pcard" style="--accent: var(--color-portal-commercial); --accent-soft: var(--color-portal-commercial-soft);" href="commercial/index.html">
+        <span class="pcard__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v16"/><path d="M13 9h6a1 1 0 0 1 1 1v11"/><path d="M3 21h18"/><path d="M7 8h2M7 12h2M7 16h2M16 13h1M16 17h1"/></svg></span>
+        <div class="pcard__kicker">Commercial</div>
+        <div class="pcard__name">MHLS · HLS</div>
+        <p class="pcard__desc">Multifamily and healthcare notes. Percentage-of-UPB bidding per asset, with HUD-furnished related-note groupings honored as offered.</p>
+        <span class="pcard__enter">Enter portal <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
       </a>
-      <a class="portal-card" style="--accent: var(--color-portal, #2D2E8F);" href="admin/login.html">
-        <div class="portal-card__kicker">TRANSACTION SPECIALIST</div>
-        <div class="portal-card__name">Admin Console</div>
-        <p class="portal-card__desc">Bidder pipeline, bid-day operations, evaluation, awards, settlements, and compliance reporting. Authorized staff only.</p>
+
+      <a class="pcard" style="--accent: #3B4250; --accent-soft: #EDEFF3;" href="admin/login.html">
+        <span class="pcard__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v5c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <div class="pcard__kicker">Transaction Specialist</div>
+        <div class="pcard__name">Admin Console</div>
+        <p class="pcard__desc">Bidder pipeline, bid-day operations, evaluation, awards, settlements, and compliance reporting. Authorized staff only.</p>
+        <span class="pcard__enter">Sign in <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
       </a>
-    </div>
-    <p class="gateway__foot">A House Strategies Group LLC platform demonstration for the HUD Office of Asset Sales Transaction Specialist program. Access requires qualification under the applicable sale's Bidder Information Package; activity is logged.</p>
+    </section>
+
+    <footer class="gw__foot">
+      A House Strategies Group LLC platform demonstration for the HUD Office of Asset Sales Transaction Specialist program. Access requires qualification under the applicable sale's Bidder Information Package; all activity is logged.
+    </footer>
   </main>
 </body>
 </html>

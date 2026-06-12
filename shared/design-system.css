@@ -2669,3 +2669,145 @@ body[data-portal="admin"] {
 .payor-bar__legend-item { display: inline-flex; align-items: center; gap: 4px; }
 .payor-bar__legend-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 
+
+/* ==========================================================================
+   ✦ ELEVATION v2 — Premium institutional skin (2026-06)
+   --------------------------------------------------------------------------
+   Layered over the base system; later cascade wins. Uses the existing
+   --color-portal* tokens so every surface themes per-portal automatically
+   (residential federal-blue · commercial bronze · admin graphite · indigo).
+   ========================================================================== */
+
+:root {
+  /* Cleaner, cooler neutral surfaces with real elevation depth */
+  --color-bg:            #F1F4F9;
+  --color-surface:       #FFFFFF;
+  --color-surface-2:     #F8FAFD;
+  --color-border:        #E4E8EF;
+  --color-border-strong: #D3DAE5;
+  --color-divider:       #ECEFF4;
+  --color-text:          #121622;
+  --color-text-muted:    #5C6373;
+  --color-ink:           #0D1220;
+
+  /* Layered, blue-black shadow stack — reads premium vs. flat black */
+  --shadow-sm: 0 1px 2px rgba(16,24,40,0.05), 0 1px 1px rgba(16,24,40,0.03);
+  --shadow-md: 0 2px 6px rgba(16,24,40,0.06), 0 8px 18px rgba(16,24,40,0.08);
+  --shadow-lg: 0 8px 16px rgba(16,24,40,0.08), 0 22px 44px rgba(16,24,40,0.12);
+  --shadow-xl: 0 16px 32px rgba(16,24,40,0.12), 0 40px 72px rgba(16,24,40,0.20);
+
+  /* Softer contemporary radii */
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Subtle portal-tinted background field instead of flat grey */
+body {
+  background:
+    radial-gradient(1150px 580px at 100% -12%, var(--color-portal-soft), transparent 56%),
+    radial-gradient(900px 500px at -10% 110%, var(--color-portal-soft), transparent 50%),
+    var(--color-bg);
+  background-attachment: fixed;
+}
+
+h1, h2, h3 { color: var(--color-ink); }
+
+/* -- Primary buttons: gradient fill, lift, focus ring ---------------------- */
+.btn-portal,
+.auth-form button[type="submit"],
+.btn--primary {
+  background: linear-gradient(180deg, var(--color-portal-bright) -20%, var(--color-portal) 75%);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), var(--shadow-sm);
+  letter-spacing: 0.01em;
+  transition: transform var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-base) var(--ease-out),
+              background var(--duration-base) var(--ease-out);
+}
+.btn-portal:hover:not(:disabled),
+.auth-form button[type="submit"]:hover:not(:disabled),
+.btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--color-portal) -20%, var(--color-portal-dark) 95%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), var(--shadow-md);
+  transform: translateY(-1px);
+}
+.btn-portal:active,
+.auth-form button[type="submit"]:active,
+.btn--primary:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
+.btn-portal:focus-visible,
+.auth-form button:focus-visible,
+.btn--primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--color-portal-soft), var(--shadow-sm);
+}
+
+/* Ghost / secondary */
+.btn-portal--ghost {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+.btn-portal--ghost:hover { border-color: var(--color-portal); background: var(--color-portal-soft); transform: translateY(-1px); }
+
+/* -- Inputs: taller, refined hover + focus ring ---------------------------- */
+.form-input, .form-select, .form-textarea {
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: inset 0 1px 2px rgba(16,24,40,0.03);
+  transition: border-color var(--duration-base) var(--ease-out),
+              box-shadow var(--duration-base) var(--ease-out);
+}
+.form-input:hover, .form-select:hover, .form-textarea:hover { border-color: var(--color-portal-bright); }
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--color-portal);
+  box-shadow: 0 0 0 4px var(--color-portal-soft);
+}
+
+/* -- Cards + stat cards: layered shadow, hover ----------------------------- */
+.card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
+}
+.card:hover { box-shadow: var(--shadow-md); }
+.stat-card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat-card__value { letter-spacing: -0.02em; }
+
+/* -- Tables: elegant mono headers, generous rows, soft hover --------------- */
+.data-table th {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  padding: 12px 16px;
+}
+.data-table td { padding: 13px 16px; }
+.data-table tbody tr { transition: background var(--duration-fast) var(--ease-out); }
+.data-table tbody tr:hover { background: var(--color-portal-soft); }
+
+/* -- Badges --------------------------------------------------------------- */
+.badge { padding: 3px 11px; letter-spacing: 0.04em; border-radius: var(--radius-full); }
+
+/* -- Wizard polish -------------------------------------------------------- */
+.wizard__panel { border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); }
+.wizard__step { border-bottom-width: 2px; transition: color var(--duration-base) var(--ease-out), border-color var(--duration-base) var(--ease-out); }
+
+/* -- Portal banner: subtle gradient --------------------------------------- */
+.portal-banner { background: linear-gradient(90deg, var(--color-portal-dark), var(--color-portal)); }
+

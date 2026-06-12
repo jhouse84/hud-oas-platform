@@ -553,9 +553,14 @@ Resources:
       AutoVerifiedAttributes: [email]
       UsernameAttributes: [email]
       UsernameConfiguration: { CaseSensitive: false }
-      MfaConfiguration: 'ON'   # AAL2: TOTP required for every account (audit S-3)
-      EnabledMfas: [SOFTWARE_TOKEN_MFA]
-      UserPoolTier: PLUS       # required for threat protection (audit S-8)
+      # MFA (AAL2) is owned by the MfaConfig custom resource below — CloudFormation's
+      # UserPool resource can't configure EMAIL_OTP, so we set the full email + TOTP
+      # MFA config via SetUserPoolMfaConfig and keep it durable across deploys.
+      EmailConfiguration:
+        EmailSendingAccount: DEVELOPER   # send via our DKIM-verified SES domain
+        SourceArn: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/hudloansales.housestrategiesgroup.com'
+        From: 'HUD OAS Platform <no-reply@hudloansales.housestrategiesgroup.com>'
+      UserPoolTier: PLUS       # required for email MFA + threat protection (audit S-8)
       UserPoolAddOns:
         AdvancedSecurityMode: ENFORCED
       Policies:
@@ -566,9 +571,11 @@ Resources:
           RequireSymbols: true
           RequireUppercase: true
           TemporaryPasswordValidityDays: 3
+      # Admin-assisted recovery: email can't be both the recovery channel and the
+      # MFA factor (Cognito blocks it), and email OTP is the chosen second factor.
       AccountRecoverySetting:
         RecoveryMechanisms:
-          - { Name: verified_email, Priority: 1 }
+          - { Name: admin_only, Priority: 1 }
       AdminCreateUserConfig:
         AllowAdminCreateUserOnly: false
         InviteMessageTemplate:
@@ -588,6 +595,75 @@ Resources:
       UserPoolTags:
         Project: HUD-OAS-Platform
         Stage:   !Ref Stage
+
+  # ---------------------------------------------------------------
+  # MFA config custom resource — sets email OTP + TOTP (AAL2) durably.
+  # CloudFormation's UserPool resource can't configure EMAIL_OTP, so this
+  # Lambda-backed resource calls SetUserPoolMfaConfig on every create/update.
+  # ---------------------------------------------------------------
+  MfaConfigFnRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - { Effect: Allow, Principal: { Service: lambda.amazonaws.com }, Action: sts:AssumeRole }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: set-mfa-config
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [cognito-idp:SetUserPoolMfaConfig, cognito-idp:GetUserPoolMfaConfig]
+                Resource: !GetAtt UserPool.Arn
+
+  MfaConfigFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-mfa-config-cr'
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 30
+      Role: !GetAtt MfaConfigFnRole.Arn
+      Code:
+        ZipFile: |
+          import boto3, json, urllib.request
+          def send(event, status, data=None):
+              body = json.dumps({
+                  'Status': status, 'Reason': 'See CloudWatch logs',
+                  'PhysicalResourceId': event.get('PhysicalResourceId') or event['LogicalResourceId'],
+                  'StackId': event['StackId'], 'RequestId': event['RequestId'],
+                  'LogicalResourceId': event['LogicalResourceId'], 'Data': data or {},
+              }).encode()
+              req = urllib.request.Request(event['ResponseURL'], data=body, method='PUT',
+                                           headers={'content-type': ''})
+              urllib.request.urlopen(req)
+          def handler(event, context):
+              try:
+                  if event['RequestType'] != 'Delete':
+                      p = event['ResourceProperties']
+                      boto3.client('cognito-idp').set_user_pool_mfa_config(
+                          UserPoolId=p['UserPoolId'],
+                          MfaConfiguration='ON',
+                          SoftwareTokenMfaConfiguration={'Enabled': True},
+                          EmailMfaConfiguration={'Message': p['Message'], 'Subject': p['Subject']},
+                      )
+                  send(event, 'SUCCESS')
+              except Exception as e:
+                  print('MFA config error:', repr(e))
+                  send(event, 'FAILED', {'Error': str(e)})
+
+  MfaConfig:
+    Type: Custom::MfaConfig
+    DependsOn: UserPool
+    Properties:
+      ServiceToken: !GetAtt MfaConfigFn.Arn
+      UserPoolId: !Ref UserPool
+      Subject: 'Your HUD OAS Platform sign-in code'
+      Message: 'Your HUD OAS Platform sign-in code is {####}. It expires in a few minutes.'
+      Rev: 1
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient

@@ -68,6 +68,35 @@ HSG.cognito = (function () {
     } catch (e) { return null; }
   }
 
+  /**
+   * Normalize an auth response into { challenge, session, email } or
+   * { tokens, claims }. If the pool asks which MFA factor to use, answer
+   * EMAIL_OTP automatically — email is the platform's default second factor;
+   * authenticator apps stay available for users who enrolled one.
+   */
+  function mapAuthResult(res, email) {
+    if (res.ChallengeName === 'SELECT_MFA_TYPE') {
+      return post('RespondToAuthChallenge', {
+        ChallengeName: 'SELECT_MFA_TYPE',
+        ClientId: cfg().userPoolClientId,
+        Session: res.Session,
+        ChallengeResponses: { USERNAME: email, ANSWER: 'EMAIL_OTP' }
+      }).then(function (next) { return mapAuthResult(next, email); });
+    }
+    if (res.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
+      return Promise.resolve({ challenge: 'NEW_PASSWORD_REQUIRED', session: res.Session, email: email, userAttributes: res.ChallengeParameters });
+    }
+    if (res.ChallengeName === 'SOFTWARE_TOKEN_MFA' || res.ChallengeName === 'EMAIL_OTP') {
+      var dest = res.ChallengeParameters && (res.ChallengeParameters.CODE_DELIVERY_DESTINATION || res.ChallengeParameters.EMAIL_OTP_CODE_DELIVERY_DESTINATION);
+      return Promise.resolve({ challenge: res.ChallengeName, session: res.Session, email: email, destination: dest || null });
+    }
+    if (res.AuthenticationResult) {
+      storeTokens(res.AuthenticationResult);
+      return Promise.resolve({ challenge: null, tokens: res.AuthenticationResult, claims: parseIdTokenClaims() });
+    }
+    return Promise.resolve({ challenge: res.ChallengeName || 'UNKNOWN', session: res.Session, email: email });
+  }
+
   function signIn(email, password) {
     return post('InitiateAuth', {
       AuthFlow: 'USER_PASSWORD_AUTH',
@@ -76,19 +105,7 @@ HSG.cognito = (function () {
         USERNAME: email,
         PASSWORD: password
       }
-    }).then(function (res) {
-      if (res.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
-        return { challenge: 'NEW_PASSWORD_REQUIRED', session: res.Session, email: email, userAttributes: res.ChallengeParameters };
-      }
-      if (res.ChallengeName === 'SOFTWARE_TOKEN_MFA') {
-        return { challenge: 'SOFTWARE_TOKEN_MFA', session: res.Session, email: email };
-      }
-      if (res.AuthenticationResult) {
-        storeTokens(res.AuthenticationResult);
-        return { challenge: null, tokens: res.AuthenticationResult, claims: parseIdTokenClaims() };
-      }
-      return { challenge: res.ChallengeName || 'UNKNOWN', session: res.Session };
-    });
+    }).then(function (res) { return mapAuthResult(res, email); });
   }
 
   function completeNewPassword(email, newPassword, session) {
@@ -100,31 +117,23 @@ HSG.cognito = (function () {
         USERNAME: email,
         NEW_PASSWORD: newPassword
       }
-    }).then(function (res) {
-      if (res.AuthenticationResult) {
-        storeTokens(res.AuthenticationResult);
-        return { tokens: res.AuthenticationResult, claims: parseIdTokenClaims() };
-      }
-      return { challenge: res.ChallengeName, session: res.Session };
-    });
+    }).then(function (res) { return mapAuthResult(res, email); });
   }
 
-  function respondMfa(email, code, session) {
+  /**
+   * Answer an MFA challenge. type = 'SOFTWARE_TOKEN_MFA' (authenticator app,
+   * default for back-compat) or 'EMAIL_OTP' (code emailed to the user).
+   */
+  function respondMfa(email, code, session, type) {
+    var challengeName = type === 'EMAIL_OTP' ? 'EMAIL_OTP' : 'SOFTWARE_TOKEN_MFA';
+    var responses = { USERNAME: email };
+    responses[challengeName === 'EMAIL_OTP' ? 'EMAIL_OTP_CODE' : 'SOFTWARE_TOKEN_MFA_CODE'] = code;
     return post('RespondToAuthChallenge', {
-      ChallengeName: 'SOFTWARE_TOKEN_MFA',
+      ChallengeName: challengeName,
       ClientId: cfg().userPoolClientId,
       Session: session,
-      ChallengeResponses: {
-        USERNAME: email,
-        SOFTWARE_TOKEN_MFA_CODE: code
-      }
-    }).then(function (res) {
-      if (res.AuthenticationResult) {
-        storeTokens(res.AuthenticationResult);
-        return { tokens: res.AuthenticationResult, claims: parseIdTokenClaims() };
-      }
-      return { challenge: res.ChallengeName, session: res.Session };
-    });
+      ChallengeResponses: responses
+    }).then(function (res) { return mapAuthResult(res, email); });
   }
 
   function refresh() {
