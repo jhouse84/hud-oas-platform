@@ -34,25 +34,45 @@ HSG.bidding.pool = (function () {
     deposit: { rate: 0.10, floor: 100000, underFloorRate: 0.50 }
   };
 
-  function basisField(programType) {
-    if (programType === 'HNVLS') return 'etd_adjusted_bpo';
-    if (programType === 'SFLS') return 'current_upb';
-    return 'bpo_value'; // HVLS
-  }
+  // Bid basis is set per SALE (sale.bid_basis); these are the program defaults when
+  // a sale doesn't override. Grounded in the bidder survey: HVLS bids are a % of ULB
+  // (unpaid loan balance), SFLS a % of UPB, HNVLS a % of ETD-adjusted BPO.
+  var BASIS_FIELD = { ULB: 'ulb', UPB: 'current_upb', BPO: 'bpo_value', ETD: 'etd_adjusted_bpo' };
+  var BASIS_LABEL = { ULB: 'ULB', UPB: 'UPB', BPO: 'BPO', ETD: 'ETD-adj. BPO' };
+  var BASIS_LONG  = { ULB: 'Unpaid Loan Balance', UPB: 'Unpaid Principal Balance', BPO: 'Broker Price Opinion', ETD: 'ETD-Adjusted BPO' };
 
-  function basisLabel(programType) {
-    if (programType === 'HNVLS') return 'ETD-adj. BPO';
+  function defaultBasisKey(programType) {
+    if (programType === 'HNVLS') return 'ETD';
     if (programType === 'SFLS') return 'UPB';
-    return 'BPO';
+    if (programType === 'HVLS') return 'ULB';
+    return 'UPB';
   }
 
-  /** HUD-furnished per-loan basis value. Never derived or corrected client-side. */
-  function loanBasis(loan, programType) {
+  /** The sale's official bid basis key ('ULB'|'UPB'|'BPO'|'ETD'). */
+  function basisKey(programType, saleConfig) {
+    var explicit = saleConfig && (saleConfig.bidBasis || saleConfig.bid_basis);
+    return explicit ? String(explicit).toUpperCase() : defaultBasisKey(programType);
+  }
+  function basisField(programType, saleConfig) { return BASIS_FIELD[basisKey(programType, saleConfig)] || 'current_upb'; }
+  function basisLabel(programType, saleConfig) { var k = basisKey(programType, saleConfig); return BASIS_LABEL[k] || k; }
+  function basisLong(programType, saleConfig)  { var k = basisKey(programType, saleConfig); return BASIS_LONG[k] || k; }
+
+  /** Tape value for ANY basis key on a loan, with graceful fallbacks for a thin tape. */
+  function loanBasisByKey(loan, key) {
     if (!loan) return 0;
-    var f = basisField(programType);
-    var v = Number(loan[f]);
-    if (!v && programType === 'HNVLS') v = Number(loan.etdAdjustedBpo); // camelCase fallback
+    var v = Number(loan[BASIS_FIELD[key]]);
+    if (!v) {
+      if (key === 'ULB') v = Number(loan.unpaid_loan_balance) || Number(loan.current_upb) || Number(loan.currentUpb);
+      else if (key === 'ETD') v = Number(loan.etdAdjustedBpo) || Number(loan.bpo_value);
+      else if (key === 'UPB') v = Number(loan.currentUpb);
+      else if (key === 'BPO') v = Number(loan.bpoValue);
+    }
     return v || 0;
+  }
+
+  /** HUD-furnished per-loan basis value for the sale's OFFICIAL basis. Never recomputed. */
+  function loanBasis(loan, programType, saleConfig) {
+    return loanBasisByKey(loan, basisKey(programType, saleConfig));
   }
 
   function roundPct(n) {
@@ -80,9 +100,9 @@ HSG.bidding.pool = (function () {
     return { state: 'ok', pct: roundPct(n) };
   }
 
-  /** Derived BID $ for one loan (read-only on the sheet). */
-  function deriveUsd(pct, loan, programType) {
-    var basis = loanBasis(loan, programType);
+  /** Derived BID $ for one loan (read-only on the sheet), against the sale's official basis. */
+  function deriveUsd(pct, loan, programType, saleConfig) {
+    var basis = loanBasis(loan, programType, saleConfig);
     return Math.round((Number(pct) / 100) * basis * 100) / 100;
   }
 
@@ -98,7 +118,7 @@ HSG.bidding.pool = (function () {
     if (cap != null && parsed.pct > cap) {
       return { state: 'error', message: 'BID % exceeds the ' + programType + ' maximum (' + cap + '%)' };
     }
-    var usd = deriveUsd(parsed.pct, loan, programType);
+    var usd = deriveUsd(parsed.pct, loan, programType, saleConfig);
     if (usd < CONFIG.minDerivedUSD) {
       return { state: 'error', message: 'Derived bid $' + usd.toLocaleString() + ' is below the per-loan minimum ($' + CONFIG.minDerivedUSD + ')' };
     }
@@ -184,9 +204,12 @@ HSG.bidding.pool = (function () {
 
   return {
     CONFIG: CONFIG,
+    basisKey: basisKey,
     basisField: basisField,
     basisLabel: basisLabel,
+    basisLong: basisLong,
     loanBasis: loanBasis,
+    loanBasisByKey: loanBasisByKey,
     parsePct: parsePct,
     deriveUsd: deriveUsd,
     validateLoanEntry: validateLoanEntry,

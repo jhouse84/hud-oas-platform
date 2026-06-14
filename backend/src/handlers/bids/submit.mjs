@@ -37,10 +37,24 @@ const MAX_PCT_BY_PROGRAM = { HNVLS: 175 };
 const roundPct = (n) => Math.round(Number(n) * 1e5) / 1e5;
 const round2 = (n) => Math.round(Number(n) * 100) / 100;
 
-function basisField(programType) {
-  if (programType === 'HNVLS') return 'etd_adjusted_bpo';
-  if (programType === 'SFLS') return 'current_upb';
-  return 'bpo_value'; // HVLS
+// Bid basis is set per SALE (sale.bid_basis), with program defaults. Survey-grounded:
+// HVLS bids are a % of ULB (unpaid loan balance), SFLS % of UPB, HNVLS % of ETD-adj. BPO.
+const BASIS_FIELD = { ULB: 'ulb', UPB: 'current_upb', BPO: 'bpo_value', ETD: 'etd_adjusted_bpo' };
+function basisKey(programType, sale) {
+  const explicit = sale && (sale.bid_basis || sale.bidBasis);
+  if (explicit) return String(explicit).toUpperCase();
+  if (programType === 'HNVLS') return 'ETD';
+  if (programType === 'SFLS') return 'UPB';
+  if (programType === 'HVLS') return 'ULB';
+  return 'UPB';
+}
+function loanBasisValue(loan, key) {
+  let v = Number(loan[BASIS_FIELD[key]]);
+  if (!v) {
+    if (key === 'ULB') v = Number(loan.unpaid_loan_balance) || Number(loan.current_upb);
+    else if (key === 'ETD') v = Number(loan.etdAdjustedBpo) || Number(loan.bpo_value);
+  }
+  return v || 0;
 }
 
 function validatePct(raw, label, programType) {
@@ -135,7 +149,8 @@ export const handler = wrap(async (event) => {
       ExpressionAttributeValues: { ':s': body.saleId }
     });
     const loanById = new Map(loans.map(l => [l.loan_id || l.loanId, l]));
-    const bField = basisField(programType);
+    const bKey = basisKey(programType, sale);
+    const bField = BASIS_FIELD[bKey];
 
     for (const pb of body.poolBids) {
       const pool = poolById.get(pb.poolId);
@@ -161,7 +176,7 @@ export const handler = wrap(async (event) => {
         const loan = loanById.get(loanId);
         if (!loan) throw new HttpError(`Loan ${loanId} not found on ${body.saleId}`, 400, 'ValidationError');
         const pct = validatePct(entries.get(loanId), `Pool ${pb.poolId} · loan ${loanId}`, programType);
-        const basis = Number(loan[bField]) || 0;
+        const basis = loanBasisValue(loan, bKey);
         if (!basis) throw new HttpError(`Loan ${loanId}: HUD basis value (${bField}) missing from the tape`, 500, 'DataError');
         const usd = round2((pct / 100) * basis);
         if (usd < MIN_DERIVED_USD) {

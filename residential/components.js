@@ -54,12 +54,14 @@ HSG.residential.components = (function () {
   function renderBidSheet(pool, loans, sale, entries, missionChecked) {
     entries = entries || {};
     var programType = sale.programType;
-    var basisLbl = eng().basisLabel(programType);
+    var sc = { bidBasis: sale.bid_basis, maxPct: sale.maxPct };
+    var basisLbl = eng().basisLabel(programType, sc);
+    var basisKey = eng().basisKey(programType, sc);
     var ids = poolLoanIds(pool);
     var poolLoans = (loans || []).filter(function (l) { return ids.indexOf(lid(l)) >= 0; });
-    var result = eng().validatePool(entries, poolLoans, programType);
+    var result = eng().validatePool(entries, poolLoans, programType, { saleConfig: sc });
     var summary = pool.summary || {};
-    var aggBasis = summary.aggregate_bpo || summary.aggregate_upb || 0;
+    var aggBasis = summary['aggregate_' + basisKey.toLowerCase()] || summary.aggregate_upb || summary.aggregate_bpo || 0;
 
     var pill;
     if (result.participation === 'COMPLETE') {
@@ -73,10 +75,10 @@ HSG.residential.components = (function () {
     var rows = poolLoans.map(function (loan) {
       var id = lid(loan);
       var raw = entries[id] != null ? entries[id] : '';
-      var entry = eng().validateLoanEntry(raw, loan, programType);
+      var entry = eng().validateLoanEntry(raw, loan, programType, sc);
       var usdCell = entry.state === 'ok' ? u.currency(entry.usd) : '—';
       var errAttr = entry.state === 'error' ? ' style="border-color: var(--color-error);" title="' + esc(entry.message) + '"' : '';
-      var basisVal = eng().loanBasis(loan, programType);
+      var basisVal = eng().loanBasis(loan, programType, sc);
       var st = (loan.property && loan.property.state) || loan.propertyState || '—';
       return '<tr data-loan-row="' + esc(id) + '">' +
         '<td style="font-family: var(--font-mono); font-size: var(--text-xs);">' + esc(id) + '</td>' +
@@ -114,7 +116,7 @@ HSG.residential.components = (function () {
         '<span style="color: var(--color-text-muted); font-size: var(--text-xs);">Or fill a flat % down the whole pool. Whole-pool participation: a % on every loan, or leave the pool entirely blank.</span>' +
       '</div>' +
       '<table class="data-table">' +
-        '<thead><tr><th>Loan ID</th><th>FHA Case</th><th>State</th><th style="text-align: right;">' + esc(basisLbl) + '</th><th>BID %</th><th style="text-align: right;">BID $ (derived)</th></tr></thead>' +
+        '<thead><tr><th>Loan ID</th><th>FHA Case</th><th>State</th><th style="text-align: right;">' + esc(basisLbl) + ' ($)</th><th>BID % (of ' + esc(basisLbl) + ')</th><th style="text-align: right;">BID $ (derived)</th></tr></thead>' +
         '<tbody>' + rows + '</tbody>' +
       '</table>' +
       errList +

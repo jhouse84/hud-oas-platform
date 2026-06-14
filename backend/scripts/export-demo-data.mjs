@@ -11,6 +11,7 @@ import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { augment } from '../../demo/augment-basis.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const region = 'us-east-1';
@@ -71,6 +72,8 @@ const out = {
     { qaId: 'QA-DEMO-2', saleId: 'HLS-2026-DEMO', question: 'Are operator financials available for the skilled nursing assets?', answer: 'Latest-year operator financials are in the data room under Volume 2; quarterly updates publish as received.', status: 'answered', visibility: 'all', askedAt: new Date(Date.now() - 86400000 * 4).toISOString(), answeredAt: new Date(Date.now() - 86400000 * 3).toISOString() }
   ]
 };
+
+augment(out);   // add ULB + explicit bid_basis (UPB/BPO come from the live tape)
 
 const target = path.resolve(__dirname, '../../demo/data.js');
 fs.mkdirSync(path.dirname(target), { recursive: true });

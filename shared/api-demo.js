@@ -108,10 +108,23 @@
   }
   function saleById(id) { return (D.sales || []).find(function (s) { return s.saleId === id; }); }
   function loansFor(id) { return (D.loans || []).filter(function (l) { return l.saleId === id; }); }
-  function basisField(programType) {
-    if (programType === 'HNVLS') return 'etd_adjusted_bpo';
-    if (programType === 'SFLS') return 'current_upb';
-    return 'bpo_value';
+  // Bid basis per SALE (sale.bid_basis), with program defaults. Mirrors the server.
+  var BASIS_FIELD = { ULB: 'ulb', UPB: 'current_upb', BPO: 'bpo_value', ETD: 'etd_adjusted_bpo' };
+  function basisKey(programType, sale) {
+    var explicit = sale && (sale.bid_basis || sale.bidBasis);
+    if (explicit) return String(explicit).toUpperCase();
+    if (programType === 'HNVLS') return 'ETD';
+    if (programType === 'SFLS') return 'UPB';
+    if (programType === 'HVLS') return 'ULB';
+    return 'UPB';
+  }
+  function loanBasisValue(loan, key) {
+    var v = Number(loan[BASIS_FIELD[key]]);
+    if (!v) {
+      if (key === 'ULB') v = Number(loan.unpaid_loan_balance) || Number(loan.current_upb);
+      else if (key === 'ETD') v = Number(loan.etdAdjustedBpo) || Number(loan.bpo_value);
+    }
+    return v || 0;
   }
   function depositFor(agg, terms) {
     terms = terms || {};
@@ -295,7 +308,7 @@
         var saleLoans = loansFor(body.saleId);
         var loanById = {};
         saleLoans.forEach(function (l) { loanById[l.loan_id || l.loanId] = l; });
-        var bf = basisField(programType);
+        var bKey = basisKey(programType, sale);
 
         body.poolBids.forEach(function (pb) {
           var pool = poolById[pb.poolId];
@@ -311,7 +324,7 @@
             var loan = loanById[loanId];
             if (!loan) throw new Error('Loan ' + loanId + ' not on the tape');
             var pct = validatePct(entries[loanId], 'Pool ' + pb.poolId + ' · loan ' + loanId);
-            var basis = Number(loan[bf]) || 0;
+            var basis = loanBasisValue(loan, bKey);
             var usd = round2((pct / 100) * basis);
             if (usd < 100) throw new Error('Pool ' + pb.poolId + ' · loan ' + loanId + ': derived BID $' + usd + ' is below the $100 minimum');
             loanBids.push({ loanId: loanId, bidPct: pct, basis: basis, bidUsd: usd });

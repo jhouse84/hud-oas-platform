@@ -245,7 +245,7 @@
       return pools.map(function (p) {
         var ids = p.loan_ids || p.loanIds || [];
         var poolLoans = loans.filter(function (l) { return ids.indexOf(c.lid(l)) >= 0; });
-        var r = HSG.bidding.pool.validatePool(saleEntries, poolLoans, sale.programType, { missionBid: !!saleMission[c.pid(p)] });
+        var r = HSG.bidding.pool.validatePool(saleEntries, poolLoans, sale.programType, { missionBid: !!saleMission[c.pid(p)], saleConfig: { bidBasis: sale.bid_basis, maxPct: sale.maxPct } });
         r.poolId = c.pid(p);
         return r;
       });
@@ -264,7 +264,7 @@
         else saleEntries[loanId] = raw;
         // Update the derived BID $ cell in place (read-only — bidder never types $)
         var loan = loans.find(function (l) { return c.lid(l) === loanId; });
-        var entry = HSG.bidding.pool.validateLoanEntry(raw === '' ? undefined : raw, loan, sale.programType);
+        var entry = HSG.bidding.pool.validateLoanEntry(raw === '' ? undefined : raw, loan, sale.programType, { bidBasis: sale.bid_basis, maxPct: sale.maxPct });
         var cell = content.querySelector('[data-role="usd-cell"][data-loan-id="' + loanId + '"]');
         if (cell) cell.textContent = entry.state === 'ok' ? HSG.utils.currency(entry.usd) : '—';
         input.style.borderColor = entry.state === 'error' ? 'var(--color-error)' : '';
@@ -302,20 +302,35 @@
       // ---- Bulk bidding: locked Excel workbook + paste ----
       // Every path writes into the same saleEntries map the per-loan grid uses,
       // so the workbook, paste, and manual entry all flow through one validated submit.
-      function loadBids(poolId, parsedRows, source) {
+      function loadBids(poolId, parsedRows, source, chosenBasis) {
         var pool = pools.find(function (p) { return c.pid(p) === poolId; });
         var roster = (pool && (pool.loan_ids || pool.loanIds)) || [];
         var inRoster = {}; roster.forEach(function (id) { inRoster[id] = true; });
+        var loanById = {}; loans.forEach(function (l) { loanById[c.lid(l)] = l; });
+        // The bidder may have priced against a different balance (the workbook toggle).
+        // Normalize every entered % to the sale's OFFICIAL basis — same conversion the
+        // server would apply — so the recorded bid is uniform regardless of the lens used.
+        var oKey = HSG.bidding.pool.basisKey(sale.programType, { bidBasis: sale.bid_basis });
+        var chosen = chosenBasis ? String(chosenBasis).toUpperCase() : oKey;
+        var converted = (chosen !== oKey);
         var applied = 0, off = 0, zeros = 0;
         parsedRows.forEach(function (row) {
           if (!inRoster[row.loanId]) { off++; return; }
-          if (Number(row.bidPct) === 0) { zeros++; }
-          saleEntries[row.loanId] = String(row.bidPct);
+          var pct = Number(row.bidPct);
+          if (pct === 0) { zeros++; }
+          if (converted) {
+            var loan = loanById[row.loanId];
+            var cv = HSG.bidding.pool.loanBasisByKey(loan, chosen);
+            var ov = HSG.bidding.pool.loanBasisByKey(loan, oKey);
+            if (ov > 0 && loan) pct = Math.round(pct * cv / ov * 1e5) / 1e5;
+          }
+          saleEntries[row.loanId] = String(pct);
           applied++;
         });
         renderTab('pools', sale, pools);   // rebuild every sheet from the updated entries
         var st = document.querySelector('[data-role="wb-status"][data-pool-id="' + poolId + '"]');
         if (st) st.textContent = applied + ' bid' + (applied === 1 ? '' : 's') + ' loaded ' + source +
+          (converted ? ' · priced as % of ' + chosen + ', recorded as % of ' + oKey : '') +
           (off ? ' · ' + off + ' off-roster row(s) ignored' : '') +
           (zeros ? ' · ' + zeros + ' zero(s) will be flagged' : '') + '. Review the derived $ and submit.';
       }
@@ -341,7 +356,7 @@
           var file = input.files && input.files[0]; if (!file) return;
           var poolId = input.getAttribute('data-pool-id');
           HSG.bidWorkbook.parse(file).then(function (res) {
-            loadBids(res.poolId || poolId, res.rows, 'from ' + file.name);
+            loadBids(res.poolId || poolId, res.rows, 'from ' + file.name, res.basis);
           }).catch(function (err) { alert('Could not read the workbook: ' + (err.message || err)); });
           input.value = '';
         });

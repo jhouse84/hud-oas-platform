@@ -70,6 +70,10 @@ function makeLoan(i, state, poolTag) {
   const rate = round(clip(normal(6.3, 0.45), 5.0, 7.5), 3);
   const vintage = weighted(VINTAGES);
   const age = Math.round(clip(normal(79, 6), 62, 98));
+  // Unpaid LOAN balance = UPB + accrued interest/MIP/servicing. Older borrowers have
+  // accrued longer → higher ULB-over-UPB. Deterministic (from age) so the tape stats
+  // never drift; sits between UPB and the max-claim ceiling.
+  const ulb = round(bal * clip(1.04 + (age - 62) * 0.004, 1.03, 1.18) / 1000) * 1000;
   const vacant = rng() < 0.70;
   const bpoAge = Math.floor(range(5, 120));                          // days before AS_OF
   const bpoDate = new Date(Date.parse(AS_OF) - bpoAge * 86400000).toISOString().slice(0, 10);
@@ -81,6 +85,7 @@ function makeLoan(i, state, poolTag) {
     property: { state, city: pick(CITIES[state] || ['—']) },
     property_name: `${pick(CITIES[state] || ['—']).toUpperCase()} HECM ${i + 1}`,
     current_upb: bal,
+    ulb: ulb, unpaid_loan_balance: ulb,
     max_claim_amount: mca,
     bal_mca_pct: round(balMca * 100, 1),
     note_rate: rate,
@@ -106,6 +111,7 @@ function poolSummary(list) {
     loan_count: list.length,
     aggregate_bpo: list.reduce((s, l) => s + l.bpo_value, 0),
     aggregate_upb: list.reduce((s, l) => s + l.current_upb, 0),
+    aggregate_ulb: list.reduce((s, l) => s + l.ulb, 0),
     states: [...new Set(list.map(l => l.property.state))].sort()
   };
 }
@@ -119,6 +125,7 @@ const sale = {
   name: 'GNMA HECM Disposition 2027-1 (Demonstration)',
   long_name: 'Ginnie Mae Defaulted-Issuer HECM Disposition 2027-1 — Platform Demonstration (synthetic data)',
   status: 'bid_window', state: 'bid_window',
+  bid_basis: 'ULB',                 // HVLS bids are a % of Unpaid Loan Balance (per bidder survey)
   completion_code: 'GNMA27D481',
   deposit_terms: { minimum_deposit_floor: 100000, deposit_pct_of_aggregate_bid: 0.10, under_floor_pct: 0.50 },
   key_dates: {
@@ -135,11 +142,11 @@ const sale = {
   pools: [
     { pool_id: SALE_ID + '-P1', pool_name: 'Pool 1 — Non-Judicial States', pool_number: 1,
       stratification_basis: 'Assignment-adjacent vacant/occupied HECMs in non-judicial foreclosure states (0.80–0.98 balance/MCA)',
-      minimum_bid_basis: 'Aggregate BPO', eligible_bidder_types: ['all'],
+      minimum_bid_basis: 'Aggregate ULB', eligible_bidder_types: ['all'],
       loan_ids: p1.map(l => l.loan_id), summary: poolSummary(p1) },
     { pool_id: SALE_ID + '-P2', pool_name: 'Pool 2 — Judicial States', pool_number: 2,
       stratification_basis: 'Assignment-adjacent HECMs in judicial foreclosure states (NY/FL/IL/PA/NJ/OH/CT) — longer disposition timelines priced separately',
-      minimum_bid_basis: 'Aggregate BPO', eligible_bidder_types: ['all'],
+      minimum_bid_basis: 'Aggregate ULB', eligible_bidder_types: ['all'],
       loan_ids: p2.map(l => l.loan_id), summary: poolSummary(p2) }
   ]
 };
