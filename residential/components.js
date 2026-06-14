@@ -100,10 +100,18 @@ HSG.residential.components = (function () {
         '</div>' +
         '<span data-role="pool-pill" data-pool-id="' + esc(pid(pool)) + '">' + pill + '</span>' +
       '</div>' +
+      '<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--space-3); padding: 12px 14px; background: var(--color-portal-soft); border: 1px solid var(--color-border); border-radius: var(--radius-md);">' +
+        '<span style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-portal); font-weight: 600;">Bulk bidding</span>' +
+        '<button class="btn-portal" style="font-size: 13px; padding: 8px 14px;" data-role="wb-download" data-pool-id="' + esc(pid(pool)) + '">⬇ Download bid workbook (Excel)</button>' +
+        '<button class="btn-portal btn-portal--ghost" style="font-size: 13px; padding: 8px 14px;" data-role="wb-upload-btn" data-pool-id="' + esc(pid(pool)) + '">⬆ Upload completed workbook</button>' +
+        '<input type="file" accept=".xlsx" data-role="wb-upload-input" data-pool-id="' + esc(pid(pool)) + '" style="display: none;" />' +
+        '<button class="btn-portal btn-portal--ghost" style="font-size: 13px; padding: 8px 14px;" data-role="wb-paste" data-pool-id="' + esc(pid(pool)) + '">Paste from spreadsheet</button>' +
+        '<span data-role="wb-status" data-pool-id="' + esc(pid(pool)) + '" style="font-size: 12.5px; color: var(--color-text-muted); flex-basis: 100%;">Price hundreds of loans in Excel — the workbook is locked to bid input only, and the platform re-derives every figure on upload.</span>' +
+      '</div>' +
       '<div style="display: flex; gap: var(--space-3); align-items: center; margin-bottom: var(--space-3); font-size: var(--text-sm);">' +
         '<input class="form-input" type="number" step="0.00001" min="0" placeholder="%" style="width: 110px;" data-role="fill-all" data-pool-id="' + esc(pid(pool)) + '" />' +
         '<button class="btn-portal btn-portal--ghost" style="font-size: var(--text-xs);" data-role="fill-all-btn" data-pool-id="' + esc(pid(pool)) + '">Apply % to all loans in pool</button>' +
-        '<span style="color: var(--color-text-muted); font-size: var(--text-xs);">Whole-pool participation: a % on every loan, or leave the pool entirely blank.</span>' +
+        '<span style="color: var(--color-text-muted); font-size: var(--text-xs);">Or fill a flat % down the whole pool. Whole-pool participation: a % on every loan, or leave the pool entirely blank.</span>' +
       '</div>' +
       '<table class="data-table">' +
         '<thead><tr><th>Loan ID</th><th>FHA Case</th><th>State</th><th style="text-align: right;">' + esc(basisLbl) + '</th><th>BID %</th><th style="text-align: right;">BID $ (derived)</th></tr></thead>' +

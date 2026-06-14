@@ -79,6 +79,7 @@
   <script src="../shared/api-demo.js"></script>
   <script src="../shared/state.js"></script>
   <script src="../shared/bidding-pool.js"></script>
+  <script src="../shared/bid-workbook.js"></script>
   <script src="../shared/vdr-room.js"></script>
   <script src="components.js"></script>
 
@@ -295,6 +296,69 @@
         input.addEventListener('change', function () {
           saleMission[input.getAttribute('data-pool-id')] = input.checked;
           updateSlipPanel(sale, pools);
+        });
+      });
+
+      // ---- Bulk bidding: locked Excel workbook + paste ----
+      // Every path writes into the same saleEntries map the per-loan grid uses,
+      // so the workbook, paste, and manual entry all flow through one validated submit.
+      function loadBids(poolId, parsedRows, source) {
+        var pool = pools.find(function (p) { return c.pid(p) === poolId; });
+        var roster = (pool && (pool.loan_ids || pool.loanIds)) || [];
+        var inRoster = {}; roster.forEach(function (id) { inRoster[id] = true; });
+        var applied = 0, off = 0, zeros = 0;
+        parsedRows.forEach(function (row) {
+          if (!inRoster[row.loanId]) { off++; return; }
+          if (Number(row.bidPct) === 0) { zeros++; }
+          saleEntries[row.loanId] = String(row.bidPct);
+          applied++;
+        });
+        renderTab('pools', sale, pools);   // rebuild every sheet from the updated entries
+        var st = document.querySelector('[data-role="wb-status"][data-pool-id="' + poolId + '"]');
+        if (st) st.textContent = applied + ' bid' + (applied === 1 ? '' : 's') + ' loaded ' + source +
+          (off ? ' · ' + off + ' off-roster row(s) ignored' : '') +
+          (zeros ? ' · ' + zeros + ' zero(s) will be flagged' : '') + '. Review the derived $ and submit.';
+      }
+
+      content.querySelectorAll('[data-role="wb-download"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (!window.HSG || !HSG.bidWorkbook) { alert('The Excel engine is unavailable on this page.'); return; }
+          var pool = pools.find(function (p) { return c.pid(p) === btn.getAttribute('data-pool-id'); });
+          var label = btn.textContent; btn.disabled = true; btn.textContent = 'Preparing…';
+          HSG.bidWorkbook.download(pool, loans, sale).then(function () {
+            btn.disabled = false; btn.textContent = label;
+          }).catch(function (err) { btn.disabled = false; btn.textContent = label; alert('Could not generate the workbook: ' + err.message); });
+        });
+      });
+      content.querySelectorAll('[data-role="wb-upload-btn"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var input = content.querySelector('[data-role="wb-upload-input"][data-pool-id="' + btn.getAttribute('data-pool-id') + '"]');
+          if (input) input.click();
+        });
+      });
+      content.querySelectorAll('[data-role="wb-upload-input"]').forEach(function (input) {
+        input.addEventListener('change', function () {
+          var file = input.files && input.files[0]; if (!file) return;
+          var poolId = input.getAttribute('data-pool-id');
+          HSG.bidWorkbook.parse(file).then(function (res) {
+            loadBids(res.poolId || poolId, res.rows, 'from ' + file.name);
+          }).catch(function (err) { alert('Could not read the workbook: ' + (err.message || err)); });
+          input.value = '';
+        });
+      });
+      content.querySelectorAll('[data-role="wb-paste"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var poolId = btn.getAttribute('data-pool-id');
+          var pool = pools.find(function (p) { return c.pid(p) === poolId; });
+          var roster = (pool && (pool.loan_ids || pool.loanIds)) || [];
+          function apply(text) {
+            var rows = HSG.bidWorkbook.parsePaste(text, roster);
+            if (!rows.length) { alert('Nothing recognized. Copy a column of percentages (optionally with loan IDs) from your spreadsheet and try again.'); return; }
+            loadBids(poolId, rows, 'pasted');
+          }
+          if (navigator.clipboard && navigator.clipboard.readText) {
+            navigator.clipboard.readText().then(apply).catch(function () { var t = window.prompt('Paste your bids (one % per line, or loan ID + % per line):'); if (t) apply(t); });
+          } else { var t = window.prompt('Paste your bids (one % per line, or loan ID + % per line):'); if (t) apply(t); }
         });
       });
 
