@@ -109,6 +109,7 @@
   }
   function saleById(id) { return (D.sales || []).find(function (s) { return s.saleId === id; }); }
   function loansFor(id) { return (D.loans || []).filter(function (l) { return l.saleId === id; }); }
+  function demoPortalForProgram(p) { return (p === 'MHLS' || p === 'HLS') ? 'commercial' : (p === 'HVLS' || p === 'HNVLS' || p === 'SFLS') ? 'residential' : null; }
   // Bid basis per SALE (sale.bid_basis), with program defaults. Mirrors the server.
   var BASIS_FIELD = { ULB: 'ulb', UPB: 'current_upb', BPO: 'bpo_value', ETD: 'etd_adjusted_bpo' };
   function basisKey(programType, sale) {
@@ -479,9 +480,22 @@
     decodeClaims: function () { return CLAIMS; },
 
     sales: {
-      list: function () {
+      // Mirrors the live backend: residential bidders see HVLS/HNVLS/SFLS, commercial
+      // bidders see MHLS/HLS, admin/super see all. The page's data-portal supplies the
+      // scope when the caller doesn't pass one (the live API derives it from the token).
+      list: function (filter) {
+        filter = filter || {};
+        var scope = filter.portal || (typeof document !== 'undefined' && document.body && document.body.getAttribute('data-portal')) || 'both';
+        if (scope === 'admin' || scope === 'super') scope = 'both';
         var items = (D.sales || []).map(function (s) { return redact(s); });
-        return Promise.resolve({ sales: items, count: items.length, portal: 'both' });
+        if (scope === 'residential' || scope === 'commercial') {
+          items = items.filter(function (s) {
+            var sp = s.portal || demoPortalForProgram(s.programType || s.program);
+            return sp === scope;
+          });
+        }
+        if (filter.programType) items = items.filter(function (s) { return (s.programType || s.program) === filter.programType; });
+        return Promise.resolve({ sales: items, count: items.length, portal: scope });
       },
       get: function (saleId) {
         var s = saleById(saleId);

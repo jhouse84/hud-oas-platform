@@ -2952,7 +2952,7 @@ h1,h2,h3,h4 { letter-spacing: -0.02em; font-weight: 600; }
 
 /* ---- Two-panel auth: navy brand pane + crisp form card ---- */
 .auth-shell { background: var(--color-bg); }
-.auth-brand, .auth-pane--brand, .auth-card__brand {
+.auth-brand, .auth-pane--brand {
   background: linear-gradient(170deg, var(--navy-2) 0%, var(--navy) 60%, var(--navy-deep) 100%);
   color: #fff;
 }
@@ -3010,8 +3010,14 @@ body[data-portal] .stat-card__label { font-family: var(--font-mono); text-transf
 body[data-portal] .stat-card__value { font-family: var(--font-mono); font-feature-settings: 'tnum'; font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); }
 body[data-portal] .tabs__item { font-family: var(--font-mono); letter-spacing: 0.03em; }
 body[data-portal] .tabs__item.active { border-color: var(--color-primary); color: var(--color-primary); }
-body[data-portal] .auth-brand, body[data-portal] .auth-pane--brand, body[data-portal] .auth-card__brand {
+body[data-portal] .auth-brand, body[data-portal] .auth-pane--brand {
   background: linear-gradient(168deg, var(--navy-2) 0%, var(--navy) 60%, var(--navy-deep) 100%);
 }
 body[data-portal] .auth-brand__title { font-family: var(--font-heading); font-weight: 600; letter-spacing: -0.02em; color: #fff; }
+/* The card's small inline brand label keeps the HSG mark (not the navy panel bg) —
+   so the compact login (collapsed brand panel) is still branded. */
+body[data-portal] .auth-card__brand::before {
+  width: 22px; height: 22px; flex: 0 0 22px; border-radius: 0; box-shadow: none;
+  background: url('assets/hsg-mark.svg') center/contain no-repeat;
+}
 

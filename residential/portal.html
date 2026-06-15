@@ -185,6 +185,14 @@
       var saleId = params.saleId;
       Promise.all([HSG.api.sales.get(saleId), HSG.api.sales.pools(saleId), HSG.api.sales.loans(saleId)]).then(function (results) {
         var sale = results[0].sale;
+        // Portal separation: a residential bidder cannot open a commercial sale (or vice versa).
+        var pagePortal = document.body.getAttribute('data-portal');
+        var salePortal = sale.portal || ((sale.programType === 'MHLS' || sale.programType === 'HLS') ? 'commercial' : 'residential');
+        if (pagePortal && salePortal && salePortal !== pagePortal) {
+          alert('That sale is handled in the ' + salePortal + ' portal. Showing your ' + pagePortal + ' sales.');
+          location.hash = '#/sales';
+          return;
+        }
         var pools = (results[1].pools) || sale.pools || [];
         var loans = (results[2] && results[2].loans) || [];
         loanCache[saleId] = loans;
