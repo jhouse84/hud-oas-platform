@@ -53,7 +53,8 @@
   function round2(n) { return Math.round(Number(n) * 100) / 100; }
 
   var store = {
-    bids: load('bids', []),
+    bids: load('bids', (D.seedBids || []).slice()),
+    staffUploads: load('staffUploads', (D.seedStaffUploads || []).slice()),
     qa: load('qa', (D.qa || []).slice()),
     notifications: load('notifications', [{
       notifId: 'NTF-DEMO-WELCOME', recipientId: 'BDR-DEMO', type: 'welcome',
@@ -232,6 +233,79 @@
     return { dd: files(set.dd, 'due-diligence'), collateral: files(set.collateral, 'collateral') };
   }
 
+  // ---- Staff document intake: classify a filename into the VDR taxonomy ----
+  var COLLATERAL_RE = /(^|[_\-\s])(note|mortgage|deed|dot|assignment|allonge|security[_\-\s]?instrument|recorded|lost[_\-\s]?note|hud[_\-\s]?1|settlement[_\-\s]?statement|modification|power[_\-\s]?of[_\-\s]?attorney|poa|title[_\-\s]?policy)([_\-\s]|$)/i;
+  var DOCTYPE_LABEL = {
+    note: 'Promissory Note', mortgage: 'Mortgage / Deed of Trust', deed: 'Mortgage / Deed of Trust', dot: 'Deed of Trust',
+    assignment: 'Assignment of Mortgage', allonge: 'Allonge', titlepolicy: 'Title Policy', recorded: 'Recorded Instrument',
+    lostnote: 'Lost Note Affidavit', hud1: 'HUD-1 Settlement Statement', modification: 'Loan Modification', poa: 'Power of Attorney',
+    bpo: 'Broker Price Opinion (BPO)', valuation: 'Valuation', oae: 'Ownership & Encumbrance (O&E)', title: 'Title Search',
+    servicing: 'Servicing Comments', paymenthistory: 'Payment History', payhist: 'Payment History', collection: 'Collection Notes',
+    occupancy: 'Occupancy / Inspection', inspection: 'Inspection Report', ti: 'Tax & Insurance Advances', tax: 'Tax Records',
+    insurance: 'Insurance', lossmit: 'Loss Mitigation', environmental: 'Environmental Report', operator: 'Operator Financials',
+    rentroll: 'Rent Roll', ar: 'Accounts Receivable', cms: 'CMS / Regulatory', regulatory: 'Regulatory File'
+  };
+  var SALE_FOLDER_RULES = [
+    [/bidder[_\-\s]?information|(^|[_\-\s])bip([_\-\s]|$)|supplement/i, 'Bidder Information Package'],
+    [/(^|[_\-\s])(ald|sald)([_\-\s]|$)|loan[_\-\s]?tape|stratification|(^|[_\-\s])tape([_\-\s]|$)/i, 'Loan Tape'],
+    [/procedure|instruction|bid[_\-\s]?day/i, 'Procedures'],
+    [/asset[_\-\s]?summar/i, 'Asset Summaries'],
+    [/bauf|btaf|caa|conditional[_\-\s]?acceptance|loan[_\-\s]?sale[_\-\s]?agreement|deposit|change[_\-\s]?form|confidential|(^|[_\-\s])(nda|ca)([_\-\s]|$)|(^|[_\-\s])forms?([_\-\s]|$)|agreement/i, 'Forms & Agreements']
+  ];
+  function prettyDocType(token, group) {
+    var k = String(token || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (DOCTYPE_LABEL[k]) return DOCTYPE_LABEL[k];
+    var pretty = String(token || '').replace(/[_\-]+/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); }).trim();
+    return pretty || (group === 'collateral' ? 'Collateral Document' : 'Due Diligence Document');
+  }
+  function classifyFileName(fileName, assets) {
+    var base = String(fileName || '').replace(/\.[^.]+$/, '');
+    var spaced = base.replace(/([a-z0-9])([A-Z])/g, '$1 $2');   // split camelCase so keywords are bounded
+    // Match an asset by normalized (alphanumeric-only) substring, so the FHA case
+    // matches regardless of how the filename delimits it (the case # itself has hyphens).
+    var fnNorm = base.toLowerCase().replace(/[^a-z0-9]/g, '');
+    var asset = null;
+    for (var ai = 0; ai < (assets || []).length; ai++) {
+      var a0 = assets[ai];
+      var fhaN = String(a0.fhaCase).toLowerCase().replace(/[^a-z0-9]/g, '');
+      var loanN = String(a0.loanId).toLowerCase().replace(/[^a-z0-9]/g, '');
+      if ((fhaN.length >= 6 && fnNorm.indexOf(fhaN) >= 0) || (loanN.length >= 6 && fnNorm.indexOf(loanN) >= 0)) { asset = a0; break; }
+    }
+    if (asset) {
+      function esc2(x) { return String(x).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+      var dt = spaced.replace(/^[A-Za-z]{2}[_\-\s]+/, '')
+        .replace(new RegExp(esc2(asset.fhaCase), 'i'), ' ')
+        .replace(new RegExp(esc2(asset.loanId), 'i'), ' ')
+        .replace(/[_\-\s]+/g, ' ').trim();
+      var group = COLLATERAL_RE.test(spaced) ? 'collateral' : 'dd';
+      return { scope: 'asset', loanId: asset.loanId, fhaCase: asset.fhaCase, assetLabel: asset.label, state: asset.state,
+        group: group, docType: prettyDocType(dt || 'Document', group), confidence: 'high' };
+    }
+    for (var i = 0; i < SALE_FOLDER_RULES.length; i++) {
+      if (SALE_FOLDER_RULES[i][0].test(base)) {
+        return { scope: 'sale', folder: SALE_FOLDER_RULES[i][1], docType: prettyDocType((base.replace(SALE_FOLDER_RULES[i][0], ' ').trim()) || SALE_FOLDER_RULES[i][1]), confidence: 'medium' };
+      }
+    }
+    return { scope: 'review', docType: prettyDocType(base), confidence: 'low' };
+  }
+  // Overlay committed staff uploads onto a clean VDR baseline.
+  function mergeStaffUploads(v, saleId, bidderOnly) {
+    var saleDocs = v.saleDocs.slice();
+    var assets = v.assets.map(function (a) { return Object.assign({}, a, { dd: a.dd.slice(), collateral: a.collateral.slice() }); });
+    var byId = {}; assets.forEach(function (a) { byId[a.loanId] = a; byId[a.fhaCase] = a; });
+    store.staffUploads.filter(function (u) {
+      return u.saleId === saleId && u.status === 'classified' && (!bidderOnly || u.visibility === 'bidder');
+    }).forEach(function (u) {
+      var f = { docId: u.uploadId, uploadId: u.uploadId, key: u.key, name: u.fileName, title: u.title || u.docType,
+        folder: u.folder, contentType: u.contentType || 'PDF', size: u.size || 0,
+        group: u.group === 'collateral' ? 'collateral' : (u.scope === 'asset' ? 'due-diligence' : undefined),
+        staff: true, visibility: u.visibility };
+      if (u.scope === 'asset') { var a = byId[u.loanId] || byId[u.fhaCase]; if (a) { (u.group === 'collateral' ? a.collateral : a.dd).push(f); a.docCount = a.dd.length + a.collateral.length; } else saleDocs.push(f); }
+      else saleDocs.push(f);
+    });
+    return { saleDocs: saleDocs, assets: assets };
+  }
+
   function vdrForSale(saleId) {
     var s = saleById(saleId) || {};
     var name = s.sale_name || saleId;
@@ -268,6 +342,8 @@
   }
 
   function findVdrDoc(saleId, docKey) {
+    var su = store.staffUploads.find(function (u) { return u.saleId === saleId && u.key === docKey; });
+    if (su) return { name: su.fileName, title: su.title || su.docType, folder: su.folder, group: su.group === 'collateral' ? 'collateral' : (su.scope === 'asset' ? 'due-diligence' : undefined) };
     var v = vdrForSale(saleId);
     var hit = v.saleDocs.find(function (d) { return d.key === docKey; });
     if (hit) return hit;
@@ -522,7 +598,7 @@
 
     docs: {
       listForSale: function (saleId) {
-        var v = vdrForSale(saleId);
+        var v = mergeStaffUploads(vdrForSale(saleId), saleId, true);   // bidders see bidder-visible staff uploads
         // Legacy flat list retained for any caller still expecting `docs`
         var flat = v.saleDocs.slice();
         v.assets.forEach(function (a) { flat = flat.concat(a.dd, a.collateral); });
@@ -544,6 +620,70 @@
       },
       logAccess: function () { return Promise.resolve({ ok: true }); },
       presignUpload: function () { return fail('Uploads are disabled in the demonstration', 403); }
+    },
+
+    // ---- HSG staff document intake: scan → auto-classify → organize → publish ----
+    staffDocs: {
+      // Auto-classify a batch of filenames against the sale's assets (no commit).
+      classify: function (saleId, fileMetas) {
+        var assets = vdrForSale(saleId).assets;
+        return Promise.resolve({ results: (fileMetas || []).map(function (m) {
+          var c = classifyFileName(m.fileName, assets);
+          c.fileName = m.fileName; c.size = m.size || 0; c.contentType = m.contentType || 'PDF';
+          c.visibility = c.scope === 'review' ? 'admin' : 'bidder';
+          return c;
+        }) });
+      },
+      // Commit reviewed classifications into the data room.
+      commit: function (saleId, records, actor) {
+        var saved = (records || []).map(function (r) {
+          var id = uid('DOC');
+          var rec = {
+            uploadId: id, saleId: saleId, fileName: r.fileName, title: r.title || r.docType || r.fileName,
+            size: r.size || 0, contentType: r.contentType || 'PDF',
+            scope: r.scope || 'review', folder: r.folder || null, loanId: r.loanId || null, fhaCase: r.fhaCase || null,
+            group: r.group || null, docType: r.docType || null,
+            visibility: r.visibility || (r.scope === 'review' ? 'admin' : 'bidder'),
+            status: r.scope && r.scope !== 'review' ? 'classified' : 'review',
+            key: 'Staff/' + (r.scope || 'review') + '/' + id + '_' + String(r.fileName || 'file').replace(/[^\w.\-]+/g, '_'),
+            uploadedBy: actor || 'HSG staff', uploadedAt: now()
+          };
+          store.staffUploads.unshift(rec);
+          return rec;
+        });
+        record('documents-uploaded', saleId + ' · ' + saved.length + ' file(s) intake');
+        persist();
+        return Promise.resolve({ saved: saved, count: saved.length });
+      },
+      // The organized data room as staff see it: baseline + all staff uploads + the review queue + stats.
+      overview: function (saleId) {
+        var v = mergeStaffUploads(vdrForSale(saleId), saleId, false);
+        var mine = store.staffUploads.filter(function (u) { return u.saleId === saleId; });
+        var review = mine.filter(function (u) { return u.status === 'review'; });
+        var classified = mine.filter(function (u) { return u.status === 'classified'; });
+        var assetsCovered = v.assets.filter(function (a) { return (a.dd.length + a.collateral.length) > 0; }).length;
+        var stats = {
+          saleDocs: v.saleDocs.length, assets: v.assets.length, assetsCovered: assetsCovered,
+          totalFiles: v.saleDocs.length + v.assets.reduce(function (s, a) { return s + a.dd.length + a.collateral.length; }, 0),
+          staffAdded: classified.length, needsReview: review.length,
+          bidderVisible: classified.filter(function (u) { return u.visibility === 'bidder'; }).length,
+          adminOnly: classified.filter(function (u) { return u.visibility === 'admin'; }).length
+        };
+        return Promise.resolve({ saleId: saleId, saleDocs: v.saleDocs, assets: v.assets, review: review, uploads: mine, stats: stats });
+      },
+      update: function (uploadId, patch) {
+        var u = store.staffUploads.find(function (x) { return x.uploadId === uploadId; });
+        if (!u) return fail('Upload not found', 404);
+        Object.assign(u, patch);
+        if (patch.scope && patch.scope !== 'review') u.status = 'classified';
+        persist();
+        return Promise.resolve({ upload: u });
+      },
+      remove: function (uploadId) {
+        store.staffUploads = store.staffUploads.filter(function (x) { return x.uploadId !== uploadId; });
+        persist();
+        return Promise.resolve({ ok: true });
+      }
     },
 
     qa: {

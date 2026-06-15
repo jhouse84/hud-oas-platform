@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data Room · HUD OAS Admin</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <link rel="stylesheet" href="_shell.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    .dz { border: 1.5px dashed var(--color-border-strong); border-radius: var(--radius-xl); background: var(--color-surface); padding: 30px; text-align: center; transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out); cursor: pointer; }
+    .dz:hover, .dz.drag { border-color: var(--color-primary); background: var(--color-primary-bg); }
+    .dz__icon { width: 46px; height: 46px; border-radius: 12px; background: var(--color-primary-bg); color: var(--color-primary); display: grid; place-items: center; margin: 0 auto 12px; }
+    .dz__hint { font-size: 12.5px; color: var(--color-text-muted); margin-top: 6px; }
+    .dz__hint code { font-family: var(--font-mono); font-size: 12px; background: var(--color-surface-2); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--color-border); }
+
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 22px; }
+
+    .rev { border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 22px; }
+    .rev__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--color-border); background: var(--color-surface-2); }
+    .rev__row { display: grid; grid-template-columns: minmax(180px, 1.4fr) auto auto auto auto 30px; gap: 10px; align-items: center; padding: 10px 18px; border-bottom: 1px solid var(--color-divider); font-size: 13px; }
+    .rev__row:last-child { border-bottom: none; }
+    .rev__fn { font-family: var(--font-mono); font-size: 12px; color: var(--color-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rev__row select, .rev__row input { font-size: 12.5px; padding: 6px 8px; }
+    .conf { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; }
+    .conf--high { background: var(--color-success-bg); color: var(--color-success); }
+    .conf--medium { background: var(--color-info-bg); color: var(--color-info); }
+    .conf--low { background: var(--color-warning-bg); color: var(--color-warning); }
+
+    .folder { border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); overflow: hidden; margin-bottom: 10px; }
+    .folder > summary { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; padding: 12px 16px; cursor: pointer; list-style: none; color: var(--color-text); display: flex; align-items: center; gap: 8px; }
+    .folder > summary::-webkit-details-marker { display: none; }
+    .asset { border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); overflow: hidden; margin-bottom: 8px; }
+    .asset > summary { display: flex; align-items: center; gap: 13px; padding: 12px 16px; cursor: pointer; list-style: none; }
+    .asset > summary::-webkit-details-marker { display: none; }
+    .grp { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; display: flex; align-items: center; gap: 7px; margin: 12px 0 6px; }
+    .grp__dot { width: 8px; height: 8px; border-radius: 2px; }
+    .frow { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--color-divider); font-size: 13px; }
+    .frow:last-child { border-bottom: none; }
+    .vis { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.03em; padding: 2px 7px; border-radius: 5px; cursor: pointer; border: 1px solid transparent; }
+    .vis--bidder { background: var(--color-success-bg); color: var(--color-success); border-color: rgba(4,120,87,0.18); }
+    .vis--admin { background: var(--color-surface-2); color: var(--color-text-muted); border-color: var(--color-border); }
+    .x { color: var(--color-text-faint); cursor: pointer; font-size: 15px; }
+    .x:hover { color: var(--color-error); }
+    .sect-h { font-family: var(--font-heading); font-size: 18px; font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); margin: 26px 0 10px; }
+  </style>
+</head>
+<body data-portal="admin">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-label">HUD OAS Admin</div>
+        <div class="sidebar__brand-name">Console</div>
+      </div>
+      <div class="sidebar__section">Overview</div>
+      <a class="sidebar__nav-item" href="index.html">Dashboard</a>
+      <a class="sidebar__nav-item" href="bidders.html">Bidders</a>
+      <a class="sidebar__nav-item active" href="dataroom.html">Data room</a>
+      <a class="sidebar__nav-item" href="bid-day.html">Bid day ops</a>
+      <a class="sidebar__nav-item" href="bem.html">BEM &amp; awards</a>
+      <div class="sidebar__section">Post-sale</div>
+      <a class="sidebar__nav-item" href="qa.html">Q&amp;A inbox</a>
+      <a class="sidebar__nav-item" href="settlements.html">Settlements</a>
+      <a class="sidebar__nav-item" href="compliance.html">Compliance &amp; QC</a>
+      <div class="sidebar__user">
+        <div id="user-name" style="color: #FFF; font-weight: 600;">…</div>
+        <div id="user-email" style="font-size: var(--text-xs); opacity: 0.7;"></div>
+        <a href="#" id="signout-link" style="display: inline-block; margin-top: var(--space-2); color: var(--color-primary-light); text-decoration: underline; font-size: var(--text-sm);">Sign out</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="main__header">
+        <div>
+          <h1 class="main__title">Data Room</h1>
+          <div style="font-size: 12.5px; color: var(--color-text-muted); margin-top: 2px;">Scan, upload, auto-classify, and publish sale documents</div>
+        </div>
+        <select class="form-select" id="sale-select" style="width: auto;"></select>
+      </header>
+      <div class="main__content" id="app"><p class="empty">Loading…</p></div>
+    </div>
+  </div>
+
+  <input type="file" id="file-input" multiple accept=".pdf,.tif,.tiff,.png,.jpg,.jpeg,.docx,.xlsx" style="display: none;" />
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="../demo/data.js"></script>
+  <script src="../demo/gnma/data.js"></script>
+  <script src="../shared/api-demo.js"></script>
+  <script>
+  (function () {
+    var u = HSG.utils;
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
+    function kb(n){ if(!n) return '—'; return n>=1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB'; }
+
+    if (!HSG.cognito.isAuthenticated()) { window.location.href = 'login.html?next=dataroom.html'; return; }
+    var claims = HSG.api.decodeClaims() || {};
+    document.getElementById('user-name').textContent = claims['custom:entityName'] || claims.email || 'Admin';
+    document.getElementById('user-email').textContent = claims.email || '';
+    document.getElementById('signout-link').addEventListener('click', function(e){ e.preventDefault(); HSG.cognito.signOut(); window.location.href='login.html'; });
+
+    if (!HSG.api.staffDocs) { document.getElementById('app').innerHTML = '<div class="error-box">Document intake runs in demonstration mode. Open a portal with <code>?demo=1</code> to try it.</div>'; }
+
+    var $app = document.getElementById('app');
+    var $file = document.getElementById('file-input');
+    var currentSale = null, assets = [], pending = null;
+
+    function load() {
+      HSG.api.sales.list({}).then(function (r) {
+        var sales = (r && r.sales) || [];
+        var sel = document.getElementById('sale-select');
+        sel.innerHTML = sales.map(function (s) { var id=s.saleId||s.sale_id; return '<option value="'+esc(id)+'">'+esc(s.long_name||s.sale_name||s.name||id)+'</option>'; }).join('') || '<option value="">No sales</option>';
+        sel.addEventListener('change', function(){ selectSale(sel.value); });
+        if (sales.length) selectSale(sales[0].saleId || sales[0].sale_id);
+      }).catch(function(err){ $app.innerHTML = '<div class="error-box">'+esc(err.message)+'</div>'; });
+    }
+
+    function selectSale(saleId) {
+      currentSale = saleId; pending = null;
+      $app.innerHTML = '<p class="empty">Loading data room…</p>';
+      HSG.api.staffDocs.overview(saleId).then(function (data) {
+        assets = data.assets || [];
+        render(data);
+      }).catch(function(err){ $app.innerHTML = '<div class="error-box">'+esc(err.message)+'</div>'; });
+    }
+
+    function render(data) {
+      var s = data.stats || {};
+      var coverage = s.assets ? Math.round(s.assetsCovered / s.assets * 100) : 0;
+      var html = '';
+      // KPIs
+      html += '<div class="kpis">' +
+        kpi('Total files', s.totalFiles) +
+        kpi('Asset coverage', coverage + '%', s.assetsCovered + ' / ' + s.assets + ' assets') +
+        kpi('Staff-added', s.staffAdded) +
+        kpi('Needs review', s.needsReview, null, s.needsReview ? 'warn' : '') +
+        kpi('Bidder-visible', s.bidderVisible) +
+      '</div>';
+
+      // Upload zone
+      html += '<div class="dz" id="dz">' +
+        '<div class="dz__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></div>' +
+        '<div style="font-weight: 600; color: var(--color-ink);">Drop scanned files here, or click to browse</div>' +
+        '<div class="dz__hint">Files named <code>STATE_FHA#_DOCTYPE.pdf</code> auto-file to the right asset. Sale documents (BIP, tape, procedures, forms) route by name. Anything unmatched lands in review.</div>' +
+      '</div>';
+
+      // Review/commit panel
+      html += '<div id="review-mount"></div>';
+
+      // Needs-review queue
+      if ((data.review || []).length) {
+        html += '<div class="sect-h">Needs review <span style="font-family: var(--font-mono); font-size: 13px; color: var(--color-warning);">· ' + data.review.length + '</span></div>';
+        html += '<div class="folder" open style="border-color: rgba(180,83,9,0.3);"><div style="padding: 6px 16px 12px;">' +
+          data.review.map(reviewQueueRow).join('') + '</div></div>';
+      }
+
+      // Organized VDR
+      var saleFolders = {};
+      (data.saleDocs || []).forEach(function (d) { (saleFolders[d.folder || 'Sale Documents'] = saleFolders[d.folder || 'Sale Documents'] || []).push(d); });
+      var stateSet = {}; assets.forEach(function (a) { if (a.state && a.state !== '—') stateSet[a.state] = true; });
+
+      html += '<div class="sect-h">Organized data room</div>';
+      html += '<div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;">' +
+        '<input class="form-input" id="dr-search" placeholder="Search case #, property, city, or document…" style="flex:1; min-width:240px;" />' +
+        '<select class="form-select" id="dr-state" style="width:auto;"><option value="">All states</option>' + Object.keys(stateSet).sort().map(function(x){return '<option>'+esc(x)+'</option>';}).join('') + '</select>' +
+      '</div>';
+
+      html += '<div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--color-text-muted); margin:8px 2px;">Sale documents · ' + (data.saleDocs||[]).length + '</div>';
+      html += Object.keys(saleFolders).map(function (f) {
+        return '<details class="folder" open><summary><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7a2 2 0 0 1 2-2h3l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>' + esc(f) + ' <span style="color:var(--color-text-muted);">· ' + saleFolders[f].length + '</span></summary>' +
+          '<div style="padding: 0 16px 12px;">' + saleFolders[f].map(fileRow).join('') + '</div></details>';
+      }).join('') || '<p class="empty" style="padding:18px;">No sale documents yet.</p>';
+
+      html += '<div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--color-text-muted); margin:18px 2px 8px;">Asset files · ' + assets.length + ' assets</div>';
+      html += '<div id="dr-assets">' + assets.map(assetBlock).join('') + '</div>';
+      html += '<p id="dr-noresults" class="empty" style="display:none;">No assets match.</p>';
+
+      $app.innerHTML = html;
+      wire(data);
+    }
+
+    function kpi(label, value, sub, tone) {
+      return '<div class="stat-card"><div class="stat-card__label">' + esc(label) + '</div>' +
+        '<div class="stat-card__value" style="font-size:24px; margin-top:5px;' + (tone==='warn'&&value?' color:var(--color-warning);':'') + '">' + esc(value==null?'—':value) + '</div>' +
+        (sub ? '<div style="font-size:11px; color:var(--color-text-faint); margin-top:3px;">'+esc(sub)+'</div>' : '') + '</div>';
+    }
+
+    function fileRow(d) {
+      var staff = d.staff;
+      return '<div class="frow" data-text="' + esc(((d.name||'')+' '+(d.title||'')).toLowerCase()) + '">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-faint)" stroke-width="1.7" style="flex:none;"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M5 3h9l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg>' +
+        '<span style="flex:1; min-width:0;"><span style="font-weight:500;">' + esc(d.title || d.name) + '</span>' +
+          '<span style="font-family:var(--font-mono); font-size:11px; color:var(--color-text-faint); margin-left:8px;">' + esc(d.name||'') + '</span></span>' +
+        '<span style="font-family:var(--font-mono); font-size:12px; color:var(--color-text-muted); white-space:nowrap;">' + esc(kb(d.size)) + '</span>' +
+        (staff ? '<span class="vis vis--' + (d.visibility==='bidder'?'bidder':'admin') + '" data-vis="' + esc(d.uploadId) + '">' + (d.visibility==='bidder'?'Bidder-visible':'Admin only') + '</span><span class="x" data-rm="' + esc(d.uploadId) + '" title="Remove">×</span>' : '<span class="vis vis--bidder" style="cursor:default;">Baseline</span><span style="width:15px;"></span>') +
+      '</div>';
+    }
+
+    function assetBlock(a) {
+      var place = [a.city, a.state].filter(Boolean).join(', ');
+      var text = [a.loanId, a.fhaCase, a.label, a.city, a.state].concat((a.dd||[]).map(function(d){return d.name;})).concat((a.collateral||[]).map(function(d){return d.name;})).join(' ').toLowerCase();
+      function grp(label, files, color) {
+        if (!files || !files.length) return '<div style="font-size:12px; color:var(--color-text-faint); margin:8px 0;">No ' + label.toLowerCase() + ' yet.</div>';
+        return '<div class="grp" style="color:'+color+';"><span class="grp__dot" style="background:'+color+';"></span>' + label + ' <span style="color:var(--color-text-muted);">· ' + files.length + '</span></div>' + files.map(fileRow).join('');
+      }
+      return '<details class="asset" data-asset data-state="' + esc(a.state) + '" data-text="' + esc(text) + '">' +
+        '<summary>' +
+          '<span style="font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--color-primary); white-space:nowrap;">' + esc(a.fhaCase||a.loanId) + '</span>' +
+          '<span style="font-weight:600; color:var(--color-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(a.label||'') + '</span>' +
+          '<span style="font-size:12.5px; color:var(--color-text-muted); white-space:nowrap;">' + esc(place) + '</span>' +
+          '<span style="margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--color-text-muted);">' + ((a.dd||[]).length+(a.collateral||[]).length) + ' files</span>' +
+        '</summary>' +
+        '<div style="padding: 2px 16px 14px; border-top:1px solid var(--color-divider);">' +
+          grp('Due Diligence Files', a.dd, 'var(--color-primary)') +
+          grp('Collateral Files', a.collateral, '#8C5A00') +
+        '</div>' +
+      '</details>';
+    }
+
+    function reviewQueueRow(uObj) {
+      return '<div class="frow"><span class="conf conf--low">REVIEW</span>' +
+        '<span style="flex:1; font-family:var(--font-mono); font-size:12px;">' + esc(uObj.fileName) + '</span>' +
+        '<button class="btn-portal btn-portal--ghost" style="font-size:12px; padding:5px 11px;" data-assign="' + esc(uObj.uploadId) + '">Assign…</button>' +
+        '<span class="x" data-rm="' + esc(uObj.uploadId) + '">×</span></div>';
+    }
+
+    // ---- Upload → classify → review ----
+    function onFiles(fileList) {
+      var metas = Array.from(fileList).map(function (f) { return { fileName: f.name, size: f.size, contentType: (f.type || 'PDF') }; });
+      if (!metas.length) return;
+      HSG.api.staffDocs.classify(currentSale, metas).then(function (r) {
+        pending = (r.results || []).map(function (c, i) { c._id = 'p' + i + '_' + Date.now(); return c; });
+        renderReview();
+      });
+    }
+
+    function renderReview() {
+      var mount = document.getElementById('review-mount');
+      if (!pending || !pending.length) { mount.innerHTML = ''; return; }
+      var fhaOpts = '<datalist id="fha-list">' + assets.slice(0, 1200).map(function(a){return '<option value="'+esc(a.fhaCase)+'">'+esc(a.label||'')+'</option>';}).join('') + '</datalist>';
+      var rows = pending.map(function (p) {
+        var isAsset = p.scope === 'asset', isSale = p.scope === 'sale';
+        return '<div class="rev__row" data-pid="' + p._id + '">' +
+          '<span class="rev__fn" title="' + esc(p.fileName) + '">' + esc(p.fileName) + '</span>' +
+          '<select data-f="scope">' + opt('asset','Asset file',p.scope) + opt('sale','Sale document',p.scope) + opt('review','Needs review',p.scope) + '</select>' +
+          '<input data-f="fha" list="fha-list" placeholder="FHA #" value="' + esc(p.fhaCase||'') + '" style="width:120px;' + (isAsset?'':'display:none;') + '" />' +
+          '<select data-f="group" style="' + (isAsset?'':'display:none;') + '">' + opt('dd','Due diligence',p.group) + opt('collateral','Collateral',p.group) + '</select>' +
+          '<select data-f="folder" style="' + (isSale?'':'display:none;') + '">' + ['Bidder Information Package','Loan Tape','Procedures','Forms & Agreements','Asset Summaries'].map(function(f){return opt(f,f,p.folder);}).join('') + '</select>' +
+          '<select data-f="visibility">' + opt('bidder','Bidder-visible',p.visibility) + opt('admin','Admin only',p.visibility) + '</select>' +
+          '<span class="x" data-drop="' + p._id + '" title="Skip">×</span>' +
+        '</div>';
+      }).join('');
+      mount.innerHTML = fhaOpts + '<div class="rev"><div class="rev__head">' +
+          '<div><strong>' + pending.length + ' file' + (pending.length===1?'':'s') + ' ready</strong> <span style="color:var(--color-text-muted); font-size:12.5px;">— auto-classified; adjust any row, then publish.</span></div>' +
+          '<div style="display:flex; gap:8px;"><button class="btn-portal btn-portal--ghost" id="rev-cancel" style="font-size:12.5px;">Cancel</button>' +
+          '<button class="btn-portal" id="rev-commit" style="font-size:12.5px;">Publish ' + pending.length + ' to data room</button></div>' +
+        '</div>' + rows + '</div>';
+      wireReview();
+    }
+    function opt(v, label, cur){ return '<option value="'+esc(v)+'"'+(cur===v?' selected':'')+'>'+esc(label)+'</option>'; }
+
+    function wireReview() {
+      var mount = document.getElementById('review-mount');
+      mount.querySelectorAll('.rev__row').forEach(function (row) {
+        var pid = row.getAttribute('data-pid');
+        var p = pending.find(function(x){return x._id===pid;});
+        row.querySelectorAll('[data-f]').forEach(function (ctl) {
+          ctl.addEventListener('change', function () {
+            p[ctl.getAttribute('data-f')] = ctl.value;
+            if (ctl.getAttribute('data-f') === 'scope') renderReview();
+          });
+        });
+        var drop = row.querySelector('[data-drop]');
+        if (drop) drop.addEventListener('click', function () { pending = pending.filter(function(x){return x._id!==pid;}); renderReview(); });
+      });
+      document.getElementById('rev-cancel').addEventListener('click', function(){ pending=null; renderReview(); });
+      document.getElementById('rev-commit').addEventListener('click', commit);
+    }
+
+    function commit() {
+      var records = pending.map(function (p) {
+        var rec = { fileName: p.fileName, size: p.size, contentType: p.contentType, scope: p.scope, docType: p.docType, title: p.docType || p.fileName, visibility: p.visibility };
+        if (p.scope === 'asset') {
+          var fv = p.fha != null && p.fha !== '' ? p.fha : p.fhaCase;
+          var a = assets.find(function(x){ return String(x.fhaCase)===String(fv) || String(x.loanId)===String(fv); });
+          if (!a) { rec.scope = 'review'; } else { rec.loanId=a.loanId; rec.fhaCase=a.fhaCase; rec.group = p.group || 'dd'; }
+        } else if (p.scope === 'sale') { rec.folder = p.folder || 'Forms & Agreements'; }
+        return rec;
+      });
+      HSG.api.staffDocs.commit(currentSale, records, claims.email || 'HSG staff').then(function () {
+        pending = null; selectSale(currentSale);
+      }).catch(function(err){ alert('Publish failed: ' + (err.message||err)); });
+    }
+
+    function wire(data) {
+      // dropzone
+      var dz = document.getElementById('dz');
+      dz.addEventListener('click', function(){ $file.click(); });
+      ['dragover','dragenter'].forEach(function(ev){ dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.add('drag'); }); });
+      ['dragleave','dragend','drop'].forEach(function(ev){ dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.remove('drag'); }); });
+      dz.addEventListener('drop', function(e){ if (e.dataTransfer && e.dataTransfer.files) onFiles(e.dataTransfer.files); });
+      $file.onchange = function(){ if ($file.files) onFiles($file.files); $file.value=''; };
+      if (pending) renderReview();
+
+      // visibility toggle + remove (on committed staff files)
+      $app.querySelectorAll('[data-vis]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var id = el.getAttribute('data-vis');
+          var next = el.classList.contains('vis--bidder') ? 'admin' : 'bidder';
+          HSG.api.staffDocs.update(id, { visibility: next }).then(function(){ selectSale(currentSale); });
+        });
+      });
+      $app.querySelectorAll('[data-rm]').forEach(function (el) {
+        el.addEventListener('click', function () { if (!confirm('Remove this file from the data room?')) return; HSG.api.staffDocs.remove(el.getAttribute('data-rm')).then(function(){ selectSale(currentSale); }); });
+      });
+      $app.querySelectorAll('[data-assign]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var id = el.getAttribute('data-assign');
+          var fha = prompt('Assign to which asset? Enter the FHA case # (or leave blank for a sale document):');
+          if (fha === null) return;
+          var a = assets.find(function(x){ return String(x.fhaCase)===String(fha.trim()) || String(x.loanId)===String(fha.trim()); });
+          if (a) HSG.api.staffDocs.update(id, { scope:'asset', loanId:a.loanId, fhaCase:a.fhaCase, group:'dd', visibility:'bidder' }).then(function(){ selectSale(currentSale); });
+          else if (!fha.trim()) HSG.api.staffDocs.update(id, { scope:'sale', folder:'Forms & Agreements', visibility:'bidder' }).then(function(){ selectSale(currentSale); });
+          else alert('No asset with FHA # ' + fha);
+        });
+      });
+
+      // search/filter
+      var search = document.getElementById('dr-search'), stateSel = document.getElementById('dr-state');
+      function applyFilters() {
+        var q = (search.value||'').toLowerCase().trim(), st = stateSel.value, visible=0;
+        $app.querySelectorAll('[data-asset]').forEach(function (el) {
+          var hit = (!q || el.getAttribute('data-text').indexOf(q)>=0) && (!st || el.getAttribute('data-state')===st);
+          el.style.display = hit ? '' : 'none'; if (hit) { visible++; if (q) el.open = true; }
+        });
+        document.getElementById('dr-noresults').style.display = visible ? 'none' : '';
+      }
+      if (search) { search.addEventListener('input', u.debounce(applyFilters, 150)); stateSel.addEventListener('change', applyFilters); }
+    }
+
+    load();
+  })();
+  </script>
+</body>
+</html>
