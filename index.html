@@ -49,10 +49,34 @@
     .pcard:hover .pcard__enter svg { transform: translateX(4px); }
 
     .gw__foot { margin-top: 56px; padding-top: var(--space-6); border-top: 1px solid var(--color-border); font-size: 12.5px; color: var(--color-text-muted); max-width: 80ch; line-height: 1.6; }
+
+    .gw__brandbar { display: flex; align-items: center; justify-content: space-between; gap: 20px 28px; flex-wrap: wrap; padding-bottom: clamp(28px, 5vh, 48px); margin-bottom: clamp(28px, 5vh, 48px); border-bottom: 1px solid var(--color-border); }
+    .gw__lockup { display: flex; align-items: center; gap: 13px; }
+    .gw__lockup img { width: 46px; height: 46px; border-radius: 11px; box-shadow: var(--shadow-sm); }
+    .gw__lockup-name { display: flex; flex-direction: column; line-height: 1.15; }
+    .gw__lockup-name b { font-family: var(--font-heading); font-weight: 600; font-size: 15px; letter-spacing: -0.01em; color: var(--color-ink); }
+    .gw__lockup-name span { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-faint); margin-top: 2px; }
+    .gw__sellers { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .gw__sellers-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-faint); }
+    .seller-wm { font-weight: 600; font-size: 13px; letter-spacing: -0.005em; display: inline-flex; align-items: center; gap: 8px; }
+    .seller-wm::before { content: ''; width: 9px; height: 9px; border-radius: 2px; }
+    .seller-wm--hud { color: #002D72; } .seller-wm--hud::before { background: #002D72; }
+    .seller-wm--gnma { color: #0A2A4E; } .seller-wm--gnma::before { background: linear-gradient(135deg, #0A2A4E, #00A39A); }
   </style>
 </head>
 <body>
   <main class="gw">
+    <div class="gw__brandbar">
+      <div class="gw__lockup">
+        <img src="shared/assets/hsg-logo.jpg" alt="House Strategies Group" />
+        <div class="gw__lockup-name"><b>House Strategies Group</b><span>Transaction Platform</span></div>
+      </div>
+      <div class="gw__sellers">
+        <span class="gw__sellers-label">Transaction platform for</span>
+        <span class="seller-wm seller-wm--hud">HUD · Office of Asset Sales</span>
+        <span class="seller-wm seller-wm--gnma">Ginnie Mae</span>
+      </div>
+    </div>
     <header class="gw__head">
       <span class="gw__eyebrow">House Strategies Group · HUD Office of Asset Sales</span>
       <h1 class="gw__title">The HUD OAS<br/><em>Transaction Platform</em></h1>

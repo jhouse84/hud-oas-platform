@@ -16,7 +16,7 @@
  */
 
 /* ---- Google Fonts -------------------------------------------------------- */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 /* ==========================================================================
    1. CSS Reset
@@ -2810,4 +2810,208 @@ h1, h2, h3 { color: var(--color-ink); }
 
 /* -- Portal banner: subtle gradient --------------------------------------- */
 .portal-banner { background: linear-gradient(90deg, var(--color-portal-dark), var(--color-portal)); }
+
+/* ============================================================================
+   ✦ PRECISION — light data surfaces on deep-navy chrome (2026-06)
+   Mercury × Stripe × Linear. One disciplined accent, hairline depth, tabular
+   numerics, geometric sans. This layer supersedes earlier skins.
+   ============================================================================ */
+:root {
+  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  --color-bg:           #F5F6F8;
+  --color-surface:      #FFFFFF;
+  --color-surface-2:    #FAFBFC;
+  --color-border:       #E6E8EC;
+  --color-divider:      #EEF0F3;
+  --color-border-strong:#D6D9DF;
+  --color-text:         #0E1117;
+  --color-ink:          #0E1117;
+  --color-text-muted:   #5B616E;
+  --color-text-faint:   #9AA0AC;
+
+  --navy:      #0B1B33;
+  --navy-2:    #0C1E3A;
+  --navy-deep: #081225;
+  --navy-text: #9DB0CC;
+
+  --color-primary:      #2563EB;
+  --color-primary-dark: #1D4ED8;
+  --color-primary-light:#3B82F6;
+  --color-primary-bg:   #EFF4FF;
+  --accent-ring:        rgba(37,99,235,0.32);
+
+  --color-success: #047857; --color-success-bg: #ECFDF5;
+  --color-error:   #DC2626; --color-error-bg:   #FEF2F2;
+  --color-warning: #B45309; --color-warning-bg: #FFFBEB;
+  --color-info:    #2563EB; --color-info-bg:    #EFF4FF;
+
+  --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px;
+
+  --shadow-sm: 0 1px 2px rgba(16,17,23,0.05), 0 1px 1px rgba(16,17,23,0.03);
+  --shadow-md: 0 1px 2px rgba(16,17,23,0.04), 0 4px 14px rgba(16,17,23,0.07);
+  --shadow-lg: 0 2px 5px rgba(16,17,23,0.05), 0 14px 32px rgba(16,17,23,0.11);
+  --shadow-xl: 0 10px 48px rgba(16,17,23,0.16);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Unify every portal to the single electric accent + navy chrome */
+body[data-portal] {
+  --color-portal: #2563EB; --color-portal-soft: #EFF4FF; --color-portal-bright: #3B82F6; --color-portal-dark: #1D4ED8;
+  --color-primary: #2563EB; --color-primary-bg: #EFF4FF; --color-primary-light: #3B82F6; --color-primary-dark: #1D4ED8;
+}
+
+body { background: var(--color-bg); color: var(--color-text); letter-spacing: -0.006em; }
+h1,h2,h3,h4 { letter-spacing: -0.02em; font-weight: 600; }
+::selection { background: rgba(37,99,235,0.18); }
+
+/* ---- Chrome: deep-navy sidebar with the HSG operator mark ---- */
+.app-shell { background: var(--color-bg); }
+.sidebar {
+  background: linear-gradient(184deg, var(--navy-2) 0%, var(--navy) 58%, var(--navy-deep) 100%);
+  color: var(--navy-text);
+  border-right: 1px solid rgba(255,255,255,0.07);
+  box-shadow: none;
+  padding: 18px 12px;
+}
+.sidebar__brand { padding: 0 8px 16px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.sidebar__brand::before {
+  content: ''; display: block; width: 38px; height: 38px;
+  background: url('assets/hsg-mark.svg') center/contain no-repeat;
+  margin-bottom: 12px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+}
+.sidebar__brand-label, .sidebar__brand-name { font-family: var(--font-mono); }
+.sidebar__brand-label { color: rgba(255,255,255,0.5); letter-spacing: 0.14em; text-transform: uppercase; font-size: 10px; }
+.sidebar__brand-name { font-family: var(--font-heading); color: #fff; font-weight: 600; font-size: 17px; letter-spacing: -0.01em; margin-top: 3px; }
+.sidebar__section, .sidebar__section-label { font-family: var(--font-mono); color: rgba(255,255,255,0.4); letter-spacing: 0.12em; text-transform: uppercase; font-size: 10px; padding: 16px 12px 6px; }
+.sidebar__nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin: 1px 0; border-radius: 9px; color: rgba(255,255,255,0.72); font-weight: 500; font-size: 13.5px; transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
+.sidebar__nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.sidebar__nav-item.active { background: rgba(91,140,255,0.16); color: #fff; box-shadow: inset 2px 0 0 var(--color-primary-light), inset 0 0 0 1px rgba(255,255,255,0.05); }
+.sidebar__user, .sidebar__footer { border-top: 1px solid rgba(255,255,255,0.08); margin-top: auto; padding: 14px 10px; color: rgba(255,255,255,0.7); }
+
+/* ---- Glass sticky header ---- */
+.main { background: var(--color-bg); }
+.main__header {
+  background: rgba(245,246,248,0.78);
+  backdrop-filter: saturate(180%) blur(12px); -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--color-border);
+  padding: 16px 28px;
+}
+.main__title { font-family: var(--font-heading); font-weight: 600; font-size: 21px; letter-spacing: -0.02em; color: var(--color-ink); }
+.main__content { padding: 24px 28px; }
+
+/* ---- Buttons: solid accent pill + refined ghost ---- */
+.btn-portal {
+  background: var(--color-primary); color: #fff; border: 1px solid transparent;
+  border-radius: 999px; padding: 9px 18px; font-weight: 500; font-size: 13px;
+  box-shadow: var(--shadow-sm); transition: background var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.btn-portal:hover { background: var(--color-primary-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-portal:active { transform: translateY(0); }
+.btn-portal:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-ring); }
+.btn-portal--ghost { background: var(--color-surface); color: var(--color-ink); border: 1px solid var(--color-border); box-shadow: none; }
+.btn-portal--ghost:hover { background: var(--color-surface-2); border-color: var(--color-border-strong); transform: translateY(-1px); }
+
+/* ---- Cards & stat tiles ---- */
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.stat-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 16px 18px; }
+.stat-card__label { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px; color: var(--color-text-muted); }
+.stat-card__value { font-family: var(--font-mono); font-feature-settings: 'tnum'; font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); }
+
+/* ---- Badges: tinted hairline pills ---- */
+.badge { font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.02em; padding: 3px 9px; border-radius: 6px; border: 1px solid transparent; }
+.badge--active, .badge--approved, .badge--qualified { background: var(--color-success-bg); color: var(--color-success); border-color: rgba(4,120,87,0.18); }
+.badge--pending, .badge--review { background: var(--color-warning-bg); color: var(--color-warning); border-color: rgba(180,83,9,0.18); }
+.badge--closed, .badge--rejected, .badge--declined { background: var(--color-error-bg); color: var(--color-error); border-color: rgba(220,38,38,0.16); }
+.badge--info, .badge--ogc { background: var(--color-info-bg); color: var(--color-info); border-color: rgba(37,99,235,0.16); }
+
+/* ---- Data tables: precise, tabular, sticky head ---- */
+.data-table { font-size: 13px; font-feature-settings: 'tnum'; }
+.data-table thead th {
+  background: var(--color-surface-2); border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted); font-family: var(--font-mono); font-weight: 500;
+  font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; padding: 10px 16px;
+}
+.data-table td { padding: 11px 16px; border-bottom: 1px solid var(--color-divider); }
+.data-table tbody tr:hover { background: var(--color-surface-2); }
+
+/* ---- Form controls: inset, accent focus ring ---- */
+.form-input, .form-select, .form-textarea {
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  padding: 9px 12px; color: var(--color-ink); transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.form-input:hover, .form-select:hover, .form-textarea:hover { border-color: var(--color-border-strong); }
+.form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--accent-ring); }
+.form-input[type="number"] { font-family: var(--font-mono); font-feature-settings: 'tnum'; }
+
+.pill { border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); transition: all var(--duration-fast) var(--ease-out); }
+.pill.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+/* ---- Two-panel auth: navy brand pane + crisp form card ---- */
+.auth-shell { background: var(--color-bg); }
+.auth-brand, .auth-pane--brand, .auth-card__brand {
+  background: linear-gradient(170deg, var(--navy-2) 0%, var(--navy) 60%, var(--navy-deep) 100%);
+  color: #fff;
+}
+.auth-brand__inner::before {
+  content: ''; display: block; width: 52px; height: 52px;
+  background: url('assets/hsg-mark.svg') center/contain no-repeat; margin-bottom: 22px;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+}
+.auth-brand__eyebrow { font-family: var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.55); font-size: 11px; }
+.auth-brand__title { font-family: var(--font-heading); font-weight: 600; letter-spacing: -0.02em; color: #fff; }
+.auth-brand__tagline, .auth-brand__foot { color: rgba(255,255,255,0.7); }
+.auth-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); }
+.auth-card__title { font-family: var(--font-heading); font-weight: 600; letter-spacing: -0.02em; }
+
+/* ---- Misc surfaces ---- */
+.wizard__panel, .drawer, .modal { border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); }
+.error-box { border-radius: var(--radius-md); border: 1px solid rgba(220,38,38,0.18); }
+code, .mono, [class*="mono"] { font-feature-settings: 'tnum'; }
+
+/* ----------------------------------------------------------------------------
+   Higher-specificity overrides — every portal page carries its chrome inline,
+   so we scope under body[data-portal] to win over those inline <style> blocks
+   without touching page-specific layout (grid, widths, position).
+   ---------------------------------------------------------------------------- */
+body[data-portal] .app-shell { background: var(--color-bg); }
+body[data-portal] .sidebar {
+  background: linear-gradient(184deg, var(--navy-2) 0%, var(--navy) 58%, var(--navy-deep) 100%);
+  color: var(--navy-text); border-right: 1px solid rgba(255,255,255,0.07); box-shadow: none; padding: 18px 12px;
+}
+body[data-portal] .sidebar__brand { padding: 0 8px 16px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+body[data-portal] .sidebar__brand::before {
+  content: ''; display: block; width: 38px; height: 38px;
+  background: url('assets/hsg-mark.svg') center/contain no-repeat; margin-bottom: 12px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+}
+body[data-portal] .sidebar__brand-label { font-family: var(--font-mono); color: rgba(255,255,255,0.5); letter-spacing: 0.14em; text-transform: uppercase; font-size: 10px; }
+body[data-portal] .sidebar__brand-name { font-family: var(--font-heading); color: #fff; font-weight: 600; font-size: 17px; letter-spacing: -0.01em; margin-top: 3px; }
+body[data-portal] .sidebar__nav-item { color: rgba(255,255,255,0.72); font-weight: 500; font-size: 13.5px; border-radius: 9px; padding: 9px 12px; }
+body[data-portal] .sidebar__nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+body[data-portal] .sidebar__nav-item.active { background: rgba(91,140,255,0.16); color: #fff; box-shadow: inset 2px 0 0 var(--color-primary-light), inset 0 0 0 1px rgba(255,255,255,0.05); }
+body[data-portal] .sidebar__user { border-top: 1px solid rgba(255,255,255,0.08); }
+body[data-portal] .main { background: var(--color-bg); }
+body[data-portal] .main__header {
+  background: rgba(245,246,248,0.78); backdrop-filter: saturate(180%) blur(12px); -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--color-border); padding: 16px 28px;
+}
+body[data-portal] .main__title { font-family: var(--font-heading); font-weight: 600; font-size: 21px; letter-spacing: -0.02em; color: var(--color-ink); }
+body[data-portal] .data-table { font-feature-settings: 'tnum'; }
+body[data-portal] .data-table th { background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); color: var(--color-text-muted); font-family: var(--font-mono); font-weight: 500; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; padding: 10px 16px; }
+body[data-portal] .data-table td { padding: 11px 16px; border-bottom: 1px solid var(--color-divider); }
+body[data-portal] .data-table tbody tr:hover { background: var(--color-surface-2); }
+body[data-portal] .badge { font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.02em; padding: 3px 9px; border-radius: 6px; }
+body[data-portal] .stat-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 16px 18px; }
+body[data-portal] .stat-card__label { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px; color: var(--color-text-muted); }
+body[data-portal] .stat-card__value { font-family: var(--font-mono); font-feature-settings: 'tnum'; font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); }
+body[data-portal] .tabs__item { font-family: var(--font-mono); letter-spacing: 0.03em; }
+body[data-portal] .tabs__item.active { border-color: var(--color-primary); color: var(--color-primary); }
+body[data-portal] .auth-brand, body[data-portal] .auth-pane--brand, body[data-portal] .auth-card__brand {
+  background: linear-gradient(168deg, var(--navy-2) 0%, var(--navy) 60%, var(--navy-deep) 100%);
+}
+body[data-portal] .auth-brand__title { font-family: var(--font-heading); font-weight: 600; letter-spacing: -0.02em; color: #fff; }
 
