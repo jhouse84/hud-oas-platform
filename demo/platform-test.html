@@ -123,7 +123,7 @@
             ['JA14b', 'Open the <b>Ginnie Mae Demo Center</b> and walk its register.', 'A full parallel experience with Ginnie Mae branding; recommendations register, sale, and repository all render.', 'gnma/index.html']
           ]},
           { name: 'Live smoke (REAL)', sub: 'You only, on the real logged-in platform.', cases: [
-            ['JA1', 'Sign in to the live admin console.', 'A one-time code arrives by email; no authenticator-app prompt; sign-in completes.', 'REAL'],
+            ['JA1', 'Sign in to the live admin console. If you have used the demo on this browser, open <b>admin/login.html?real=1</b> (or click EXIT in the demo banner) first to reach the real sign-in.', 'A one-time code arrives by email; no authenticator-app prompt; sign-in completes.', 'REAL'],
             ['JA15', 'Live: create a real draft sale via Sale Setup, then delete it.', 'The sale is created and listed, then removed cleanly; nothing leaks to bidders.', 'REAL']
           ]}
         ]
@@ -302,7 +302,7 @@
         sec.cases.forEach(function (c) {
           var id = c[0], v = st[id] || {}, link = c[3];
           var isReal = link === 'REAL';
-          var openHtml = (link && !isReal) ? '<a class="case__open" href="' + link + '" target="_blank" rel="noopener">Open screen &#8594;</a>' : '';
+          var openHtml = (link && !isReal) ? '<a class="case__open" href="' + link + '" target="hsg-demo" rel="noopener">Open screen &#8594;</a>' : '';
           var realHtml = isReal ? '<span class="case__real">REAL · Jelani</span>' : '';
           var el = document.createElement('div');
           el.className = 'case' + (v.r === 'pass' ? ' passed' : v.r === 'fail' ? ' failed' : '');

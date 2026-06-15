@@ -16,19 +16,28 @@
 
   var qs = new URLSearchParams(window.location.search);
   // Variants: ?demo=1 → the HUD OAS demonstration · ?demo=gnma → the Ginnie Mae
-  // demonstration (separate dataset + session store). The variant is sticky for
-  // the session; arriving with an explicit ?demo= switches it.
+  // demonstration (separate dataset + session store). The variant is sticky;
+  // arriving with an explicit ?demo= switches it.
+  //
+  // ?real=1 is an explicit escape (used by the admin for the live-login smoke):
+  // it clears the demo flag so a real sign-in is not bounced back into the demo.
+  if (qs.get('real') === '1') {
+    try { localStorage.removeItem('hsg.demo.active'); localStorage.removeItem('hsg.demo.variant'); sessionStorage.removeItem('hsg.demo.active'); } catch (e) {}
+    return;
+  }
   var qsDemo = qs.get('demo');
   if (qsDemo === '1' || qsDemo === 'gnma') {
-    try {
-      sessionStorage.setItem('hsg.demo.active', '1');
-      sessionStorage.setItem('hsg.demo.variant', qsDemo === 'gnma' ? 'gnma' : '');
-    } catch (e) {}
+    var _v = qsDemo === 'gnma' ? 'gnma' : '';
+    // Persist in localStorage (not just sessionStorage) so the demo survives new
+    // tabs, reloads, and URLs that drop the ?demo param. A non-technical tester
+    // cannot accidentally fall out of the demo into a real login wall.
+    try { localStorage.setItem('hsg.demo.active', '1'); localStorage.setItem('hsg.demo.variant', _v); } catch (e) {}
+    try { sessionStorage.setItem('hsg.demo.active', '1'); sessionStorage.setItem('hsg.demo.variant', _v); } catch (e) {}
   }
   var ACTIVE = false, VARIANT = '';
   try {
-    ACTIVE = sessionStorage.getItem('hsg.demo.active') === '1';
-    VARIANT = sessionStorage.getItem('hsg.demo.variant') || '';
+    ACTIVE = localStorage.getItem('hsg.demo.active') === '1' || sessionStorage.getItem('hsg.demo.active') === '1';
+    VARIANT = localStorage.getItem('hsg.demo.variant') || sessionStorage.getItem('hsg.demo.variant') || '';
   } catch (e) {}
   if (!ACTIVE) return;                       // no-op outside demo sessions
   var D = (VARIANT === 'gnma' && window.HSG_DEMO_DATA_GNMA) ? window.HSG_DEMO_DATA_GNMA : window.HSG_DEMO_DATA;
@@ -903,6 +912,8 @@
     var exit = document.getElementById('hsg-demo-exit');
     if (exit) exit.addEventListener('click', function (e) {
       e.preventDefault();
+      if (!window.confirm('Leave the demonstration? You can re-enter any time from your test link.')) return;
+      try { localStorage.removeItem('hsg.demo.active'); localStorage.removeItem('hsg.demo.variant'); } catch (err) {}
       try { sessionStorage.clear(); } catch (err) {}
       window.location.href = '/index.html';
     });

@@ -3,6 +3,22 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+  /* Demo guard: if a demonstration session is active, never show the real login
+     wall to a tester — bounce back into the demo portal. ?real=1 forces real login. */
+  (function () {
+    try {
+      var qs = new URLSearchParams(location.search);
+      if (qs.get('real') === '1') { localStorage.removeItem('hsg.demo.active'); localStorage.removeItem('hsg.demo.variant'); return; }
+      var dv = qs.get('demo'); var active = dv === '1' || dv === 'gnma' || localStorage.getItem('hsg.demo.active') === '1';
+      if (!active) return;
+      var v = (dv === 'gnma' || localStorage.getItem('hsg.demo.variant') === 'gnma') ? 'gnma' : '1';
+      var dest = 'portal.html', nx = qs.get('next');
+      if (nx && nx.indexOf('://') < 0 && nx.indexOf('//') !== 0) dest = nx;
+      location.replace(dest + (dest.indexOf('?') >= 0 ? '&' : '?') + 'demo=' + v);
+    } catch (e) {}
+  })();
+  </script>
   <title>Sign in · HUD Residential Loan Sales</title>
   <link rel="stylesheet" href="../shared/design-system.css" />
   <script src="../shared/config.js"></script>
