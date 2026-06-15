@@ -51,10 +51,12 @@ HSG.router = (function() {
       notFound(path);
     }
 
-    // Update active nav items
+    // Update active nav items. data-route values may carry a leading '#'
+    // (e.g. "#/settlements"); getHash() returns a bare path ("/settlements"),
+    // so normalize before comparing or nothing ever matches.
     document.querySelectorAll('[data-route]').forEach(function(el) {
-      var route = el.getAttribute('data-route');
-      if (path === route || (route !== '/' && path.indexOf(route) === 0)) {
+      var route = (el.getAttribute('data-route') || '').replace(/^#/, '');
+      if (route && (path === route || (route !== '/' && path.indexOf(route) === 0))) {
         el.classList.add('active');
       } else {
         el.classList.remove('active');

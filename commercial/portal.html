@@ -126,6 +126,11 @@
               .onNotFound(function () { $app.innerHTML = '<p class="empty">Page not found.</p>'; })
               .start();
 
+    // Sidebar nav lives outside the content area ($app), so wire its clicks once here.
+    document.querySelectorAll('.sidebar__nav-item[data-route]').forEach(function (el) {
+      el.addEventListener('click', function (e) { e.preventDefault(); HSG.router.navigate(el.getAttribute('data-route').replace('#', '')); });
+    });
+
     function setTitle(title, actions) { $title.textContent = title; $actions.innerHTML = actions || ''; }
     function setLoading() { $app.innerHTML = '<p class="empty">Loading…</p>'; }
     function setError(err) { $app.innerHTML = '<div class="auth-error">' + c.esc(err.message || String(err)) + '</div>'; }
