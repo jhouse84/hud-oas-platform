@@ -680,14 +680,14 @@
       },
       presignDownload: function (saleId, docKey) {
         var doc = findVdrDoc(saleId, docKey) || { name: docKey, title: docKey };
-        var url = demoPdf(doc.title || doc.name || docKey, [
-          'Sale: ' + saleId,
-          'File: ' + (doc.name || docKey),
-          'Class: ' + (doc.group === 'collateral' ? 'Collateral File' : doc.group === 'due-diligence' ? 'Due Diligence File' : (doc.folder || 'Sale Document')),
-          'This demonstration document stands in for the real file.',
-          'In production this download is the per-bidder watermarked copy,',
-          'served by a 5-minute presigned URL and access-logged with IP + UA.'
-        ]);
+        var sale = saleById(saleId) || { saleId: saleId };
+        // Asset documents carry the loan id in the key: assets/{loanId}/{group}/{file}
+        var loan = null, m = /^assets\/([^/]+)\//.exec(docKey || '');
+        if (m) { var llid = decodeURIComponent(m[1]); loan = loansFor(saleId).find(function (l) { return (l.loan_id || l.loanId) === llid; }); }
+        var entity = (D.demoBidder && D.demoBidder.entityName) || 'the qualified bidder';
+        var url = (window.HSG && HSG.demoDocs)
+          ? HSG.demoDocs.forDoc(doc, { sale: sale, loan: loan, entity: entity })
+          : demoPdf(doc.title || doc.name || docKey, ['Sale: ' + saleId, 'File: ' + (doc.name || docKey), 'Demonstration document.']);
         record('document-downloaded', saleId + ' · ' + (doc.name || docKey) + ' · watermarked');
         persist();
         return Promise.resolve({ url: url, expiresIn: 300, watermarked: true, accessId: uid('ACC') });

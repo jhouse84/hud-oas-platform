@@ -43,9 +43,8 @@ function summarize(loans) {
   };
 }
 function mapState(status) {
-  if (/active/i.test(status)) return 'bid_window';
   if (/postponed/i.test(status)) return 'announced';
-  return 'qualification_open';   // Upcoming / pre-qualification
+  return 'bid_window';   // active + upcoming both shown as open (live data room + bidding) for the demo
 }
 
 // ---- per-program loan transforms ----
