@@ -86,6 +86,7 @@
 
   <script src="../shared/utils.js"></script>
   <script src="../shared/cognito.js"></script>
+  <script src="../shared/doc-classify.js"></script>
   <script src="../shared/api.js"></script>
   <script src="../demo/data.js"></script>
   <script src="../demo/gnma/data.js"></script>
@@ -229,12 +230,14 @@
 
     // ---- Upload → classify → review ----
     function onFiles(fileList) {
-      var metas = Array.from(fileList).map(function (f) { return { fileName: f.name, size: f.size, contentType: (f.type || 'PDF') }; });
+      var arr = Array.from(fileList);
+      var metas = arr.map(function (f) { return { fileName: f.name, size: f.size, contentType: (f.type || 'application/pdf') }; });
       if (!metas.length) return;
       HSG.api.staffDocs.classify(currentSale, metas).then(function (r) {
-        pending = (r.results || []).map(function (c, i) { c._id = 'p' + i + '_' + Date.now(); return c; });
+        // Keep the File on each row so commit() can stream its bytes to S3 (real mode).
+        pending = (r.results || []).map(function (c, i) { c._id = 'p' + i + '_' + Date.now(); c._file = arr[i]; return c; });
         renderReview();
-      });
+      }).catch(function (err) { alert('Could not classify: ' + (err.message || err)); });
     }
 
     function renderReview() {
@@ -282,7 +285,7 @@
 
     function commit() {
       var records = pending.map(function (p) {
-        var rec = { fileName: p.fileName, size: p.size, contentType: p.contentType, scope: p.scope, docType: p.docType, title: p.docType || p.fileName, visibility: p.visibility };
+        var rec = { fileName: p.fileName, size: p.size, contentType: p.contentType, scope: p.scope, docType: p.docType, title: p.docType || p.fileName, visibility: p.visibility, _file: p._file };
         if (p.scope === 'asset') {
           var fv = p.fha != null && p.fha !== '' ? p.fha : p.fhaCase;
           var a = assets.find(function(x){ return String(x.fhaCase)===String(fv) || String(x.loanId)===String(fv); });
@@ -290,9 +293,12 @@
         } else if (p.scope === 'sale') { rec.folder = p.folder || 'Forms & Agreements'; }
         return rec;
       });
-      HSG.api.staffDocs.commit(currentSale, records, claims.email || 'HSG staff').then(function () {
+      var btn = document.getElementById('rev-commit'), label = btn && btn.textContent;
+      if (btn) { btn.disabled = true; btn.textContent = window.HSG_DEMO ? 'Publishing…' : 'Uploading to S3…'; }
+      HSG.api.staffDocs.commit(currentSale, records, claims.email || 'HSG staff').then(function (res) {
         pending = null; selectSale(currentSale);
-      }).catch(function(err){ alert('Publish failed: ' + (err.message||err)); });
+        if (res && res.skipped && res.skipped.length) alert(res.skipped.length + ' file(s) had no readable content and were skipped.');
+      }).catch(function(err){ if (btn){ btn.disabled=false; btn.textContent=label||'Publish'; } alert('Publish failed: ' + (err.message||err)); });
     }
 
     function wire(data) {
@@ -305,16 +311,20 @@
       $file.onchange = function(){ if ($file.files) onFiles($file.files); $file.value=''; };
       if (pending) renderReview();
 
-      // visibility toggle + remove (on committed staff files)
+      // visibility toggle + remove (on committed staff files).
+      // Real mode (flat S3, no metadata store) surfaces an honest note for
+      // re-file / visibility / remove rather than silently doing nothing.
+      function applied(r){ if (r && r.ok === false && r.note) { alert(r.note); return; } selectSale(currentSale); }
+      function failed(e){ alert(e && (e.message || e)); }
       $app.querySelectorAll('[data-vis]').forEach(function (el) {
         el.addEventListener('click', function () {
           var id = el.getAttribute('data-vis');
           var next = el.classList.contains('vis--bidder') ? 'admin' : 'bidder';
-          HSG.api.staffDocs.update(id, { visibility: next }).then(function(){ selectSale(currentSale); });
+          HSG.api.staffDocs.update(id, { visibility: next }).then(applied).catch(failed);
         });
       });
       $app.querySelectorAll('[data-rm]').forEach(function (el) {
-        el.addEventListener('click', function () { if (!confirm('Remove this file from the data room?')) return; HSG.api.staffDocs.remove(el.getAttribute('data-rm')).then(function(){ selectSale(currentSale); }); });
+        el.addEventListener('click', function () { if (!confirm('Remove this file from the data room?')) return; HSG.api.staffDocs.remove(el.getAttribute('data-rm'), currentSale).then(function(){ selectSale(currentSale); }).catch(failed); });
       });
       $app.querySelectorAll('[data-assign]').forEach(function (el) {
         el.addEventListener('click', function () {
@@ -322,8 +332,8 @@
           var fha = prompt('Assign to which asset? Enter the FHA case # (or leave blank for a sale document):');
           if (fha === null) return;
           var a = assets.find(function(x){ return String(x.fhaCase)===String(fha.trim()) || String(x.loanId)===String(fha.trim()); });
-          if (a) HSG.api.staffDocs.update(id, { scope:'asset', loanId:a.loanId, fhaCase:a.fhaCase, group:'dd', visibility:'bidder' }).then(function(){ selectSale(currentSale); });
-          else if (!fha.trim()) HSG.api.staffDocs.update(id, { scope:'sale', folder:'Forms & Agreements', visibility:'bidder' }).then(function(){ selectSale(currentSale); });
+          if (a) HSG.api.staffDocs.update(id, { scope:'asset', loanId:a.loanId, fhaCase:a.fhaCase, group:'dd', visibility:'bidder' }).then(applied).catch(failed);
+          else if (!fha.trim()) HSG.api.staffDocs.update(id, { scope:'sale', folder:'Forms & Agreements', visibility:'bidder' }).then(applied).catch(failed);
           else alert('No asset with FHA # ' + fha);
         });
       });

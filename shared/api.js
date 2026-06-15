@@ -269,6 +269,109 @@ HSG.api = (function () {
     }
   };
 
+  // -------------------------------------------------------------------
+  //  Staff data room (admin) — real S3-backed intake.
+  //  The production data room is a flat object store under
+  //  originals/{saleId}/; the rich per-asset view is reconstructed from
+  //  filenames via the shared classifier. Uploads stream bytes straight
+  //  to S3 with a presigned PUT (KMS-encrypted), no metadata table.
+  // -------------------------------------------------------------------
+  var _assetCache = {};   // saleId -> assets[]  (cleared per page load)
+  function buildAssets(loans) {
+    return (loans || []).map(function (l) {
+      return {
+        loanId: l.loan_id || l.loanId,
+        fhaCase: l.fha_case_number || l.loan_id || l.loanId,
+        label: l.property_name || (l.loan_id || l.loanId || ''),
+        state: (l.property && l.property.state) || '—',
+        city: (l.property && l.property.city) || '',
+        assetClass: l.asset_class || '',
+        dd: [], collateral: [], docCount: 0
+      };
+    });
+  }
+  function assetsForSale(saleId, opts) {
+    if (_assetCache[saleId]) return Promise.resolve(_assetCache[saleId]);
+    return sales.loans(saleId, {}, opts).then(function (r) {
+      var a = buildAssets(r.loans || []); _assetCache[saleId] = a; return a;
+    }, function () { return []; });
+  }
+
+  var staffDocs = {
+    // Classify a batch of filenames against the sale's loans (no network write).
+    classify: function (saleId, fileMetas, opts) {
+      if (!window.HSG.docClassify) return Promise.reject(new Error('Classifier (doc-classify.js) not loaded'));
+      return assetsForSale(saleId, opts).then(function (assets) {
+        return { results: (fileMetas || []).map(function (m) {
+          var c = window.HSG.docClassify.classifyFileName(m.fileName, assets);
+          c.fileName = m.fileName; c.size = m.size || 0; c.contentType = m.contentType || 'application/pdf';
+          c.visibility = c.scope === 'review' ? 'admin' : 'bidder';
+          return c;
+        }) };
+      });
+    },
+    // Upload each record's bytes to S3 via a presigned PUT. Each record carries
+    // its File on `_file` (set by the UI). Classification persists implicitly
+    // through the filename convention, re-derived on listing.
+    commit: function (saleId, records, actor, opts) {
+      records = records || [];
+      var saved = [], skipped = [];
+      function next(i) {
+        if (i >= records.length) return Promise.resolve({ saved: saved, count: saved.length, skipped: skipped });
+        var rec = records[i];
+        var file = rec._file;
+        if (!file) { skipped.push(rec.fileName); return next(i + 1); }
+        var ct = rec.contentType || file.type || 'application/octet-stream';
+        return docs.presignUpload(saleId, rec.fileName, ct, opts).then(function (p) {
+          var headers = p.requiredHeaders || { 'content-type': ct };
+          return fetch(p.url, { method: 'PUT', headers: headers, body: file }).then(function (res) {
+            if (!res.ok) throw new Error('S3 upload failed (' + res.status + ') for ' + rec.fileName);
+            saved.push({ fileName: rec.fileName, key: p.key });
+            return next(i + 1);
+          });
+        });
+      }
+      return next(0);
+    },
+    // Reconstruct the organized data room from the flat S3 list + the sale's loans.
+    overview: function (saleId, opts) {
+      return Promise.all([
+        docs.listForSale(saleId, opts).catch(function () { return { docs: [] }; }),
+        assetsForSale(saleId, opts)
+      ]).then(function (rr) {
+        var docList = rr[0].docs || rr[0].saleDocs || [];
+        var assets = (rr[1] || []).map(function (a) { return Object.assign({}, a, { dd: [], collateral: [], docCount: 0 }); });
+        var byId = {}; assets.forEach(function (a) { byId[a.loanId] = a; byId[a.fhaCase] = a; });
+        var saleDocs = [], review = [];
+        docList.forEach(function (d) {
+          var name = d.filename || d.name || String(d.docKey || '').split('/').pop();
+          var c = window.HSG.docClassify ? window.HSG.docClassify.classifyFileName(name, assets) : { scope: 'review', docType: name };
+          var f = {
+            docId: d.docKey || d.docId || name, uploadId: d.docKey || d.docId || name,
+            key: d.docKey || d.docId, name: name, title: c.docType || name,
+            contentType: 'PDF', size: d.size || 0, modified: d.modified,
+            group: c.group === 'collateral' ? 'collateral' : (c.scope === 'asset' ? 'due-diligence' : undefined),
+            folder: c.folder, staff: true, visibility: 'bidder'
+          };
+          if (c.scope === 'asset') { var a = byId[c.loanId] || byId[c.fhaCase]; if (a) { (c.group === 'collateral' ? a.collateral : a.dd).push(f); a.docCount = a.dd.length + a.collateral.length; } else { f.folder = 'Forms & Agreements'; saleDocs.push(f); } }
+          else if (c.scope === 'sale') saleDocs.push(f);
+          else review.push(f);
+        });
+        var assetsCovered = assets.filter(function (a) { return (a.dd.length + a.collateral.length) > 0; }).length;
+        var stats = {
+          saleDocs: saleDocs.length, assets: assets.length, assetsCovered: assetsCovered,
+          totalFiles: docList.length, staffAdded: docList.length, needsReview: review.length,
+          bidderVisible: docList.length, adminOnly: 0
+        };
+        return { saleId: saleId, saleDocs: saleDocs, assets: assets, review: review, uploads: [], stats: stats };
+      });
+    },
+    // Re-filing and per-file visibility have no production backend yet (flat
+    // store, no metadata table). Surface that honestly rather than fake it.
+    update: function () { return Promise.resolve({ ok: false, note: 'In production, re-file by re-uploading under the {STATE}_{FHA#}_{DOCTYPE} name.' }); },
+    remove: function () { return Promise.reject(new Error('Removing a published file is not yet wired in production. Replace it by re-uploading the same name.')); }
+  };
+
   var qa = {
     ask: function (saleId, payload, opts) {
       return request('POST', '/sales/' + encodeURIComponent(saleId) + '/qa', payload, opts);
@@ -365,6 +468,7 @@ HSG.api = (function () {
     bidders: bidders,
     bids: bids,
     docs: docs,
+    staffDocs: staffDocs,
     qa: qa,
     settlements: settlements,
     bem: bem,
