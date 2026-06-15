@@ -6,7 +6,8 @@ import {
   UpdateCommand,
   QueryCommand,
   ScanCommand,
-  DeleteCommand
+  DeleteCommand,
+  BatchWriteCommand
 } from '@aws-sdk/lib-dynamodb';
 
 const raw = new DynamoDBClient({ region: process.env.REGION || process.env.AWS_REGION });
@@ -65,6 +66,30 @@ export async function scanAll(TableName, opts = {}) {
 
 export async function deleteItem(TableName, Key) {
   await ddb.send(new DeleteCommand({ TableName, Key }));
+}
+
+/**
+ * Bulk-put items in 25-item batches, retrying UnprocessedItems with backoff.
+ * Returns the count written. Used by tape ingestion (hundreds–thousands of loans).
+ */
+export async function batchPut(TableName, items) {
+  let written = 0;
+  for (let i = 0; i < items.length; i += 25) {
+    let batch = items.slice(i, i + 25).map(Item => ({ PutRequest: { Item } }));
+    let attempt = 0;
+    while (batch.length) {
+      const res = await ddb.send(new BatchWriteCommand({ RequestItems: { [TableName]: batch } }));
+      const unprocessed = (res.UnprocessedItems && res.UnprocessedItems[TableName]) || [];
+      written += batch.length - unprocessed.length;
+      batch = unprocessed;
+      if (batch.length) {
+        attempt += 1;
+        if (attempt > 6) throw new Error(`BatchWrite could not drain ${batch.length} items after retries`);
+        await new Promise(r => setTimeout(r, 100 * Math.pow(2, attempt)));
+      }
+    }
+  }
+  return written;
 }
 
 export function uid(prefix = 'ID') {

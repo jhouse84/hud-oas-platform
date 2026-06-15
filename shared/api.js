@@ -170,12 +170,24 @@ HSG.api = (function () {
         .filter(function (k) { return filter[k] != null && filter[k] !== ''; })
         .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(filter[k]); }).join('&');
       return request('GET', '/sales/' + encodeURIComponent(saleId) + '/loans' + (qs ? '?' + qs : ''), null, opts);
+    },
+    // ---- Sale Setup (admin): create a sale + ingest its tape ----
+    create: function (sale, opts) {
+      return request('POST', '/sales', sale, opts);
+    },
+    update: function (saleId, patch, opts) {
+      return request('PUT', '/sales/' + encodeURIComponent(saleId), patch, opts);
     }
   };
 
   var loans = {
     get: function (saleId, loanId, opts) {
       return request('GET', '/loans/' + encodeURIComponent(saleId) + '/' + encodeURIComponent(loanId), null, opts);
+    },
+    // Bulk-insert loans for a sale (admin tape ingestion). The backend chunks
+    // the BatchWrite; the client may also chunk for very large tapes.
+    bulkPut: function (saleId, loanRecords, opts) {
+      return request('POST', '/sales/' + encodeURIComponent(saleId) + '/loans', { loans: loanRecords }, opts);
     }
   };
 

@@ -1233,6 +1233,60 @@ Resources:
             Path: /loans/{saleId}/{loanId}
             Auth: { Authorizer: CognitoJwt }
 
+  # Sale Setup & tape ingestion (admin) — POST /sales, PUT /sales/{id}, POST /sales/{id}/loans
+  FnSalesCreate:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-sales-create'
+      CodeUri: src/
+      Handler: handlers/sales/create.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref SalesTable }
+      Events:
+        HttpCreate:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /sales
+            Auth: { Authorizer: CognitoJwt }
+
+  FnSalesUpdate:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-sales-update'
+      CodeUri: src/
+      Handler: handlers/sales/update.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref SalesTable }
+      Events:
+        HttpUpdate:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: PUT
+            Path: /sales/{saleId}
+            Auth: { Authorizer: CognitoJwt }
+
+  FnLoansBulkPut:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-loans-bulkput'
+      Timeout: 60
+      CodeUri: src/
+      Handler: handlers/loans/bulkPut.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref LoansTable }
+        - DynamoDBReadPolicy: { TableName: !Ref SalesTable }
+      Events:
+        HttpBulkPut:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /sales/{saleId}/loans
+            Auth: { Authorizer: CognitoJwt }
+
   # QC findings (NEW)
   FnQcList:
     Type: AWS::Serverless::Function

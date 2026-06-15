@@ -81,12 +81,23 @@
     }]),
     scenarios: load('scenarios', []),
     bidders: load('bidders', (D.bidders || []).slice()),
-    audit: load('audit', [])
+    audit: load('audit', []),
+    // Sales + loans created via the Sale Setup wizard this session. Merged onto
+    // the dataset below so they behave exactly like seeded sales everywhere.
+    newSales: load('newSales', []),
+    newLoans: load('newLoans', [])
   };
+  // Overlay wizard-created sales/loans onto the (freshly reloaded) dataset.
+  // D is rebuilt from data.js on every page load, so this concat is idempotent.
+  if (store.newSales.length) {
+    var haveSale = {}; (D.sales || []).forEach(function (s) { haveSale[s.saleId] = 1; });
+    store.newSales.forEach(function (s) { if (!haveSale[s.saleId]) (D.sales = D.sales || []).push(s); });
+  }
+  if (store.newLoans.length) { D.loans = (D.loans || []).concat(store.newLoans); }
   function persist() {
     save('bids', store.bids); save('qa', store.qa); save('notifications', store.notifications);
     save('settlements', store.settlements); save('scenarios', store.scenarios); save('bidders', store.bidders);
-    save('audit', store.audit);
+    save('audit', store.audit); save('newSales', store.newSales); save('newLoans', store.newLoans);
   }
   /** Append-only audit trail of everything the reviewer does in the session. */
   function record(action, detail) {
@@ -518,6 +529,29 @@
         }
         if (filter.asset_class) items = items.filter(function (l) { return l.asset_class === filter.asset_class; });
         return Promise.resolve({ saleId: saleId, loans: items, count: items.length });
+      },
+      // ---- Sale Setup wizard: create a sale (writes to the session overlay) ----
+      create: function (sale) {
+        if (!sale || !sale.saleId) return fail('A sale needs a saleId', 400);
+        if (saleById(sale.saleId)) return fail('Sale ' + sale.saleId + ' already exists', 409);
+        var rec = Object.assign({}, sale);
+        rec.status = rec.status || 'draft'; rec.state = rec.state || rec.status;
+        rec.createdAt = now(); rec.demo = true;
+        (D.sales = D.sales || []).push(rec);
+        store.newSales.push(rec);
+        record('sale-created', rec.saleId + ' · ' + (rec.programType || '') + ' · ' + ((rec.summary && rec.summary.loan_count) || 0) + ' loans');
+        persist();
+        return Promise.resolve({ sale: rec });
+      },
+      update: function (saleId, patch) {
+        var s = saleById(saleId);
+        if (!s) return fail('Sale not found', 404);
+        Object.assign(s, patch || {});
+        var i = store.newSales.findIndex(function (x) { return x.saleId === saleId; });
+        if (i >= 0) store.newSales[i] = s;
+        record('sale-updated', saleId);
+        persist();
+        return Promise.resolve({ sale: s });
       }
     },
 
@@ -526,7 +560,23 @@
         var loan = loansFor(saleId).find(function (l) { return (l.loan_id || l.loanId) === loanId; });
         return loan ? Promise.resolve({ loan: loan }) : fail('Loan not found', 404);
       },
-      listForSale: function (saleId) { return Promise.resolve({ saleId: saleId, loans: loansFor(saleId), count: loansFor(saleId).length }); }
+      listForSale: function (saleId) { return Promise.resolve({ saleId: saleId, loans: loansFor(saleId), count: loansFor(saleId).length }); },
+      // ---- Sale Setup wizard: bulk-insert loans for a sale ----
+      bulkPut: function (saleId, loans) {
+        if (!saleById(saleId)) return fail('Sale not found — create the sale before loading its tape', 404);
+        var existing = {}; loansFor(saleId).forEach(function (l) { existing[l.loan_id || l.loanId] = 1; });
+        var added = 0;
+        (loans || []).forEach(function (l) {
+          var rec = Object.assign({ saleId: saleId }, l);
+          rec.loan_id = rec.loan_id || rec.loanId; rec.loanId = rec.loan_id;
+          if (existing[rec.loan_id]) return;
+          existing[rec.loan_id] = 1;
+          D.loans.push(rec); store.newLoans.push(rec); added++;
+        });
+        record('loans-ingested', saleId + ' · ' + added + ' loan(s)');
+        persist();
+        return Promise.resolve({ saleId: saleId, count: added });
+      }
     },
 
     qc: {

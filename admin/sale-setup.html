@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sale Setup &amp; Tape Ingestion · HUD OAS Admin</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <link rel="stylesheet" href="_shell.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    /* ---- Stepper ---- */
+    .stepper { display: flex; gap: 0; margin-bottom: var(--space-6); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; background: var(--color-surface); }
+    .step { flex: 1; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); cursor: pointer; border-right: 1px solid var(--color-border); position: relative; transition: background var(--duration-fast); }
+    .step:last-child { border-right: none; }
+    .step:hover:not(.step--disabled) { background: var(--color-grey-50); }
+    .step--active { background: var(--color-portal-dark); }
+    .step--active .step__num { background: #FFF; color: var(--color-portal-dark); }
+    .step--active .step__label, .step--active .step__sub { color: #FFF; }
+    .step--done .step__num { background: var(--color-success); color: #FFF; }
+    .step--disabled { opacity: 0.55; cursor: not-allowed; }
+    .step__num { width: 26px; height: 26px; flex: 0 0 26px; border-radius: 50%; background: var(--color-grey-200); color: var(--color-text); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 700; }
+    .step__label { font-weight: 600; font-size: var(--text-sm); }
+    .step__sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); }
+
+    .panel { display: none; }
+    .panel--active { display: block; animation: fadeIn var(--duration-base) var(--ease-default); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .card-pad { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-6); margin-bottom: var(--space-5); }
+    .card-pad__title { font-family: var(--font-heading); font-size: var(--text-lg); margin-bottom: var(--space-1); }
+    .card-pad__hint { color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--space-5); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--space-5); }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 var(--space-5); }
+    @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+    /* ---- Drop zone ---- */
+    .drop { border: 2px dashed var(--color-border-strong); border-radius: var(--radius-lg); padding: var(--space-8); text-align: center; background: var(--color-grey-50); cursor: pointer; transition: border-color var(--duration-fast), background var(--duration-fast); }
+    .drop:hover, .drop--over { border-color: var(--color-portal); background: var(--color-portal-soft); }
+    .drop__icon { font-size: 34px; line-height: 1; }
+    .drop__big { font-family: var(--font-heading); font-size: var(--text-md); margin-top: var(--space-3); }
+    .drop__sub { color: var(--color-text-muted); font-size: var(--text-sm); margin-top: var(--space-1); }
+
+    .tape-meta { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
+    .chip { font-family: var(--font-mono); font-size: var(--text-xs); padding: 5px 11px; border-radius: var(--radius-full); background: var(--color-portal-soft); color: var(--color-portal); }
+    .chip--good { background: var(--color-success-bg); color: var(--color-success); }
+
+    /* ---- Mapping grid ---- */
+    .map-group { margin-bottom: var(--space-5); }
+    .map-group__h { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: var(--space-2); padding-bottom: var(--space-1); border-bottom: 1px solid var(--color-grey-100); }
+    .map-row { display: grid; grid-template-columns: 1fr 1.2fr; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; }
+    .map-row__field { font-size: var(--text-sm); font-weight: 600; display: flex; align-items: center; gap: var(--space-2); }
+    .map-row__field small { font-weight: 400; color: var(--color-text-muted); font-family: var(--font-mono); font-size: 10px; }
+    .req-dot { color: var(--color-error); }
+    .map-sel { width: 100%; height: 38px; padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: var(--text-sm); }
+    .map-sel--mapped { border-color: var(--color-success); background: var(--color-success-bg); }
+    .map-sel--missing-req { border-color: var(--color-error); }
+
+    /* ---- Preview table ---- */
+    .tbl-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+    table.preview { border-collapse: collapse; width: 100%; font-size: var(--text-xs); white-space: nowrap; }
+    table.preview th { background: var(--color-grey-50); text-align: left; padding: var(--space-2) var(--space-3); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); position: sticky; top: 0; }
+    table.preview td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-grey-100); font-family: var(--font-mono); }
+    table.preview tr:last-child td { border-bottom: none; }
+    .num { text-align: right; }
+
+    /* ---- Pools ---- */
+    .strat { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-bottom: var(--space-5); }
+    @media (max-width: 760px) { .strat { grid-template-columns: 1fr; } }
+    .strat__opt { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); cursor: pointer; transition: border-color var(--duration-fast), box-shadow var(--duration-fast); }
+    .strat__opt:hover { border-color: var(--color-portal); }
+    .strat__opt--on { border-color: var(--color-portal); box-shadow: 0 0 0 2px var(--color-portal-soft); background: var(--color-portal-soft); }
+    .strat__opt h4 { font-size: var(--text-sm); margin-bottom: var(--space-1); }
+    .strat__opt p { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+    .pool-row { display: grid; grid-template-columns: 1.4fr 80px 1fr 1fr 1.2fr; gap: var(--space-3); padding: var(--space-3); border-bottom: 1px solid var(--color-grey-100); align-items: center; font-size: var(--text-sm); }
+    .pool-row--head { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-muted); background: var(--color-grey-50); }
+
+    /* ---- Review ---- */
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); margin-bottom: var(--space-5); }
+    @media (max-width: 900px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+    .sm { padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+    .sm__l { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-muted); }
+    .sm__v { font-family: var(--font-heading); font-size: var(--text-2xl); margin-top: 2px; line-height: 1.1; }
+
+    .vmsg { display: flex; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-md); font-size: var(--text-sm); margin-bottom: var(--space-2); }
+    .vmsg--error { background: var(--color-error-bg); color: var(--color-error); }
+    .vmsg--warn { background: var(--color-warning-bg); color: var(--color-warning); }
+    .vmsg--ok { background: var(--color-success-bg); color: var(--color-success); }
+
+    .wizard-nav { display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
+    .wizard-nav__right { display: flex; gap: var(--space-3); }
+
+    .seller-brand { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-mono); font-size: var(--text-xs); }
+    .seller-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+    .toast { position: fixed; top: 18px; right: 18px; z-index: 9998; background: var(--color-portal-dark); color: #FFF; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); font-size: var(--text-sm); max-width: 360px; opacity: 0; transform: translateY(-8px); transition: opacity .2s, transform .2s; }
+    .toast--show { opacity: 1; transform: none; }
+    .toast--error { background: var(--color-error); }
+    .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #FFF; border-radius: 50%; animation: rot .7s linear infinite; vertical-align: -2px; }
+    @keyframes rot { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body data-portal="admin">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-label">HUD OAS Admin</div>
+        <div class="sidebar__brand-name">Console</div>
+      </div>
+      <div class="sidebar__section">Overview</div>
+      <a class="sidebar__nav-item" href="index.html">Dashboard</a>
+      <a class="sidebar__nav-item active" href="sale-setup.html">Sale setup</a>
+      <a class="sidebar__nav-item" href="bidders.html">Bidders</a>
+      <a class="sidebar__nav-item" href="dataroom.html">Data room</a>
+      <a class="sidebar__nav-item" href="bid-day.html">Bid day ops</a>
+      <a class="sidebar__nav-item" href="bem.html">BEM &amp; awards</a>
+      <div class="sidebar__section">Post-sale</div>
+      <a class="sidebar__nav-item" href="qa.html">Q&amp;A inbox</a>
+      <a class="sidebar__nav-item" href="settlements.html">Settlements</a>
+      <a class="sidebar__nav-item" href="compliance.html">Compliance &amp; QC</a>
+      <div class="sidebar__user">
+        <div id="user-name" style="color: #FFF; font-weight: 600;">…</div>
+        <div id="user-email" style="font-size: var(--text-xs); opacity: 0.7;"></div>
+        <a href="#" id="signout-link" style="display: inline-block; margin-top: var(--space-2); color: var(--color-portal-bright); text-decoration: underline; font-size: var(--text-sm);">Sign out</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="main__header">
+        <h1 class="main__title">Sale Setup &amp; Tape Ingestion</h1>
+        <div>
+          <span id="mode-badge" class="chip" style="margin-right: var(--space-3);"></span>
+          <button class="btn-portal btn-portal--ghost" id="reset-btn" style="font-size: var(--text-sm);">Start over</button>
+        </div>
+      </header>
+      <div class="main__content" id="app">
+        <p class="empty">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="../demo/data.js"></script>
+  <script src="../demo/gnma/data.js"></script>
+  <script src="../shared/api-demo.js"></script>
+  <script src="../shared/bid-workbook.js"></script>
+  <script src="../shared/tape-parser.js"></script>
+  <script src="../shared/sale-builder.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    var u = HSG.utils, SB = HSG.saleBuilder, TAPE = HSG.tape;
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+    function fmtMoney(n) { return u && u.currency ? u.currency(n) : ('$' + Math.round(Number(n)||0).toLocaleString()); }
+    function fmtCompact(n) { return u && u.currencyCompact ? u.currencyCompact(n) : ('$' + (Math.round(Number(n)||0)).toLocaleString()); }
+
+    if (!HSG.cognito.isAuthenticated()) { window.location.href = 'login.html?next=sale-setup.html'; return; }
+    var claims = HSG.api.decodeClaims() || {};
+    document.getElementById('user-name').textContent = claims['custom:entityName'] || claims.email || 'Admin';
+    document.getElementById('user-email').textContent = claims.email || '';
+    document.getElementById('signout-link').addEventListener('click', function (e) { e.preventDefault(); HSG.cognito.signOut(); window.location.href = 'login.html'; });
+
+    var DEMO = !!window.HSG_DEMO;
+    var badge = document.getElementById('mode-badge');
+    badge.textContent = DEMO ? 'DEMONSTRATION — writes to the session sandbox' : 'LIVE — writes to production';
+    badge.className = 'chip' + (DEMO ? '' : ' chip--good');
+
+    var $app = document.getElementById('app');
+
+    var PROGRAMS = [
+      { code: 'HVLS',  name: 'HVLS — Vacant single-family (HECM)',      seller: 'HUD', portal: 'residential' },
+      { code: 'HNVLS', name: 'HNVLS — Non-vacant single-family (HECM)', seller: 'HUD', portal: 'residential' },
+      { code: 'SFLS',  name: 'SFLS — Single-family forward',            seller: 'HUD', portal: 'residential' },
+      { code: 'MHLS',  name: 'MHLS — Multifamily',                      seller: 'HUD', portal: 'commercial' },
+      { code: 'HLS',   name: 'HLS — Healthcare / residential care',     seller: 'HUD', portal: 'commercial' }
+    ];
+
+    var state = {
+      step: 1,
+      maxReached: 1,
+      meta: { saleId: '', programType: '', seller: 'HUD', sale_name: '', bid_basis: '', status: 'draft',
+              key_dates: {}, completion_code: '' },
+      tape: null,
+      mapping: {},
+      poolStrategy: 'single',
+      poolCount: 2,
+      loans: [],
+      pools: [],
+      sale: null,
+      committing: false,
+      committed: null
+    };
+
+    var STEPS = [
+      { n: 1, label: 'Sale details', sub: 'Identity & basis' },
+      { n: 2, label: 'Upload tape', sub: 'Parse .xlsx' },
+      { n: 3, label: 'Map columns', sub: 'Tape → fields' },
+      { n: 4, label: 'Pools', sub: 'Group loans' },
+      { n: 5, label: 'Review & commit', sub: 'Create sale' }
+    ];
+
+    // ---- toast ----
+    var toastEl = document.getElementById('toast'), toastTimer = null;
+    function toast(msg, isErr) {
+      toastEl.innerHTML = msg; toastEl.className = 'toast toast--show' + (isErr ? ' toast--error' : '');
+      clearTimeout(toastTimer); toastTimer = setTimeout(function () { toastEl.className = 'toast'; }, isErr ? 6000 : 3500);
+    }
+
+    // ============================ render ============================
+    function render() {
+      var html = '';
+      html += '<div class="stepper">' + STEPS.map(function (s) {
+        var cls = 'step';
+        if (s.n === state.step) cls += ' step--active';
+        else if (s.n < state.maxReached || s.n < state.step) cls += ' step--done';
+        if (s.n > state.maxReached) cls += ' step--disabled';
+        return '<div class="' + cls + '" data-step="' + s.n + '">' +
+          '<div class="step__num">' + (s.n < state.step ? '✓' : s.n) + '</div>' +
+          '<div><div class="step__label">' + esc(s.label) + '</div><div class="step__sub">' + esc(s.sub) + '</div></div>' +
+        '</div>';
+      }).join('') + '</div>';
+
+      html += '<div id="panel"></div>';
+      $app.innerHTML = html;
+
+      $app.querySelectorAll('.step').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var n = Number(el.getAttribute('data-step'));
+          if (n <= state.maxReached) gotoStep(n);
+        });
+      });
+
+      var p = document.getElementById('panel');
+      if (state.step === 1) renderDetails(p);
+      else if (state.step === 2) renderUpload(p);
+      else if (state.step === 3) renderMapping(p);
+      else if (state.step === 4) renderPools(p);
+      else if (state.step === 5) renderReview(p);
+    }
+
+    function gotoStep(n) { state.step = n; state.maxReached = Math.max(state.maxReached, n); render(); }
+    function navButtons(backTo, nextFn, nextLabel, nextDisabled) {
+      return '<div class="wizard-nav">' +
+        (backTo ? '<button class="btn btn--ghost" id="nav-back">← Back</button>' : '<span></span>') +
+        '<div class="wizard-nav__right">' +
+          (nextFn ? '<button class="btn btn--primary" id="nav-next"' + (nextDisabled ? ' disabled' : '') + '>' + esc(nextLabel || 'Continue →') + '</button>' : '') +
+        '</div>' +
+      '</div>';
+    }
+    function wireNav(backTo, nextFn) {
+      var b = document.getElementById('nav-back'); if (b && backTo) b.addEventListener('click', function () { gotoStep(backTo); });
+      var nx = document.getElementById('nav-next'); if (nx && nextFn) nx.addEventListener('click', nextFn);
+    }
+
+    // ---------------------- Step 1: details ----------------------
+    function renderDetails(p) {
+      var m = state.meta;
+      p.innerHTML =
+        '<div class="panel panel--active"><div class="card-pad">' +
+          '<div class="card-pad__title">Sale details</div>' +
+          '<div class="card-pad__hint">Define the offering. The program sets the portal and the default official bid basis; you can override the basis.</div>' +
+          '<div class="grid-2">' +
+            '<div class="field"><label>Program type <span class="req-dot">*</span></label>' +
+              '<select id="f-program">' + '<option value="">Select a program…</option>' +
+                PROGRAMS.map(function (pr) { return '<option value="' + pr.code + '"' + (m.programType === pr.code ? ' selected' : '') + '>' + esc(pr.name) + '</option>'; }).join('') +
+              '</select><div class="field__hint" id="program-hint"></div></div>' +
+            '<div class="field"><label>Seller</label>' +
+              '<select id="f-seller">' +
+                '<option value="HUD"' + (m.seller === 'HUD' ? ' selected' : '') + '>U.S. Department of Housing &amp; Urban Development</option>' +
+                '<option value="Ginnie Mae"' + (m.seller === 'Ginnie Mae' ? ' selected' : '') + '>Government National Mortgage Association (Ginnie Mae)</option>' +
+              '</select><div class="field__hint" id="seller-hint"></div></div>' +
+          '</div>' +
+          '<div class="grid-2">' +
+            '<div class="field"><label>Sale ID <span class="req-dot">*</span></label>' +
+              '<input type="text" id="f-saleid" value="' + esc(m.saleId) + '" placeholder="e.g. HVLS-2026-2" />' +
+              '<div class="field__hint">Unique. Used in URLs, the data room, and every workbook.</div></div>' +
+            '<div class="field"><label>Official bid basis <span class="req-dot">*</span></label>' +
+              '<select id="f-basis">' +
+                ['ULB','UPB','BPO','ETD'].map(function (b) { return '<option value="' + b + '"' + (m.bid_basis === b ? ' selected' : '') + '>' + b + ' — ' + basisLabel(b) + '</option>'; }).join('') +
+              '</select><div class="field__hint">Bidders bid a percentage of this figure per loan.</div></div>' +
+          '</div>' +
+          '<div class="field"><label>Sale name</label>' +
+            '<input type="text" id="f-name" value="' + esc(m.sale_name) + '" placeholder="e.g. HUD HECM Vacant Loan Sale 2026-2" /></div>' +
+          '<div class="grid-3">' +
+            dateField('Qualification closes', 'qualification_closes', m.key_dates.qualification_closes) +
+            dateField('Data room go-live', 'go_live_data_room', m.key_dates.go_live_data_room) +
+            dateField('Bid day', 'bid_day', m.key_dates.bid_day) +
+          '</div>' +
+          '<div class="grid-2">' +
+            '<div class="field"><label>Status at creation</label>' +
+              '<select id="f-status">' +
+                ['draft','announced','qualification_open'].map(function (s) { return '<option value="' + s + '"' + (m.status === s ? ' selected' : '') + '>' + esc(s.replace(/_/g, ' ')) + '</option>'; }).join('') +
+              '</select><div class="field__hint">New sales start as drafts; bidders never see drafts.</div></div>' +
+            '<div class="field"><label>Completion code <span class="field__hint" style="font-weight:400;">(admin-only, optional)</span></label>' +
+              '<input type="text" id="f-code" value="' + esc(m.completion_code) + '" placeholder="auto / leave blank" />' +
+              '<div class="field__hint">Issued to a winning bidder at award. Never exposed to bidders.</div></div>' +
+          '</div>' +
+        '</div>' +
+        navButtons(null, step1Next, 'Continue →') +
+        '</div>';
+
+      var prog = document.getElementById('f-program');
+      prog.addEventListener('change', function () {
+        m.programType = prog.value;
+        var pr = PROGRAMS.find(function (x) { return x.code === m.programType; });
+        if (pr) {
+          // default basis + seller + suggested id/name
+          var db = SB.defaultBasis(m.programType);
+          document.getElementById('f-basis').value = db; m.bid_basis = db;
+          if (!m.saleId) document.getElementById('f-saleid').value = suggestId(m.programType);
+          updateProgramHint();
+        }
+      });
+      document.getElementById('f-seller').addEventListener('change', function () { m.seller = this.value; updateSellerHint(); });
+      updateProgramHint(); updateSellerHint();
+      wireNav(null, step1Next);
+    }
+    function basisLabel(b) { return b === 'ULB' ? 'unpaid loan balance' : b === 'UPB' ? 'current unpaid principal' : b === 'BPO' ? 'broker price opinion' : 'ETD-adjusted BPO'; }
+    function dateField(label, key, val) {
+      return '<div class="field"><label>' + esc(label) + '</label><input type="date" data-date="' + key + '" value="' + esc(val || '') + '" /></div>';
+    }
+    function suggestId(program) { var yr = new Date().getFullYear(); return program + '-' + yr + '-1'; }
+    function updateProgramHint() {
+      var pr = PROGRAMS.find(function (x) { return x.code === state.meta.programType; });
+      var el = document.getElementById('program-hint'); if (!el) return;
+      el.innerHTML = pr ? ('Portal: <strong>' + pr.portal + '</strong> · default basis <strong>' + SB.defaultBasis(pr.code) + '</strong>') : 'Sets the portal and default basis.';
+    }
+    function updateSellerHint() {
+      var el = document.getElementById('seller-hint'); if (!el) return;
+      var g = state.meta.seller === 'Ginnie Mae';
+      el.innerHTML = '<span class="seller-brand"><span class="seller-dot" style="background:' + (g ? '#0A2A66' : '#1A4480') + '"></span>' + (g ? 'Ginnie Mae branding on workbooks &amp; BEM' : 'HUD branding on workbooks &amp; BEM') + '</span>';
+    }
+    function step1Next() {
+      var m = state.meta;
+      m.saleId = document.getElementById('f-saleid').value.trim();
+      m.programType = document.getElementById('f-program').value;
+      m.seller = document.getElementById('f-seller').value;
+      m.bid_basis = document.getElementById('f-basis').value;
+      m.sale_name = document.getElementById('f-name').value.trim();
+      m.status = document.getElementById('f-status').value;
+      m.completion_code = document.getElementById('f-code').value.trim();
+      m.key_dates = {};
+      document.querySelectorAll('[data-date]').forEach(function (el) { if (el.value) m.key_dates[el.getAttribute('data-date')] = el.value; });
+      if (!m.programType) return toast('Pick a program type.', true);
+      if (!m.saleId) return toast('Enter a sale ID.', true);
+      if (!/^[A-Za-z0-9._-]+$/.test(m.saleId)) return toast('Sale ID may only contain letters, numbers, dot, dash, underscore.', true);
+      gotoStep(2);
+    }
+
+    // ---------------------- Step 2: upload ----------------------
+    function renderUpload(p) {
+      var t = state.tape;
+      var body = '<div class="card-pad">' +
+        '<div class="card-pad__title">Upload the loan tape</div>' +
+        '<div class="card-pad__hint">Drop the seller&#39;s .xlsx tape for <strong>' + esc(state.meta.saleId) + '</strong>. The first sheet with data is read; you can switch sheets after parsing.</div>' +
+        '<div class="drop" id="drop"><div class="drop__icon">⬆</div>' +
+          '<div class="drop__big">Drop .xlsx here, or click to choose</div>' +
+          '<div class="drop__sub">Headers in the first populated row. Up to thousands of loans.</div>' +
+        '</div>' +
+        '<input type="file" id="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none" />' +
+        '<div style="margin-top: var(--space-4); display:flex; gap: var(--space-3); flex-wrap: wrap;">' +
+          '<button class="btn btn--outline btn--sm" id="dl-template">⬇ Download tape template</button>' +
+          (DEMO ? '<button class="btn btn--outline btn--sm" id="use-sample">⚡ Use sample data (demo)</button>' : '') +
+        '</div>' +
+        '<div id="tape-result"></div>' +
+      '</div>';
+      p.innerHTML = '<div class="panel panel--active">' + body + navButtons(1, t ? function () { gotoStep(3); } : null, 'Continue →', !t) + '</div>';
+
+      var drop = document.getElementById('drop'), file = document.getElementById('file');
+      drop.addEventListener('click', function () { file.click(); });
+      drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('drop--over'); });
+      drop.addEventListener('dragleave', function () { drop.classList.remove('drop--over'); });
+      drop.addEventListener('drop', function (e) {
+        e.preventDefault(); drop.classList.remove('drop--over');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+      });
+      file.addEventListener('change', function () { if (file.files[0]) handleFile(file.files[0]); });
+      document.getElementById('dl-template').addEventListener('click', downloadTemplate);
+      var us = document.getElementById('use-sample'); if (us) us.addEventListener('click', useSampleData);
+      if (t) renderTapeResult();
+      wireNav(1, t ? function () { gotoStep(3); } : null);
+    }
+
+    function handleFile(f) {
+      var res = document.getElementById('tape-result');
+      res.innerHTML = '<div style="margin-top: var(--space-4);"><span class="spin" style="border-color:rgba(0,0,0,0.15);border-top-color:var(--color-portal)"></span> Parsing <strong>' + esc(f.name) + '</strong>…</div>';
+      TAPE.read(f).then(function (parsed) {
+        state.tape = parsed; state.tape.fileName = f.name;
+        state.mapping = TAPE.autoMap(parsed.headers).byCanon;
+        rebuild();
+        render();   // re-render so the Continue button enables + result shows
+        toast('Parsed ' + parsed.rowCount.toLocaleString() + ' rows from ' + esc(f.name));
+      }).catch(function (err) {
+        res.innerHTML = '<div class="vmsg vmsg--error" style="margin-top: var(--space-4);">Could not read that file: ' + esc(err.message || err) + '</div>';
+      });
+    }
+
+    function renderTapeResult() {
+      var t = state.tape; if (!t) return;
+      var res = document.getElementById('tape-result'); if (!res) return;
+      var sheetSel = (t.sheetNames && t.sheetNames.length > 1)
+        ? '<div class="field" style="max-width:320px; margin-top: var(--space-4);"><label>Worksheet</label><select id="sheet-sel">' +
+            t.sheetNames.map(function (n) { return '<option value="' + esc(n) + '"' + (n === t.sheetName ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') +
+          '</select></div>' : '';
+      res.innerHTML =
+        '<div class="tape-meta">' +
+          '<span class="chip chip--good">✓ ' + esc(t.fileName || 'tape.xlsx') + '</span>' +
+          '<span class="chip">' + t.rowCount.toLocaleString() + ' rows</span>' +
+          '<span class="chip">' + t.colCount + ' columns</span>' +
+          '<span class="chip">sheet: ' + esc(t.sheetName) + '</span>' +
+          '<span class="chip">header row ' + t.headerRow + '</span>' +
+        '</div>' + sheetSel +
+        '<div style="margin-top: var(--space-4);"><div class="map-group__h">First rows</div>' + previewTable(t.headers, t.matrix, 6) + '</div>';
+      var ss = document.getElementById('sheet-sel');
+      if (ss) ss.addEventListener('change', function () {
+        var name = ss.value;
+        res.innerHTML = '<div style="margin-top: var(--space-4);"><span class="spin" style="border-color:rgba(0,0,0,0.15);border-top-color:var(--color-portal)"></span> Reading sheet ' + esc(name) + '…</div>';
+        // re-read needs the file; we kept only parsed data, so re-prompt is avoided by reusing matrix when same sheet.
+        toast('Re-pick the file to switch sheets in this build.', true);
+      });
+    }
+
+    function previewTable(headers, matrix, n) {
+      var rows = matrix.slice(0, n);
+      var th = headers.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('');
+      var body = rows.map(function (r) {
+        return '<tr>' + headers.map(function (_, i) {
+          var v = r[i]; var isNum = typeof v === 'number';
+          return '<td class="' + (isNum ? 'num' : '') + '">' + esc(isNum ? v.toLocaleString() : (v == null ? '' : v)) + '</td>';
+        }).join('') + '</tr>';
+      }).join('');
+      return '<div class="tbl-wrap"><table class="preview"><thead><tr>' + th + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+    }
+
+    // ---------------------- Step 3: mapping ----------------------
+    function renderMapping(p) {
+      var t = state.tape;
+      if (!t) { p.innerHTML = '<div class="vmsg vmsg--warn">Upload a tape first.</div>'; return; }
+      var groups = {};
+      TAPE.CANON.forEach(function (f) { (groups[f.group] = groups[f.group] || []).push(f); });
+      var GROUP_LABEL = { identity: 'Identity', balances: 'Balances', valuation: 'Valuation', terms: 'Terms', property: 'Property / collateral', grouping: 'Pool grouping' };
+
+      var mapHtml = Object.keys(groups).map(function (g) {
+        return '<div class="map-group"><div class="map-group__h">' + esc(GROUP_LABEL[g] || g) + '</div>' +
+          groups[g].map(function (f) {
+            var sel = state.mapping[f.key] || '';
+            var cls = 'map-sel' + (sel ? ' map-sel--mapped' : (f.required ? ' map-sel--missing-req' : ''));
+            var opts = '<option value="">— not in tape —</option>' + t.headers.map(function (h) { return '<option value="' + esc(h) + '"' + (h === sel ? ' selected' : '') + '>' + esc(h) + '</option>'; }).join('');
+            return '<div class="map-row">' +
+              '<div class="map-row__field">' + esc(f.label) + (f.required ? ' <span class="req-dot">*</span>' : '') + ' <small>' + esc(f.key) + (f.basisFor ? ' · basis ' + f.basisFor : '') + '</small></div>' +
+              '<select class="' + cls + '" data-canon="' + f.key + '">' + opts + '</select>' +
+            '</div>';
+          }).join('') +
+        '</div>';
+      }).join('');
+
+      p.innerHTML = '<div class="panel panel--active"><div class="card-pad">' +
+          '<div class="card-pad__title">Map tape columns to platform fields</div>' +
+          '<div class="card-pad__hint">Auto-matched by header name — verify and fix. <span class="req-dot">*</span> required. The official basis for this sale is <strong>' + esc(state.meta.bid_basis) + '</strong>, so its column should be mapped.</div>' +
+          '<div class="grid-2" style="align-items:start;"><div>' + mapHtml + '</div>' +
+          '<div><div class="map-group__h">Live preview — mapped loans</div><div id="map-preview"></div></div></div>' +
+        '</div>' + navButtons(2, step3Next, 'Continue →') + '</div>';
+
+      p.querySelectorAll('select[data-canon]').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+          var k = sel.getAttribute('data-canon');
+          if (sel.value) state.mapping[k] = sel.value; else delete state.mapping[k];
+          rebuild(); updateMapPreview();
+          sel.className = 'map-sel' + (sel.value ? ' map-sel--mapped' : (TAPE.fieldByKey(k).required ? ' map-sel--missing-req' : ''));
+        });
+      });
+      updateMapPreview();
+      wireNav(2, step3Next);
+    }
+    function updateMapPreview() {
+      var el = document.getElementById('map-preview'); if (!el) return;
+      var cols = ['loan_id', 'property_state', 'current_upb', 'ulb', 'bpo_value', 'etd_adjusted_bpo'];
+      var labels = { loan_id: 'Loan ID', property_state: 'ST', current_upb: 'UPB', ulb: 'ULB', bpo_value: 'BPO', etd_adjusted_bpo: 'ETD' };
+      var rows = state.loans.slice(0, 8).map(function (l) {
+        return '<tr>' + cols.map(function (c) {
+          var v = c === 'property_state' ? (l.property && l.property.state) : l[c];
+          var isNum = typeof v === 'number';
+          return '<td class="' + (isNum ? 'num' : '') + '">' + esc(isNum ? Math.round(v).toLocaleString() : (v == null ? '—' : v)) + '</td>';
+        }).join('') + '</tr>';
+      }).join('');
+      el.innerHTML = '<div class="tbl-wrap"><table class="preview"><thead><tr>' + cols.map(function (c) { return '<th>' + labels[c] + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        '<div class="field__hint" style="margin-top: var(--space-2);">' + state.loans.length.toLocaleString() + ' loans built from the tape.</div>';
+    }
+    function step3Next() {
+      if (!state.mapping.loan_id) { if (!confirm('No Loan ID column is mapped — IDs will be auto-generated. Continue?')) return; }
+      var basisField = SB.BASIS_FIELD[(state.meta.bid_basis || 'UPB').toUpperCase()];
+      var haveBasis = state.loans.some(function (l) { return Number(l[basisField]) > 0; });
+      if (!haveBasis) return toast('No loan has a ' + state.meta.bid_basis + ' value — map the basis column before continuing.', true);
+      gotoStep(4);
+    }
+
+    // ---------------------- Step 4: pools ----------------------
+    function renderPools(p) {
+      var hasPoolCol = !!state.mapping.pool;
+      var opt = function (key, h, sub, disabled) {
+        return '<div class="strat__opt' + (state.poolStrategy === key ? ' strat__opt--on' : '') + (disabled ? ' step--disabled' : '') + '" data-strat="' + key + '"' + (disabled ? ' data-disabled="1"' : '') + '>' +
+          '<h4>' + esc(h) + '</h4><p>' + esc(sub) + '</p></div>';
+      };
+      p.innerHTML = '<div class="panel panel--active"><div class="card-pad">' +
+        '<div class="card-pad__title">Group loans into pools</div>' +
+        '<div class="card-pad__hint">Bidders bid whole pools. Choose how to form them.</div>' +
+        '<div class="strat">' +
+          opt('single', 'Single pool', 'All ' + state.loans.length.toLocaleString() + ' loans in one pool.') +
+          opt('equal', 'Equal split', 'Divide into N contiguous pools of similar size.') +
+          opt('column', 'By tape column', hasPoolCol ? ('Group by the mapped "' + esc(state.mapping.pool) + '" column.') : 'Map a Pool column on the previous step to enable.', !hasPoolCol) +
+        '</div>' +
+        '<div id="pool-controls"></div>' +
+        '<div id="pool-table" style="margin-top: var(--space-5);"></div>' +
+      '</div>' + navButtons(3, function () { gotoStep(5); }, 'Continue →') + '</div>';
+
+      p.querySelectorAll('[data-strat]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          if (el.getAttribute('data-disabled')) return;
+          state.poolStrategy = el.getAttribute('data-strat');
+          rebuild(); renderPools(p);
+        });
+      });
+      renderPoolControls(); rebuild(); renderPoolTable();
+      wireNav(3, function () { gotoStep(5); });
+    }
+    function renderPoolControls() {
+      var el = document.getElementById('pool-controls'); if (!el) return;
+      if (state.poolStrategy === 'equal') {
+        el.innerHTML = '<div class="field" style="max-width:220px;"><label>Number of pools</label>' +
+          '<input type="number" id="pool-count" min="1" max="20" value="' + state.poolCount + '" /></div>';
+        document.getElementById('pool-count').addEventListener('input', function () {
+          state.poolCount = Math.max(1, Math.min(20, Number(this.value) || 1)); rebuild(); renderPoolTable();
+        });
+      } else { el.innerHTML = ''; }
+    }
+    function renderPoolTable() {
+      var el = document.getElementById('pool-table'); if (!el) return;
+      var basis = (state.meta.bid_basis || 'UPB').toUpperCase();
+      var head = '<div class="pool-row pool-row--head"><div>Pool</div><div class="num">Loans</div><div class="num">Agg. UPB</div><div class="num">Agg. ' + esc(basis) + '</div><div>States</div></div>';
+      var rows = state.pools.map(function (pl) {
+        var aggBasis = pl.summary['aggregate_' + (basis === 'UPB' ? 'upb' : basis === 'ULB' ? 'ulb' : basis === 'BPO' ? 'bpo' : 'etd')] || 0;
+        return '<div class="pool-row"><div><strong>' + esc(pl.pool_name) + '</strong><br><span class="field__hint">' + esc(pl.pool_id) + '</span></div>' +
+          '<div class="num">' + pl.summary.loan_count.toLocaleString() + '</div>' +
+          '<div class="num">' + fmtCompact(pl.summary.aggregate_upb) + '</div>' +
+          '<div class="num">' + fmtCompact(aggBasis) + '</div>' +
+          '<div class="field__hint">' + esc((pl.summary.states || []).join(', ') || '—') + '</div></div>';
+      }).join('');
+      el.innerHTML = '<div class="card" style="padding:0; overflow:hidden;">' + head + rows + '</div>';
+    }
+
+    // ---------------------- Step 5: review ----------------------
+    function renderReview(p) {
+      rebuild();
+      var s = state.sale, basis = (state.meta.bid_basis || 'UPB').toUpperCase();
+      var warnings = SB.validate(state.loans, s, state.mapping);
+      var hasError = warnings.some(function (w) { return w.level === 'error'; });
+      var aggBasis = s.summary['aggregate_' + (basis === 'UPB' ? 'upb' : basis === 'ULB' ? 'ulb' : basis === 'BPO' ? 'bpo' : 'etd')] || 0;
+
+      var vlist = warnings.length
+        ? warnings.map(function (w) { return '<div class="vmsg vmsg--' + (w.level === 'error' ? 'error' : 'warn') + '">' + (w.level === 'error' ? '✕' : '⚠') + ' ' + esc(w.msg) + '</div>'; }).join('')
+        : '<div class="vmsg vmsg--ok">✓ No issues detected. Ready to create.</div>';
+
+      var committed = state.committed;
+      p.innerHTML = '<div class="panel panel--active"><div class="card-pad">' +
+        '<div class="card-pad__title">Review &amp; create</div>' +
+        '<div class="card-pad__hint">' + (DEMO ? 'This writes to the in-browser demonstration sandbox — nothing touches live systems.' : 'This creates the sale and ingests its loans into production DynamoDB.') + '</div>' +
+        '<div class="summary-grid">' +
+          smCard('Sale', esc(s.saleId)) +
+          smCard('Program · portal', esc(s.programType) + ' · ' + esc(s.portal)) +
+          smCard('Loans', s.summary.loan_count.toLocaleString()) +
+          smCard('Pools', String(s.pools.length)) +
+          smCard('Aggregate UPB', fmtCompact(s.summary.aggregate_upb)) +
+          smCard('Aggregate ' + basis, fmtCompact(aggBasis)) +
+          smCard('Basis', basis) +
+          smCard('Seller', esc(s.seller)) +
+        '</div>' +
+        '<div class="map-group__h">Pools</div>' +
+        '<div class="card" style="padding:0; overflow:hidden; margin-bottom: var(--space-5);">' +
+          '<div class="pool-row pool-row--head"><div>Pool</div><div class="num">Loans</div><div class="num">Agg. UPB</div><div class="num">Agg. ' + esc(basis) + '</div><div>States</div></div>' +
+          s.pools.map(function (pl) {
+            var ab = pl.summary['aggregate_' + (basis === 'UPB' ? 'upb' : basis === 'ULB' ? 'ulb' : basis === 'BPO' ? 'bpo' : 'etd')] || 0;
+            return '<div class="pool-row"><div><strong>' + esc(pl.pool_name) + '</strong></div><div class="num">' + pl.summary.loan_count.toLocaleString() + '</div><div class="num">' + fmtCompact(pl.summary.aggregate_upb) + '</div><div class="num">' + fmtCompact(ab) + '</div><div class="field__hint">' + esc((pl.summary.states || []).join(', ')) + '</div></div>';
+          }).join('') +
+        '</div>' +
+        '<div class="map-group__h">Validation</div>' + vlist +
+        (committed ? '<div class="vmsg vmsg--ok" style="margin-top: var(--space-4);">✓ Created <strong>' + esc(committed.saleId) + '</strong> with ' + committed.loanCount.toLocaleString() + ' loans across ' + committed.poolCount + ' pools. ' +
+            '<a href="' + (DEMO ? 'dataroom.html?saleId=' + encodeURIComponent(committed.saleId) + '&demo=1' : 'dataroom.html?saleId=' + encodeURIComponent(committed.saleId)) + '" style="text-decoration:underline;">Open its data room →</a></div>' : '') +
+      '</div>' +
+      '<div class="wizard-nav"><button class="btn btn--ghost" id="nav-back">← Back</button>' +
+        '<div class="wizard-nav__right">' +
+          (committed ? '<a class="btn btn--outline" href="index.html">Go to dashboard</a><button class="btn btn--primary" id="new-sale">+ Set up another</button>'
+                     : '<button class="btn btn--primary btn--lg" id="commit"' + (hasError || state.committing ? ' disabled' : '') + '>' + (state.committing ? '<span class="spin"></span> Creating…' : (DEMO ? 'Create sale (sandbox)' : 'Create sale in production')) + '</button>') +
+        '</div></div>' +
+      '</div>';
+
+      document.getElementById('nav-back').addEventListener('click', function () { gotoStep(4); });
+      var c = document.getElementById('commit'); if (c) c.addEventListener('click', commit);
+      var ns = document.getElementById('new-sale'); if (ns) ns.addEventListener('click', resetWizard);
+    }
+    function smCard(l, v) { return '<div class="sm"><div class="sm__l">' + l + '</div><div class="sm__v">' + v + '</div></div>'; }
+
+    // ============================ build + commit ============================
+    function rebuild() {
+      if (!state.tape) { state.loans = []; state.pools = []; state.sale = null; return; }
+      state.loans = SB.buildLoans(state.tape.rows, state.mapping, state.meta.saleId, { programType: state.meta.programType });
+      state.pools = SB.assignPools(state.loans, state.poolStrategy, state.meta.saleId, { programType: state.meta.programType, basis: state.meta.bid_basis, poolCount: state.poolCount });
+      state.sale = SB.buildSale(state.meta, state.pools, state.loans);
+    }
+
+    function commit() {
+      if (state.committing) return;
+      rebuild();
+      var warnings = SB.validate(state.loans, state.sale, state.mapping);
+      if (warnings.some(function (w) { return w.level === 'error'; })) return toast('Resolve the errors before creating.', true);
+      state.committing = true; renderReview(document.getElementById('panel'));
+
+      var cleanLoans = SB.cleanLoans(state.loans);
+      HSG.api.sales.create(state.sale).then(function () {
+        // chunk loans for very large tapes
+        return putLoansChunked(state.meta.saleId, cleanLoans);
+      }).then(function () {
+        state.committing = false;
+        state.committed = { saleId: state.meta.saleId, loanCount: cleanLoans.length, poolCount: state.pools.length };
+        toast('Sale ' + state.meta.saleId + ' created.');
+        renderReview(document.getElementById('panel'));
+      }).catch(function (err) {
+        state.committing = false;
+        renderReview(document.getElementById('panel'));
+        toast('Create failed: ' + esc(err.message || err), true);
+      });
+    }
+    function putLoansChunked(saleId, loans) {
+      var CH = 400, i = 0;
+      function next() {
+        if (i >= loans.length) return Promise.resolve();
+        var slice = loans.slice(i, i + CH); i += CH;
+        return HSG.api.loans.bulkPut(saleId, slice).then(next);
+      }
+      return next();
+    }
+
+    function resetWizard() {
+      state.step = 1; state.maxReached = 1; state.tape = null; state.mapping = {};
+      state.poolStrategy = 'single'; state.poolCount = 2; state.loans = []; state.pools = []; state.sale = null;
+      state.committed = null; state.committing = false;
+      state.meta = { saleId: '', programType: '', seller: 'HUD', sale_name: '', bid_basis: '', status: 'draft', key_dates: {}, completion_code: '' };
+      render();
+    }
+    document.getElementById('reset-btn').addEventListener('click', function () { if (confirm('Discard this setup and start over?')) resetWizard(); });
+
+    // ---- template + sample (ExcelJS) ----
+    function downloadTemplate() {
+      var ensure = HSG.bidWorkbook && HSG.bidWorkbook.ensureLib ? HSG.bidWorkbook.ensureLib() : Promise.reject(new Error('Excel engine unavailable'));
+      ensure.then(function (ExcelJS) {
+        var wb = new ExcelJS.Workbook(); var ws = wb.addWorksheet('Loan Tape');
+        var cols = TAPE.CANON.map(function (f) { return f.label; });
+        ws.addRow(cols);
+        ws.getRow(1).font = { bold: true }; ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E1F6B' } };
+        ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        // example rows
+        var ex = [
+          ['L-0001','562-1000001',185000,201500,260000,234000,212000,180000,3.25,'123 Magnolia Blvd','Jacksonville','FL','32205','VACANT','FAIR','',0,'Pool 1'],
+          ['L-0002','562-1000002',142000,150300,235000,206800,'',135000,4.10,'88 Cedar St','Dallas','TX','75201','OCCUPIED','GOOD','',0,'Pool 1'],
+          ['L-0003','562-1000003',310000,322400,398000,358200,341000,300000,2.95,'17 Live Oak Dr','Phoenix','AZ','85003','VACANT','GOOD','',0,'Pool 2']
+        ];
+        ex.forEach(function (r) { ws.addRow(r); });
+        ws.columns.forEach(function (c) { c.width = 18; });
+        return wb.xlsx.writeBuffer();
+      }).then(function (buf) {
+        var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = (state.meta.saleId || 'HUD-OAS') + '-Tape-Template.xlsx'; document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+        toast('Template downloaded.');
+      }).catch(function (err) { toast('Template failed: ' + esc(err.message || err), true); });
+    }
+
+    function useSampleData() {
+      // Build a synthetic parsed tape so the whole flow is clickable without a file.
+      var STATES = ['FL','TX','CA','GA','OH','PA','NC','AZ','MI','IL'];
+      var CITY = { FL:'Orlando', TX:'Houston', CA:'Fresno', GA:'Atlanta', OH:'Toledo', PA:'Erie', NC:'Raleigh', AZ:'Mesa', MI:'Flint', IL:'Peoria' };
+      var headers = TAPE.CANON.map(function (f) { return f.label; });
+      var N = 120, seed = 1234567;
+      function rng() { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; seed >>>= 0; return seed / 4294967296; }
+      var matrix = [], rows = [];
+      for (var i = 0; i < N; i++) {
+        var st = STATES[Math.floor(rng() * STATES.length)];
+        var upb = Math.round((90000 + rng() * 320000) / 1000) * 1000;
+        var ulb = Math.round(upb * (1.03 + rng() * 0.12) / 1000) * 1000;
+        var bpo = Math.round(upb / (0.35 + rng() * 0.4) / 1000) * 1000;
+        var etd = Math.round(bpo * (0.85 + rng() * 0.4) / 1000) * 1000;
+        var mca = Math.round(upb * (1.0 + rng() * 0.15) / 1000) * 1000;
+        var pool = 'Pool ' + (1 + (i % 2));
+        var rate = Math.round((3 + rng() * 4) * 1000) / 1000;   // 3.000–7.000%
+        // Order MUST match TAPE.CANON exactly (19 fields):
+        // loan_id, fha, current_upb, ulb, bpo, etd, max_claim, orig_principal, rate,
+        // address, city, state, zip, occupancy, condition, property_name, asset_class, units, pool
+        var rowArr = ['L-' + String(10001 + i), '562-' + (1000000 + i), upb, ulb, bpo, etd, mca, Math.round(upb * 0.9 / 1000) * 1000,
+          rate, (100 + Math.floor(rng() * 8900)) + ' Magnolia Blvd', CITY[st], st, '3' + (1000 + Math.floor(rng() * 8999)),
+          rng() < 0.65 ? 'VACANT' : 'OCCUPIED', ['GOOD', 'FAIR', 'POOR'][Math.floor(rng() * 3)], '', '', '', pool];
+        matrix.push(rowArr);
+        var obj = {}; headers.forEach(function (h, j) { obj[h] = rowArr[j]; }); rows.push(obj);
+      }
+      state.tape = { headers: headers, rows: rows, matrix: matrix, rowCount: N, colCount: headers.length, headerRow: 1, sheetName: 'Loan Tape', sheetNames: ['Loan Tape'], fileName: 'SAMPLE-' + (state.meta.programType || 'HUD') + '-tape.xlsx' };
+      state.mapping = TAPE.autoMap(headers).byCanon;
+      rebuild(); render();
+      toast('Loaded ' + N + ' sample loans. Map columns and continue.');
+    }
+
+    render();
+  })();
+  </script>
+</body>
+</html>
