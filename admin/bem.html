@@ -100,6 +100,7 @@
   <script src="../demo/data.js"></script>
   <script src="../demo/gnma/data.js"></script>
   <script src="../shared/api-demo.js"></script>
+  <script src="../shared/bem-model.js"></script>
   <script>
   (function () {
     var u = HSG.utils;
@@ -220,6 +221,7 @@
       // Toolbar
       html += '<div class="toolbar">' +
         '<button class="btn-portal" id="run-btn">Run BEM →</button>' +
+        '<button class="btn-portal btn-portal--ghost" id="gen-bem-btn">⬇ Generate BEM (Excel)</button>' +
         '<button class="btn-portal btn-portal--ghost" id="save-btn">Save</button>' +
         (s.scenarioId ? '<button class="btn-portal btn-portal--ghost" id="delete-btn" style="color: var(--color-error); border-color: var(--color-error);">Delete</button>' : '') +
         (activeRunResult ? '<button class="btn-portal" id="approve-btn" style="margin-left: auto; background: var(--color-success);">Approve all awards →</button>' : '') +
@@ -371,6 +373,31 @@
 
       var saveBtn = document.getElementById('save-btn');
       if (saveBtn) saveBtn.addEventListener('click', function () { saveScenario(scenario); });
+
+      // Generate the formula-driven, co-branded BEM workbook (Excel)
+      var genBtn = document.getElementById('gen-bem-btn');
+      if (genBtn) genBtn.addEventListener('click', function () {
+        if (!window.HSG || !HSG.bem) { alert('The Excel engine is unavailable on this page.'); return; }
+        var saleId = currentSale.saleId || currentSale.sale_id;
+        // current reserve % per pool from the panel inputs
+        var reserves = {};
+        $app.querySelectorAll('[data-reserve-pool]').forEach(function (inp) { reserves[inp.getAttribute('data-reserve-pool')] = parseFloat(inp.value) || 0; });
+        var label = genBtn.textContent; genBtn.disabled = true; genBtn.textContent = 'Building…';
+        Promise.all([
+          HSG.api.bids.list({ saleId: saleId }),
+          HSG.api.loans.listForSale ? HSG.api.loans.listForSale(saleId) : Promise.resolve({ loans: [] })
+        ]).then(function (r) {
+          var bids = ((r[0] && r[0].bids) || []).filter(function (b) { return b.status === 'live' && !b.withdrawn; });
+          if (!bids.length) { genBtn.disabled = false; genBtn.textContent = label; alert('No live bids to evaluate for this sale yet.'); return; }
+          var now = new Date();
+          return HSG.bem.download(currentSale, currentSale.pools || [], (r[1] && r[1].loans) || [], bids, {
+            reserves: reserves, generatedBy: (claims.email || 'HUD OAS Transaction Platform'),
+            generatedAt: now.toISOString().slice(0, 16).replace('T', ' ') + ' UTC',
+            closedAt: (currentSale.key_dates && currentSale.key_dates.bid_day) || null
+          });
+        }).then(function () { genBtn.disabled = false; genBtn.textContent = label; })
+          .catch(function (err) { genBtn.disabled = false; genBtn.textContent = label; alert('Could not generate the BEM: ' + (err.message || err)); });
+      });
 
       var runBtn = document.getElementById('run-btn');
       if (runBtn) runBtn.addEventListener('click', function () {

@@ -266,11 +266,51 @@ const seedSettlements = [{
   ]
 }];
 
+// ---- Competing bids (the bid set the Bid Evaluation Model evaluates) ----
+// Pool-level bidders submit one % across the pool; loan-level bidders vary by loan
+// (deterministic jitter) so the loan-level optimization analysis shows real upside.
+function bidderById(id) { return bidders.find(b => b.bidderId === id); }
+function loanBidsFor(poolLoans, basePct, jitterAmp, seed) {
+  let s = (seed >>> 0) || 1;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  return poolLoans.map(l => {
+    const pct = jitterAmp ? round(clip(basePct + (rnd() * 2 - 1) * jitterAmp, basePct * 0.55, 175), 5) : basePct;
+    return { loanId: l.loan_id, bidPct: pct, basis: 'ULB', basisValue: l.ulb, bidUsd: Math.round(pct / 100 * l.ulb * 100) / 100 };
+  });
+}
+function makeBid(bidderId, pool, poolLoans, basePct, opts) {
+  opts = opts || {};
+  const b = bidderById(bidderId) || { bidderId, entityName: bidderId, qualificationStatus: 'Qualified' };
+  const lb = loanBidsFor(poolLoans, basePct, opts.jitter || 0, opts.seed || 1);
+  const agg = Math.round(lb.reduce((s, x) => s + x.bidUsd, 0) * 100) / 100;
+  const conforming = b.qualificationStatus === 'Qualified';
+  return {
+    bidId: 'BID-' + bidderId + '-' + (pool.pool_number || pool.pool_id), saleId: SALE_ID, portal: 'residential',
+    poolId: pool.pool_id, poolLabel: pool.pool_name, bidderId: bidderId, bidderName: b.entityName, bidderType: b.entityType || '',
+    programType: 'HVLS', bidBasis: 'ulb', loanBids: lb, loanCount: lb.length, aggregateUsd: agg,
+    basePct: basePct, mode: opts.jitter ? 'loan-level' : 'pool-level', missionBid: !!opts.mission,
+    conforming: conforming, conformingStatus: conforming ? 'Conforming' : 'Non-conforming — bidder not qualified at bid close',
+    status: 'live', withdrawn: false, receiptId: 'RCPT-' + bidderId + '-' + (pool.pool_number || ''),
+    completionCode: sale.completion_code, timestamp: opts.ts || '2026-06-10T12:5' + (opts.min || 0) + ':00Z'
+  };
+}
+const seedBids = [
+  // Pool 1 — non-judicial (ULB ~$61.1M). Pacific Crest wins; Meridian a thin cover; Garnet Hill non-conforming.
+  makeBid('BDR-GN-001', sale.pools[0], p1, 52.5, { seed: 101, min: 1, ts: '2026-06-10T12:51:00Z' }),
+  makeBid('BDR-DEMO',  sale.pools[0], p1, 51.8, { jitter: 9, seed: 202, min: 4, ts: '2026-06-10T12:54:30Z' }),
+  makeBid('BDR-GN-002', sale.pools[0], p1, 49.0, { seed: 303, min: 2, ts: '2026-06-10T12:52:10Z' }),
+  makeBid('BDR-GN-003', sale.pools[0], p1, 50.5, { seed: 404, min: 5, ts: '2026-06-10T12:55:40Z' }),
+  // Pool 2 — judicial (ULB ~$33.1M). Highest bid still falls below a 50% reserve -> no-sale.
+  makeBid('BDR-GN-002', sale.pools[1], p2, 44.0, { seed: 505, min: 3, ts: '2026-06-10T12:53:00Z' }),
+  makeBid('BDR-GN-001', sale.pools[1], p2, 43.5, { seed: 606, min: 1, ts: '2026-06-10T12:51:30Z' }),
+  makeBid('BDR-DEMO',  sale.pools[1], p2, 41.0, { seed: 707, min: 4, ts: '2026-06-10T12:54:00Z' })
+];
+
 const out = {
   generatedAt: AS_OF + 'T00:00:00Z',
   variant: 'gnma',
   disclaimer: 'Platform demonstration configured for Sources Sought APP-T-2027-125 market research. All data is synthetic — no Ginnie Mae data is present. House Strategies Group LLC.',
-  demoBidder, sales: [sale], loans, qc: [], bidders, qa, seedSettlements, recommendations
+  demoBidder, sales: [sale], loans, qc: [], bidders, qa, seedSettlements, recommendations, seedBids
 };
 
 const target = path.resolve(__dirname, 'data.js');

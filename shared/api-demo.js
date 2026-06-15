@@ -511,7 +511,8 @@
       get: function (saleId, loanId) {
         var loan = loansFor(saleId).find(function (l) { return (l.loan_id || l.loanId) === loanId; });
         return loan ? Promise.resolve({ loan: loan }) : fail('Loan not found', 404);
-      }
+      },
+      listForSale: function (saleId) { return Promise.resolve({ saleId: saleId, loans: loansFor(saleId), count: loansFor(saleId).length }); }
     },
 
     qc: {
