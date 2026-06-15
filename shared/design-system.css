@@ -2964,7 +2964,7 @@ h1,h2,h3,h4 { letter-spacing: -0.02em; font-weight: 600; }
 .auth-brand__eyebrow { font-family: var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.55); font-size: 11px; }
 .auth-brand__title { font-family: var(--font-heading); font-weight: 600; letter-spacing: -0.02em; color: #fff; }
 .auth-brand__tagline, .auth-brand__foot { color: rgba(255,255,255,0.7); }
-.auth-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); }
+.auth-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); padding: clamp(26px, 4vw, 38px); max-width: 440px; }
 .auth-card__title { font-family: var(--font-heading); font-weight: 600; letter-spacing: -0.02em; }
 
 /* ---- Misc surfaces ---- */
