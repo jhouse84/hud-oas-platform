@@ -80,6 +80,8 @@
   <script src="../shared/state.js"></script>
   <script src="../shared/bidding-deal.js"></script>
   <script src="../shared/vdr-room.js"></script>
+  <script src="../shared/geo.js"></script>
+  <script src="../shared/property-view.js"></script>
   <script src="components.js"></script>
 
   <script>
@@ -214,6 +216,7 @@
 
         var tabs = '<div class="tabs">' +
           '<div class="tabs__item active" data-tab="bidding">Bidding</div>' +
+          '<div class="tabs__item" data-tab="properties">Properties</div>' +
           '<div class="tabs__item" data-tab="loantape">Loan tape</div>' +
           '<div class="tabs__item" data-tab="dataroom">Data room</div>' +
           '<div class="tabs__item" data-tab="qa">Q&amp;A</div>' +
@@ -253,6 +256,8 @@
         '</div>';
         wirePoolBidInputs(sale, saleCtx);
         updateSlipPanel(sale, saleCtx);
+      } else if (tab === 'properties') {
+        HSG.propertyView.render(content, { sale: sale, pools: saleCtx.pools, loans: saleCtx.loans });
       } else if (tab === 'loantape') {
         renderLoanTape(content, sale, saleCtx);
       } else if (tab === 'dataroom') {

@@ -176,6 +176,12 @@
             ['MB10', 'Open <b>My Bids</b>; change a percentage and resubmit; then withdraw.', 'The latest form is Live and the earlier one is Superseded; withdrawing flips status and lets you submit again.', R + '/my-bids'],
             ['MB11', 'Ask a question in <b>Q&amp;A</b>; check <b>Notifications</b>.', 'The question posts as your entity; a notification shows your bid was received.', null],
             ['MB12', 'Try to find any other bidder anywhere.', 'Impossible; no other bidder, bid, count, or reserve is visible.', null]
+          ]},
+          { name: 'Property view', sub: 'On the loaded historical sale (real addresses).', cases: [
+            ['MB14', 'Open <b>HECM Vacant Loan Sale 2026-2</b> and click the <b>Properties</b> tab.', 'A US pool map with a pin per property, plus a card per property showing its address and BPO. Pool filter pills switch pools.', R + '/sale/HVLS-2026-2'],
+            ['MB15', 'On any property card, click <b>Street View</b>.', 'Google Maps opens in a new tab at that property address.', null],
+            ['MB16', 'Click <b>View BPO</b> on a property.', 'A Broker Price Opinion opens (as-is value, as-repaired, comps) for that exact property.', null],
+            ['MB17', 'Click a pool pill, then hover a map pin.', 'Map and cards filter to that pool; hovering a pin shows the address + BPO and highlights its card.', null]
           ]}
         ]
       },
@@ -201,7 +207,8 @@
             ['GD10', 'Check portal separation.', 'Residential never shows MHLS or HLS; commercial never shows HVLS, HNVLS, or SFLS.', C + '/sales'],
             ['GD11', 'Open the Ginnie Mae sale loans and pools.', 'ULB is modeled from borrower age; Pool 1 is Non-Judicial (about 220) and Pool 2 is Judicial (about 120).', 'gnma/index.html'],
             ['GD12', 'Run the Ginnie Mae BEM with its seeded bids.', 'Pool 1 awards to the high conforming bidder over a thin cover; Pool 2\'s high bid is below reserve, so No-Sale.', null],
-            ['GD14', 'Spot-check five Data Room files against their assets.', 'Each is filed under the correct asset and the correct Due Diligence or Collateral category.', R + '/sale/HVLS-2026-DEMO']
+            ['GD14', 'Spot-check five Data Room files against their assets.', 'Each is filed under the correct asset and the correct Due Diligence or Collateral category.', R + '/sale/HVLS-2026-DEMO'],
+            ['GD15', 'On HVLS-2026-2 Properties, spot-check three BPO values and the map.', 'Each card BPO matches the loan tape; the View BPO document agrees; map pins sit in the right states (Pool A is Southeast, etc.).', R + '/sale/HVLS-2026-2']
           ]}
         ]
       },
@@ -220,7 +227,8 @@
             ['TT5', 'Look for other bidders while bidding.', 'You see only your own bids and counts; no reserves; no other entities.', null],
             ['TT7', '(Some of you) Bid on a Commercial sale.', 'The commercial sheet uses percentage of UPB; no cap rate, NOI, price per unit, or yield.', C + '/sale/HLS-2026-DEMO'],
             ['TT8', 'Open the bidder portal on a phone and a second browser.', 'Layout holds up; note anything cramped, cut off, or hard to tap.', R + '/sales'],
-            ['TT9', 'Live: two of you as different real entities bid the same pool.', 'The admin Bid Day and BEM show a true competitive field across the two entities.', 'REAL']
+            ['TT9', 'Live: two of you as different real entities bid the same pool.', 'The admin Bid Day and BEM show a true competitive field across the two entities.', 'REAL'],
+            ['TT10', 'On your phone, open a sale Properties tab; tap a pin and a Street View link.', 'The map and cards are usable on mobile; tapping Street View opens the property in Google Maps.', R + '/sale/HVLS-2026-2']
           ]}
         ]
       }
