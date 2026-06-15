@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Platform Test Console · HUD OAS Transaction Platform</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <style>
+    body { min-height: 100vh; }
+    .tc { max-width: 1040px; margin: 0 auto; padding: clamp(28px, 5vh, 56px) var(--space-6) var(--space-16); }
+    .tc__eyebrow { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-portal); padding: 7px 14px; border-radius: 999px; background: var(--color-portal-soft); border: 1px solid var(--color-border); }
+    .tc__title { font-family: var(--font-heading); font-size: clamp(28px, 5vw, 42px); letter-spacing: -0.018em; color: var(--color-ink); margin: 16px 0 0; }
+    .tc__sub { color: var(--color-text-muted); font-size: 15px; line-height: 1.65; max-width: 74ch; margin-top: 13px; }
+    .tc__sub b { color: var(--color-ink); }
+
+    .who { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 26px; }
+    @media (max-width: 900px) { .who { grid-template-columns: repeat(2, 1fr); } }
+    .who__card { text-align: left; padding: 15px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+    .who__card:hover { border-color: var(--color-portal); transform: translateY(-1px); }
+    .who__card.on { border-color: var(--color-portal); box-shadow: 0 0 0 2px var(--color-portal-soft); background: var(--color-portal-soft); }
+    .who__role { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-muted); }
+    .who__name { font-family: var(--font-heading); font-size: 17px; color: var(--color-ink); margin-top: 3px; }
+    .who__count { font-family: var(--font-mono); font-size: 11px; color: var(--color-portal); margin-top: 4px; }
+
+    .brief { margin-top: 24px; padding: 18px 20px; background: var(--color-portal-dark); color: #fff; border-radius: var(--radius-lg); }
+    .brief__role { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.65); }
+    .brief__name { font-family: var(--font-heading); font-size: 22px; margin: 4px 0 8px; }
+    .brief__text { font-size: 14px; line-height: 1.6; opacity: 0.92; max-width: 80ch; }
+
+    .bar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 22px; padding: 12px 16px; background: rgba(255,255,255,0.92); backdrop-filter: blur(6px); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+    .bar__count { font-family: var(--font-mono); font-size: 13px; color: var(--color-text); margin-right: auto; }
+    .bar__count b { color: var(--color-portal); }
+    .bar .btn-portal { font-size: 13px; padding: 8px 16px; color: #fff; }
+    .bar .ghost { font-size: 13px; padding: 8px 15px; border-radius: var(--radius-md); border: 1px solid var(--color-border-strong); background: var(--color-surface); cursor: pointer; }
+
+    .sec { margin-top: 34px; }
+    .sec__title { font-family: var(--font-heading); font-size: 22px; color: var(--color-ink); margin-bottom: 3px; }
+    .sec__sub { font-size: 13px; color: var(--color-text-muted); margin-bottom: 13px; }
+
+    .case { display: grid; grid-template-columns: 56px 1fr 150px; gap: 15px; padding: 15px 17px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 10px; align-items: start; }
+    .case__id { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--color-portal); padding-top: 2px; }
+    .case__do { font-size: 14px; color: var(--color-text); line-height: 1.55; }
+    .case__do b { color: var(--color-ink); }
+    .case__expect { font-size: 13px; color: var(--color-text-muted); line-height: 1.55; margin-top: 5px; }
+    .case__expect::before { content: 'EXPECT  '; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; color: var(--color-portal); }
+    .case__open { display: inline-block; margin-top: 8px; font-size: 12.5px; font-weight: 600; color: var(--color-portal); text-decoration: none; font-family: var(--font-mono); }
+    .case__open:hover { text-decoration: underline; }
+    .case__real { display: inline-block; margin-left: 8px; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 999px; background: var(--color-warning-bg); color: var(--color-warning); vertical-align: 1px; }
+    .case__verdict { display: flex; flex-direction: column; gap: 7px; }
+    .case__verdict label { display: flex; align-items: center; gap: 7px; font-size: 13px; cursor: pointer; }
+    .case__verdict input[type="radio"] { accent-color: var(--color-portal); width: 15px; height: 15px; }
+    .case__verdict .fail input[type="radio"] { accent-color: #A0321A; }
+    .case__notes { grid-column: 1 / -1; }
+    .case__notes input { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 13px; background: var(--color-grey-50); }
+    .case.passed { border-color: #BBE3C9; background: #FAFFFB; }
+    .case.failed { border-color: #EFC4B8; background: #FFFBFA; }
+
+    .foot { margin-top: 34px; font-size: 13px; color: var(--color-text-muted); line-height: 1.6; border-top: 1px solid var(--color-border); padding-top: 16px; }
+    @media print { .bar, .who, .brief, .tc__sub { display: none; } .case { break-inside: avoid; box-shadow: none; } body { background: #fff !important; } }
+    @media (max-width: 720px) { .case { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="tc">
+    <span class="tc__eyebrow">Internal test console · sample data · nothing live</span>
+    <h1 class="tc__title">Platform test console</h1>
+    <p class="tc__sub">Pick your name below. You will see only your own checklist. Open each linked screen in a new tab, do the action, and compare what you see against <b>EXPECT</b>. Mark <b>Pass</b> or <b>Fail</b> and add a note on anything off (wording, numbers, look, speed, all of it). Your marks save in this browser. When you are done, use <b>Send my results to Jelani</b>. Cases marked <span class="case__real">REAL</span> are for the live logged-in platform and are run by Jelani only.</p>
+
+    <div class="who" id="who"></div>
+
+    <div id="brief"></div>
+
+    <div class="bar" id="bar" style="display:none;">
+      <span class="bar__count" id="counter">0 / 0 checked</span>
+      <button class="btn-portal" id="send-btn">Send my results to Jelani</button>
+      <button class="ghost" id="copy-btn">Copy results</button>
+      <button class="ghost" id="reset-btn">Reset mine</button>
+      <button class="ghost" onclick="window.print()">Print</button>
+    </div>
+
+    <div id="sections"></div>
+
+    <div class="foot" id="foot" style="display:none;">
+      Full strategy, coverage matrix, and sign-off live in <b>PLATFORM_TEST_PLAN.md</b> (with Jelani). Report problems with a severity at the front of the note: <b>S1</b> blocker, <b>S2</b> major, <b>S3</b> minor, <b>S4</b> cosmetic.
+    </div>
+  </main>
+
+  <script>
+  (function () {
+    var JELANI_EMAIL = 'jelani.house@housestrategiesgroup.com';
+    // link bases (this page lives at /demo/)
+    var R = '../residential/portal.html?demo=1#';      // residential portal
+    var C = '../commercial/portal.html?demo=1#';        // commercial portal
+    var A = '../admin/';                                 // admin pages (append page + ?demo=1)
+    function admin(p) { return A + p + '?demo=1'; }
+
+    var PERSONAS = {
+      jelani: {
+        role: 'Administrator / Orchestrator', tester: 'Jelani House',
+        brief: 'You run the whole admin console: stand up a sale from a loan tape, approve bidders, run bid day, build the BEM, award, and settle. You also run the few live logged-in checks (marked REAL). Work top to bottom; open each screen in a new tab.',
+        sections: [
+          { name: 'Sale Setup &amp; tape ingestion', sub: 'The new tool: a sale from an Excel tape.', cases: [
+            ['JA2', 'In Sale Setup, choose program <b>HVLS</b>.', 'Official basis defaults to ULB; portal reads residential; a sale ID is suggested.', admin('sale-setup.html')],
+            ['JA3', 'Click <b>Use sample data</b>.', '120 sample loans load; columns auto-map; a live preview shows the first rows.', null],
+            ['JA4', 'Choose <b>Equal split</b>, 3 pools (then try By tape column).', 'Three pools of about 40 loans; per-pool aggregates look right; column grouping works when a Pool column is mapped.', null],
+            ['JA5', 'Review and <b>Create</b>.', 'Review shows UPB and ULB aggregates with ULB above UPB; validation says no issues; Create confirms.', null],
+            ['JA6', 'Open the residential portal and look for the new sale.', 'It is a draft and does NOT show to bidders; it does show on the admin dashboard.', R + '/sales']
+          ]},
+          { name: 'Console', sub: 'The day-to-day admin pages.', cases: [
+            ['JA7', 'Open the <b>Dashboard</b>.', 'KPIs for both portals populate (sales, loans, pipeline, deadlines); reads like a command center.', admin('index.html')],
+            ['JA8', 'Open <b>Bidders</b> and approve the pending bidder.', 'Status moves to Qualified immediately; counts update; reject / request-info also behave.', admin('bidders.html')],
+            ['JA9', 'Open <b>Bid Day</b> and select the HVLS demo sale.', 'The bid feed shows submitted bids under their entity, marked Conforming.', admin('bid-day.html')],
+            ['JA10', 'Open <b>BEM &amp; Awards</b>, set a reserve, run the evaluation.', 'Reserves are set here only (never bidder-facing); results rank against the bids.', admin('bem.html')],
+            ['JA11', 'Click <b>Generate BEM (Excel)</b>.', 'A 10-sheet workbook downloads; figures are live Excel formulas; co-branded HSG + seller; no agency seals.', null],
+            ['JA12', 'Open <b>Settlements</b>.', 'The seeded settlement shows milestones and deliverables; items are checkable.', admin('settlements.html')],
+            ['JA13', 'Open <b>Q&amp;A Inbox</b> and answer a question.', 'The answer publishes and shows on the bidder side.', admin('qa.html')],
+            ['JA14', 'Open <b>Compliance &amp; QC</b>, then the Ginnie Mae register.', 'QC findings render per sale; the Ginnie Mae recommendations register and lifecycle render.', admin('compliance.html')]
+          ]},
+          { name: 'Ginnie Mae variant', sub: 'The second seller.', cases: [
+            ['JA14b', 'Open the <b>Ginnie Mae Demo Center</b> and walk its register.', 'A full parallel experience with Ginnie Mae branding; recommendations register, sale, and repository all render.', 'gnma/index.html']
+          ]},
+          { name: 'Live smoke (REAL)', sub: 'You only, on the real logged-in platform.', cases: [
+            ['JA1', 'Sign in to the live admin console.', 'A one-time code arrives by email; no authenticator-app prompt; sign-in completes.', 'REAL'],
+            ['JA15', 'Live: create a real draft sale via Sale Setup, then delete it.', 'The sale is created and listed, then removed cleanly; nothing leaks to bidders.', 'REAL']
+          ]}
+        ]
+      },
+      trish: {
+        role: 'Data Room Operations Lead', tester: 'Trish Kelly',
+        brief: 'This is your domain. You load documents into the Data Room, watch the auto-classification, fix anything in the review queue, publish, and check the bidder-facing room. Bring your operations eye: if a file lands in the wrong place, that is exactly what we need to know.',
+        sections: [
+          { name: 'Staff document intake', sub: 'Admin → Data Room.', cases: [
+            ['TD1', 'Open <b>Admin → Data Room</b> and select a sale.', 'The organized room renders with KPIs: total files, coverage, staff added, needs review, bidder-visible.', admin('dataroom.html')],
+            ['TD2', 'Drop files named like <b>AZ_024-5777326_Note.pdf</b>, a BPO, a BIP, and a random name.', 'Note files go to Collateral, BPO to Due Diligence, BIP to a sale folder, the random one to a review queue.', null],
+            ['TD3', 'In the review queue, assign a file to an asset and change its group or visibility.', 'The file moves under the chosen asset and category.', null],
+            ['TD4', 'Publish the reviewed files.', 'Files appear organized: sale folders on top, per-asset Due Diligence and Collateral below; coverage updates.', null],
+            ['TD5', 'Toggle one published file to <b>Admin only</b>.', 'It disappears from the bidder Data Room but stays visible to staff.', null],
+            ['TD11', 'Try six awkward filenames of your own choosing.', 'Note any that file under the wrong asset or category, with the exact filename.', null]
+          ]},
+          { name: 'Bidder-facing data room', sub: 'What a qualified bidder sees.', cases: [
+            ['TD6', 'Open a sale and its <b>Data Room</b> tab in the bidder portal.', 'Sale documents on top; every asset has its own Due Diligence and Collateral files; names follow the state and case convention.', R + '/sale/HVLS-2026-DEMO'],
+            ['TD7', 'Search a state code, then a case number; use the state filter.', 'Search filters assets live and auto-expands matches; the state filter narrows the list.', null],
+            ['TD8', 'Download one document.', 'It opens watermarked to the demo entity, with a class label and timestamp.', null],
+            ['TD9', 'Open a <b>Healthcare (HLS)</b> sale Data Room.', 'Healthcare files appear: Operator Financials, CMS Survey, Phase I Environmental, Regulatory Agreement, Operator Lease, AR Security Agreement; Asset Summaries at sale level.', C + '/sale/HLS-2026-DEMO'],
+            ['TD10', 'Open the <b>Ginnie Mae</b> Data Room.', 'The HECM data room renders with its own document set.', 'gnma/index.html']
+          ]},
+          { name: 'Live upload (REAL)', sub: 'Jelani provisions your access.', cases: [
+            ['TD12', 'Live: upload a real document to a draft sale.', 'It uploads and then appears in that sale\'s Data Room.', 'REAL']
+          ]}
+        ]
+      },
+      maurice: {
+        role: 'Bidder — experience &amp; credibility', tester: 'Maurice House',
+        brief: 'You are a sharp outside bidder seeing this for the first time. Go through the whole bidder journey: qualify, browse, read the data room, download a document, place a bid, manage it. Judge it the way a real institution would. If anything looks unfinished or reads wrong, mark Fail and say why.',
+        sections: [
+          { name: 'First impressions', sub: 'Open it cold.', cases: [
+            ['MB1', 'Open the <b>Demo Center</b> as a stranger would.', 'Within about ten seconds you understand what this is, that it takes around fifteen minutes, and that nothing is live.', 'index.html'],
+            ['MB13', 'After you have seen several pages, step back and judge the whole thing.', 'It looks premium and institutional, and would not embarrass us next to a federal incumbent platform.', null]
+          ]},
+          { name: 'Qualification', sub: 'Becoming an approved bidder.', cases: [
+            ['MB2', 'Try to advance step 1 without signing the Confidentiality Agreement.', 'It refuses with clear errors; the CA/NDA gates everything behind it.', R.replace('portal.html','qualify.html').split('#')[0]],
+            ['MB3', 'Walk the qualification steps and certify.', 'Eight steps in order, each validating before advancing; specific error messages; no "HUD-90092" anywhere.', null]
+          ]},
+          { name: 'Browse, read, bid', sub: 'The core bidder loop.', cases: [
+            ['MB4', 'Browse the residential portal and open a sale.', 'The sales list and the sale detail read clearly; nothing looks unfinished.', R + '/sales'],
+            ['MB5', 'Open the <b>Data Room</b> and download one document.', 'The structure is clear; the document opens watermarked to your entity.', null],
+            ['MB6', 'Look at the bid sheet.', 'Every HUD figure is locked; the only editable cell per row is BID %; no reserve, optimizer, or suggested price.', null],
+            ['MB7', 'Enter a percentage in <b>apply to all</b> and apply it to a pool.', 'Every loan fills, each derived BID $ computes, the pool flips to Complete, a total and deposit show.', null],
+            ['MB8', 'Download the <b>Excel bid workbook</b>.', 'A real, seller-branded, locked workbook downloads; only the BID % column is editable.', null],
+            ['MB9', 'Submit a bid (type SUBMIT to confirm).', 'A receipt appears with a receipt ID, a completion code, the total, and the deposit.', null]
+          ]},
+          { name: 'After the bid', sub: 'Manage and confirm.', cases: [
+            ['MB10', 'Open <b>My Bids</b>; change a percentage and resubmit; then withdraw.', 'The latest form is Live and the earlier one is Superseded; withdrawing flips status and lets you submit again.', R + '/my-bids'],
+            ['MB11', 'Ask a question in <b>Q&amp;A</b>; check <b>Notifications</b>.', 'The question posts as your entity; a notification shows your bid was received.', null],
+            ['MB12', 'Try to find any other bidder anywhere.', 'Impossible; no other bidder, bid, count, or reserve is visible.', null]
+          ]}
+        ]
+      },
+      gilda: {
+        role: 'Data Integrity &amp; Evaluation', tester: 'Gilda Weech-House',
+        brief: 'You are checking that the numbers and the filing are correct. Verify the loan-tape data, the bid math, the deposit formula, the completion codes, and the BEM formulas, and confirm documents are filed under the right asset and category. A calculator helps. Where a known figure is given, reproduce it exactly.',
+        sections: [
+          { name: 'Tape and bid math', sub: 'Open a sale and a calculator.', cases: [
+            ['GD1', 'Open a sale\'s loans and scan the figures.', 'For each loan, UPB is below ULB which is at or below BPO; no fields are blank or garbled.', R + '/sale/HVLS-2026-DEMO'],
+            ['GD2', 'Enter 50 percent on an HVLS pool and check one loan by hand.', 'Derived BID $ equals 50 percent of that loan\'s ULB; the pool aggregate is the sum of the loans.', null],
+            ['GD3', 'Read the bid sheet basis label.', 'HVLS bids are a percentage of ULB (not BPO); the label says "of ULB".', null],
+            ['GD4', 'In the Excel workbook, switch the pricing basis from BPO to ULB.', 'The submitted dollar amount is preserved; the percentage normalizes to the official basis.', null],
+            ['GD5', 'Check the deposit on a small pool and on a large one.', 'Small pool deposit is the 100,000 floor; large pool deposit is 10 percent where that beats the floor.', null],
+            ['GD9', 'Reproduce two known figures.', 'HVLS at 55.12345 percent totals 619,588; HLS at 72.5 percent gives a 4,002,435 deposit on a 40,024,350 base.', C + '/sale/HLS-2026-DEMO']
+          ]},
+          { name: 'Evaluation model', sub: 'Admin → BEM &amp; Awards.', cases: [
+            ['GD6', 'Note the completion code on two sales.', 'Each sale has its own consistent code (for example HVLS26D742, HLS26DHC84).', null],
+            ['GD7', 'Open the generated BEM Excel and change a reserve cell.', 'Rank, winner, cover, and award recompute from formulas; nothing is hard-typed.', admin('bem.html')],
+            ['GD8', 'Read the BEM recovery and tabulation sheets.', 'Recovery shows against UPB, ULB, and BPO; the figures tie to the bid tabulation.', null],
+            ['GD13', 'Look for any reserve anywhere on the bidder side.', 'None; reserves live only in the admin BEM.', null]
+          ]},
+          { name: 'Separation, Ginnie Mae, filing', sub: 'Accuracy across the system.', cases: [
+            ['GD10', 'Check portal separation.', 'Residential never shows MHLS or HLS; commercial never shows HVLS, HNVLS, or SFLS.', C + '/sales'],
+            ['GD11', 'Open the Ginnie Mae sale loans and pools.', 'ULB is modeled from borrower age; Pool 1 is Non-Judicial (about 220) and Pool 2 is Judicial (about 120).', 'gnma/index.html'],
+            ['GD12', 'Run the Ginnie Mae BEM with its seeded bids.', 'Pool 1 awards to the high conforming bidder over a thin cover; Pool 2\'s high bid is below reserve, so No-Sale.', null],
+            ['GD14', 'Spot-check five Data Room files against their assets.', 'Each is filed under the correct asset and the correct Due Diligence or Collateral category.', R + '/sale/HVLS-2026-DEMO']
+          ]}
+        ]
+      },
+      team: {
+        role: 'Competing Bidders', tester: 'Trish\'s team',
+        brief: 'Each of you acts as a different bidding entity. Exercise all three ways to bid, confirm you can never see another bidder, and try the platform on whatever device and browser you actually use. Spread out: different people on different setups finds the most.',
+        sections: [
+          { name: 'Bid every way', sub: 'Three input modes, same validated result.', cases: [
+            ['TT1', 'Qualify as a bidder in your own browser.', 'Qualification completes for you independently.', R.replace('portal.html','qualify.html').split('#')[0]],
+            ['TT2', 'Place a bid through the on-screen grid (apply to all).', 'The pool fills and submits; a receipt with a completion code returns.', R + '/sale/HVLS-2026-DEMO'],
+            ['TT3', 'Place a bid through the Excel workbook (download, fill BID %, upload).', 'The upload re-derives every dollar on the server and returns the same kind of receipt.', null],
+            ['TT4', 'Place a bid by pasting a column of percentages.', 'The paste maps to the loans in order and submits.', null],
+            ['TT6', 'Change a percentage and resubmit.', 'The new form is Live; the prior one is Superseded.', R + '/my-bids']
+          ]},
+          { name: 'Isolation, commercial, devices', sub: 'Stress the bidder side.', cases: [
+            ['TT5', 'Look for other bidders while bidding.', 'You see only your own bids and counts; no reserves; no other entities.', null],
+            ['TT7', '(Some of you) Bid on a Commercial sale.', 'The commercial sheet uses percentage of UPB; no cap rate, NOI, price per unit, or yield.', C + '/sale/HLS-2026-DEMO'],
+            ['TT8', 'Open the bidder portal on a phone and a second browser.', 'Layout holds up; note anything cramped, cut off, or hard to tap.', R + '/sales'],
+            ['TT9', 'Live: two of you as different real entities bid the same pool.', 'The admin Bid Day and BEM show a true competitive field across the two entities.', 'REAL']
+          ]}
+        ]
+      }
+    };
+
+    var ORDER = ['jelani', 'trish', 'maurice', 'gilda', 'team'];
+    var SHORT = { jelani: 'Jelani', trish: 'Trish', maurice: 'Maurice', gilda: 'Gilda', team: "Trish's team" };
+
+    function keyFor(pk) { return 'hsg.platformtest.v2.' + pk; }
+    function loadState(pk) { try { return JSON.parse(localStorage.getItem(keyFor(pk)) || '{}'); } catch (e) { return {}; } }
+    function saveState(pk, st) { try { localStorage.setItem(keyFor(pk), JSON.stringify(st)); } catch (e) {} }
+    function countFor(pk) {
+      var p = PERSONAS[pk], st = loadState(pk), total = 0, done = 0;
+      p.sections.forEach(function (s) { s.cases.forEach(function (c) { total++; if ((st[c[0]] || {}).r) done++; }); });
+      return { total: total, done: done };
+    }
+
+    var current = null;
+    try { current = localStorage.getItem('hsg.platformtest.persona'); } catch (e) {}
+
+    // ---- persona picker ----
+    var who = document.getElementById('who');
+    function renderWho() {
+      who.innerHTML = ORDER.map(function (pk) {
+        var p = PERSONAS[pk], c = countFor(pk);
+        return '<div class="who__card' + (pk === current ? ' on' : '') + '" data-pk="' + pk + '">' +
+          '<div class="who__role">' + p.role.replace(/&amp;/g, '&') + '</div>' +
+          '<div class="who__name">' + SHORT[pk] + '</div>' +
+          '<div class="who__count">' + c.done + ' / ' + c.total + ' checked</div>' +
+        '</div>';
+      }).join('');
+      who.querySelectorAll('[data-pk]').forEach(function (el) {
+        el.addEventListener('click', function () { select(el.getAttribute('data-pk')); });
+      });
+    }
+
+    function select(pk) {
+      current = pk;
+      try { localStorage.setItem('hsg.platformtest.persona', pk); } catch (e) {}
+      renderWho(); renderBrief(); renderCases();
+      document.getElementById('bar').style.display = 'flex';
+      document.getElementById('foot').style.display = 'block';
+    }
+
+    function renderBrief() {
+      var p = PERSONAS[current];
+      document.getElementById('brief').innerHTML =
+        '<div class="brief"><div class="brief__role">' + p.role + '</div>' +
+        '<div class="brief__name">' + p.tester + '</div>' +
+        '<div class="brief__text">' + p.brief + '</div></div>';
+    }
+
+    function renderCases() {
+      var p = PERSONAS[current], st = loadState(current), host = document.getElementById('sections');
+      host.innerHTML = '';
+      p.sections.forEach(function (sec) {
+        var s = document.createElement('section'); s.className = 'sec';
+        s.innerHTML = '<h2 class="sec__title">' + sec.name + '</h2><p class="sec__sub">' + sec.sub + '</p>';
+        sec.cases.forEach(function (c) {
+          var id = c[0], v = st[id] || {}, link = c[3];
+          var isReal = link === 'REAL';
+          var openHtml = (link && !isReal) ? '<a class="case__open" href="' + link + '" target="_blank" rel="noopener">Open screen &#8594;</a>' : '';
+          var realHtml = isReal ? '<span class="case__real">REAL · Jelani</span>' : '';
+          var el = document.createElement('div');
+          el.className = 'case' + (v.r === 'pass' ? ' passed' : v.r === 'fail' ? ' failed' : '');
+          el.innerHTML =
+            '<div class="case__id">' + id + '</div>' +
+            '<div><div class="case__do">' + c[1] + realHtml + '</div>' +
+            '<div class="case__expect">' + c[2] + '</div>' + openHtml + '</div>' +
+            '<div class="case__verdict">' +
+              '<label><input type="radio" name="' + id + '" value="pass"' + (v.r === 'pass' ? ' checked' : '') + '/> Pass</label>' +
+              '<label class="fail"><input type="radio" name="' + id + '" value="fail"' + (v.r === 'fail' ? ' checked' : '') + '/> Fail</label>' +
+            '</div>' +
+            '<div class="case__notes"><input type="text" placeholder="Notes — start with a severity, e.g. S2 — …" data-note="' + id + '" value="' + (v.n ? String(v.n).replace(/"/g, '&quot;') : '') + '"/></div>';
+          s.appendChild(el);
+          el.querySelectorAll('input[type="radio"]').forEach(function (r) {
+            r.addEventListener('change', function () {
+              var cur = loadState(current); cur[id] = cur[id] || {}; cur[id].r = r.value; saveState(current, cur);
+              el.className = 'case ' + (r.value === 'pass' ? 'passed' : 'failed'); update(); renderWho();
+            });
+          });
+          el.querySelector('[data-note="' + id + '"]').addEventListener('input', function (e) {
+            var cur = loadState(current); cur[id] = cur[id] || {}; cur[id].n = e.target.value; saveState(current, cur);
+          });
+        });
+        host.appendChild(s);
+      });
+      update();
+    }
+
+    function update() {
+      var p = PERSONAS[current], st = loadState(current), total = 0, done = 0, fails = 0;
+      p.sections.forEach(function (s) { s.cases.forEach(function (c) { total++; var v = st[c[0]] || {}; if (v.r) { done++; if (v.r === 'fail') fails++; } }); });
+      document.getElementById('counter').innerHTML = '<b>' + done + ' / ' + total + '</b> checked' + (fails ? ' &middot; <b style="color:#A0321A;">' + fails + ' fail</b>' : '');
+    }
+
+    function buildReport() {
+      var p = PERSONAS[current], st = loadState(current), lines = [], done = 0, fails = 0;
+      p.sections.forEach(function (sec) {
+        sec.cases.forEach(function (c) {
+          var v = st[c[0]] || {}; if (v.r) { done++; if (v.r === 'fail') fails++; }
+          lines.push(c[0] + ' [' + (v.r ? v.r.toUpperCase() : '—') + ']' + (v.n ? ' · ' + v.n : ''));
+        });
+      });
+      var total = lines.length;
+      var head = 'Platform test results — ' + p.tester + ' (' + p.role.replace(/&amp;/g, '&') + ')\n' +
+                 new Date().toLocaleString() + '\n' + done + ' / ' + total + ' checked' + (fails ? ', ' + fails + ' FAIL' : '') + '\n';
+      return head + '\n' + lines.join('\n');
+    }
+
+    document.getElementById('send-btn').addEventListener('click', function () {
+      var p = PERSONAS[current];
+      var subject = 'Platform test results — ' + p.tester;
+      var body = buildReport();
+      var href = 'mailto:' + JELANI_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      // mailto bodies can truncate; also stage to clipboard as a safety net.
+      if (navigator.clipboard) navigator.clipboard.writeText(body).catch(function () {});
+      window.location.href = href;
+    });
+
+    document.getElementById('copy-btn').addEventListener('click', function () {
+      var txt = buildReport();
+      (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () {
+        var b = document.getElementById('copy-btn'); b.textContent = 'Copied ✓';
+        setTimeout(function () { b.textContent = 'Copy results'; }, 1600);
+      }).catch(function () { window.prompt('Copy your results:', txt); });
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', function () {
+      if (!window.confirm('Clear ' + PERSONAS[current].tester + '\'s marks and notes?')) return;
+      saveState(current, {}); renderCases(); renderWho();
+    });
+
+    renderWho();
+    if (current && PERSONAS[current]) select(current);
+  })();
+  </script>
+</body>
+</html>
