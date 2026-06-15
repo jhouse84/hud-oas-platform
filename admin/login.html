@@ -155,7 +155,7 @@
       var sub = document.getElementById('mfa-challenge-sub');
       if (sub) sub.textContent = r.challenge === 'EMAIL_OTP'
         ? ('Enter the 6-digit code we emailed to ' + (r.destination || 'your address on file') + '.')
-        : 'Enter the 6-digit code from your authenticator app.';
+        : ('Enter the 6-digit code we emailed to ' + (r.destination || 'your address on file') + '.');
       show('screen-mfa-challenge');
       var inp = document.getElementById('mfa-c-code'); if (inp) { inp.value = ''; setTimeout(function () { inp.focus(); }, 50); }
     }

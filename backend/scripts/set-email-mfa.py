@@ -49,11 +49,11 @@ print('update-user-pool: OK (admin_only recovery + DEVELOPER sending, all else p
 
 aws(['cognito-idp', 'set-user-pool-mfa-config', '--user-pool-id', POOL,
      '--mfa-configuration', 'ON',
-     '--software-token-mfa-configuration', 'Enabled=true',
+     '--software-token-mfa-configuration', 'Enabled=false',  # email OTP only - bidders do not use authenticator apps
      '--email-mfa-configuration', json.dumps({
          'Message': 'Your HUD OAS Platform sign-in code is {####}. It expires in a few minutes.',
          'Subject': 'Your HUD OAS Platform sign-in code'})])
-print('set-user-pool-mfa-config: OK (email OTP + TOTP)')
+print('set-user-pool-mfa-config: OK (email OTP only)')
 
 # Verify nothing security-critical regressed
 after = aws(['cognito-idp', 'describe-user-pool', '--user-pool-id', POOL])['UserPool']
