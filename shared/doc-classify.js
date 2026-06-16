@@ -75,11 +75,69 @@ HSG.docClassify = (function () {
     return { scope: 'review', docType: prettyDocType(base), confidence: 'low' };
   }
 
+  // ------------------------------------------------------------------
+  // classifyImport(relPath) — canonical taxonomy for the bulk importer.
+  // Takes a file's relative path (folders + name, any separator) and returns
+  // { category, visibility:'bidder'|'admin'|'exclude', scope:'sale'|'asset', asset }.
+  // Unknowns default to admin (never silently bidder-visible). Mirrors the
+  // ingest planner so the admin UI sorts a whole folder the same way every time.
+  // ------------------------------------------------------------------
+  var EXCLUDE_EXT = /\.(html?|mpp|msg|jpe?g|png|gif|tmp|db)$/i;
+  var FHA_RE = /\d{3}-?\d{7}/;
+  // [regex, category, visibility, scope] — first match wins (path is lowercased, '/'-separated).
+  var IMPORT_RULES = [
+    [/\/archives?\//, 'Excluded', 'exclude', 'sale'],
+    [/\/drafts?\//, 'Excluded', 'exclude', 'sale'],
+    [/executed/, 'Results & Post-Sale', 'admin', 'sale'],
+    [/procedure|bidder instruction/, 'Sale Procedures', 'bidder', 'sale'],
+    [/bidder information|(^|[\/_ ])bip([\/_ .]|$)/, 'Bidder Information Package', 'bidder', 'sale'],
+    [/(^|[\/_ ])(ald|sald)([\/_ .]|$)|loan ?tape|(^|[\/_ ])tape([\/_ .]|$)|loan list|stratification/, 'Loan Tape', 'bidder', 'sale'],
+    [/asset summ/, 'Asset Summaries', 'bidder', 'sale'],
+    [/bpo|(^|[\/_ ])avm([\/_ .]|$)|valuation|appraisal/, 'Valuation', 'bidder', 'asset'],
+    [/physical need|pcna|environmental|phase ?i|engineering|rent ?roll|operating statement|financial statement|(^|[\/_ ])t-?12/, 'Property Reports', 'bidder', 'asset'],
+    [/(^|[\/_ ])cases?([\/_ .]|$)|case file|collateral|(^|[\/_ ])note([\/_ .]|$)|mortgage|(^|[\/_ ])title|servicing|occupancy|payment history|escrow/, 'Collateral & Case Files', 'bidder', 'asset'],
+    [/caa|conditional acceptance|bauf|btaf|deposit form|change form|confidentiality|qualification statement|(^|[\/_ ])ca([\/_ .]|$)|(^|[\/_ ])forms?([\/_ .]|$)|agreement/, 'Forms & Agreements', 'bidder', 'sale'],
+    [/due diligence|(^|[\/_ ])dd([\/_ .]|$)|(^|[\/_ ])sale file([\/_ .]|$)|data ?room/, 'Due Diligence Files', 'bidder', 'asset'],
+    [/(^|[\/_ ])bem([\/_ .]|$)|bid form/, 'BEM & Pricing', 'admin', 'sale'],
+    [/bid day/, 'Bid Day Ops', 'admin', 'sale'],
+    [/pricing methodology|portfolio analytics|analytics|floor price|bid estimate|loan level|market pric/, 'Pricing & Analytics', 'admin', 'sale'],
+    [/results report|post.?sale|final bid results|mfns/, 'Results & Post-Sale', 'admin', 'sale'],
+    [/meeting minutes|project plan|project schedule|weekly dashboard|marketing|advertisement|announcement|(^|[\/_ ])ads([\/_ .]|$)|geographic distribution|press|authorization|contractor deliverable|deliverable|survey|questionnaire|lesson learned|individuals with access|bidder folder/, 'TS Internal', 'admin', 'sale'],
+    [/borrower notification|goodbye letter|award letter/, 'Borrower & Award Letters', 'admin', 'sale']
+  ];
+  var TOP_FOLDER = {
+    'due diligence': ['Due Diligence Files', 'bidder', 'asset'],
+    'sale file': ['Due Diligence Files', 'bidder', 'asset'],
+    'data room': ['Due Diligence Files', 'bidder', 'sale'],
+    'bidder confi & qual': ['Forms & Agreements', 'bidder', 'sale'],
+    'contractor deliverables': ['TS Internal', 'admin', 'sale'],
+    'contractors deliverables': ['TS Internal', 'admin', 'sale'],
+    'announcement and ads': ['TS Internal', 'admin', 'sale']
+  };
+
+  function classifyImport(relPath) {
+    var p = String(relPath || '').replace(/\\/g, '/');
+    var name = p.split('/').pop();
+    var low = p.toLowerCase();
+    if (EXCLUDE_EXT.test(name)) return { category: 'Excluded', visibility: 'exclude', scope: 'sale', asset: null };
+    var hit = null;
+    for (var i = 0; i < IMPORT_RULES.length; i++) { if (IMPORT_RULES[i][0].test(low)) { hit = IMPORT_RULES[i]; break; } }
+    if (!hit) {
+      var top = low.split('/')[0];
+      hit = TOP_FOLDER[top] ? [null].concat(TOP_FOLDER[top]) : [null, 'Unsorted', 'admin', 'sale'];
+    }
+    var scope = hit[3], asset = null;
+    if (scope === 'asset') { var m = FHA_RE.exec(name); asset = m ? m[0] : null; }
+    return { category: hit[1], visibility: hit[2], scope: scope, asset: asset, fileName: name };
+  }
+
   return {
     COLLATERAL_RE: COLLATERAL_RE,
     DOCTYPE_LABEL: DOCTYPE_LABEL,
     SALE_FOLDER_RULES: SALE_FOLDER_RULES,
     prettyDocType: prettyDocType,
-    classifyFileName: classifyFileName
+    classifyFileName: classifyFileName,
+    classifyImport: classifyImport,
+    IMPORT_CATEGORIES: { bidder: ['Bidder Information Package', 'Loan Tape', 'Asset Summaries', 'Sale Procedures', 'Forms & Agreements', 'Valuation', 'Property Reports', 'Collateral & Case Files', 'Due Diligence Files'], admin: ['BEM & Pricing', 'Bid Day Ops', 'Pricing & Analytics', 'Results & Post-Sale', 'TS Internal', 'Borrower & Award Letters', 'Unsorted'] }
   };
 })();
