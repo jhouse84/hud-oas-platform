@@ -167,7 +167,15 @@ HSG.vdrRoom = (function () {
         HSG.api.docs.presignDownload(saleId, key).then(function (r) {
           if (r && r.url) {
             HSG.api.docs.logAccess({ saleId: saleId, docKey: key, action: 'download', actor: opts.actorEmail || null });
-            window.open(r.url, '_blank');
+            // Trigger via a download anchor, not window.open(): a popup opened from
+            // inside an async .then() has lost the user-gesture and gets blocked,
+            // which read as "can't open/download" in testing. An anchor click with a
+            // download attr is not popup-gated and works for blob: and presigned URLs.
+            var fname = (key || 'document').split('/').pop();
+            var dl = document.createElement('a');
+            dl.href = r.url; dl.download = fname; dl.target = '_blank'; dl.rel = 'noopener';
+            document.body.appendChild(dl); dl.click(); dl.remove();
+            if (/^blob:/.test(r.url)) setTimeout(function () { try { URL.revokeObjectURL(r.url); } catch (e) {} }, 60000);
           } else {
             alert('Document not available.');
           }

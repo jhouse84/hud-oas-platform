@@ -236,7 +236,10 @@
       if (!metas.length) return;
       HSG.api.staffDocs.classify(currentSale, metas).then(function (r) {
         // Keep the File on each row so commit() can stream its bytes to S3 (real mode).
-        pending = (r.results || []).map(function (c, i) { c._id = 'p' + i + '_' + Date.now(); c._file = arr[i]; return c; });
+        // APPEND to the queue — dropping files one at a time must accumulate, not
+        // replace the previous drop (a single-file drop was overwriting the queue).
+        var add = (r.results || []).map(function (c, i) { c._id = 'p_' + Date.now() + '_' + i; c._file = arr[i]; return c; });
+        pending = (pending || []).concat(add);
         renderReview();
       }).catch(function (err) { alert('Could not classify: ' + (err.message || err)); });
     }

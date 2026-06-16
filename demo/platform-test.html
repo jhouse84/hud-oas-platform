@@ -67,7 +67,7 @@
   <main class="tc">
     <span class="tc__eyebrow">Internal test console · sample data · nothing live</span>
     <h1 class="tc__title">Platform test console</h1>
-    <p class="tc__sub">Pick your name below. You will see only your own checklist. Open each linked screen in a new tab, do the action, and compare what you see against <b>EXPECT</b>. Mark <b>Pass</b> or <b>Fail</b> and add a note on anything off (wording, numbers, look, speed, all of it). Your marks save in this browser. When you are done, use <b>Send my results to Jelani</b>. Cases marked <span class="case__real">REAL</span> are for the live logged-in platform and are run by Jelani only.</p>
+    <p class="tc__sub">Pick your name below. You will see only your own checklist. Open each linked screen in a new tab, do the action, and compare what you see against <b>EXPECT</b>. Mark <b>Pass</b> or <b>Fail</b> and add a note on anything off (wording, numbers, look, speed, all of it). Your marks save in this browser. When you are done, use <b>Copy my results for Jelani</b> and paste them into an email or reply to him. Cases marked <span class="case__real">REAL</span> are for the live logged-in platform and are run by Jelani only.</p>
 
     <div class="who" id="who"></div>
 
@@ -75,7 +75,7 @@
 
     <div class="bar" id="bar" style="display:none;">
       <span class="bar__count" id="counter">0 / 0 checked</span>
-      <button class="btn-portal" id="send-btn">Send my results to Jelani</button>
+      <button class="btn-portal" id="send-btn">Copy my results for Jelani</button>
       <button class="ghost" id="copy-btn">Copy results</button>
       <button class="ghost" id="reset-btn">Reset mine</button>
       <button class="ghost" onclick="window.print()">Print</button>
@@ -145,7 +145,7 @@
             ['TD7', 'Search a state code, then a case number; use the state filter.', 'Search filters assets live and auto-expands matches; the state filter narrows the list.', null],
             ['TD8', 'Download one document.', 'It opens watermarked to the demo entity, with a class label and timestamp.', null],
             ['TD9', 'Open a <b>Healthcare (HLS)</b> sale Data Room.', 'Healthcare files appear: Operator Financials, CMS Survey, Phase I Environmental, Regulatory Agreement, Operator Lease, AR Security Agreement; Asset Summaries at sale level.', C + '/sale/HLS-2026-DEMO'],
-            ['TD10', 'Open the <b>Ginnie Mae</b> Data Room.', 'The HECM data room renders with its own document set.', 'gnma/index.html']
+            ['TD10', 'Ginnie Mae is a <b>separate seller demo</b>, not an option in the HUD sale dropdown. Click <b>Open</b> to launch it.', 'The Ginnie Mae demo opens; its HECM data room renders with its own document set.', 'gnma/index.html']
           ]},
           { name: 'Live upload (REAL)', sub: 'Jelani provisions your access.', cases: [
             ['TD12', 'Live: upload a real document to a draft sale.', 'It uploads and then appears in that sale\'s Data Room.', 'REAL']
@@ -352,13 +352,19 @@
     }
 
     document.getElementById('send-btn').addEventListener('click', function () {
-      var p = PERSONAS[current];
-      var subject = 'Platform test results — ' + p.tester;
       var body = buildReport();
-      var href = 'mailto:' + JELANI_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-      // mailto bodies can truncate; also stage to clipboard as a safety net.
-      if (navigator.clipboard) navigator.clipboard.writeText(body).catch(function () {});
-      window.location.href = href;
+      var b = this;
+      // Copy-first, never rely on mailto: an external/New-Outlook client can demand
+      // a sign-in and silently drop the body. The tester pastes into a reply to Jelani.
+      function instruct() {
+        b.textContent = 'Copied ✓ — paste into an email to ' + JELANI_EMAIL;
+        setTimeout(function () { b.textContent = 'Copy my results for Jelani'; }, 5000);
+      }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(body).then(instruct, function () { window.prompt('Copy your results, then email them to ' + JELANI_EMAIL + ':', body); });
+      } else {
+        window.prompt('Copy your results, then email them to ' + JELANI_EMAIL + ':', body);
+      }
     });
 
     document.getElementById('copy-btn').addEventListener('click', function () {
