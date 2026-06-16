@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Historical Sale Data Room · HUD OAS</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <script src="../shared/config.js"></script>
+  <script>
+    // This page IS the gated demo — force the in-browser demo twin on so it can
+    // serve the historical sales + generate watermarked files. No live systems.
+    try { localStorage.setItem('hsg.demo.active', '1'); localStorage.setItem('hsg.demo.variant', ''); } catch (e) {}
+  </script>
+  <style>
+    body { margin: 0; background: var(--color-bg, #0b1020); }
+    /* ---- gate ---- */
+    .gate { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+      background: radial-gradient(1200px 600px at 50% -10%, #1b2550, #0b1020 60%); padding: 24px; }
+    .gate__card { width: 100%; max-width: 430px; background: var(--color-surface, #fff); border-radius: 18px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.45); padding: 34px 32px; text-align: center; }
+    .gate__lock { width: 54px; height: 54px; border-radius: 14px; margin: 0 auto 16px; display: grid; place-items: center;
+      background: var(--color-primary-bg, #eef0ff); color: var(--color-primary, #2E2FA6); }
+    .gate__ey { font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); }
+    .gate__t { font-family: var(--font-heading); font-size: 22px; font-weight: 680; letter-spacing: -.02em; color: var(--color-ink); margin: 6px 0 6px; }
+    .gate__s { font-size: 13.5px; color: var(--color-text-muted); line-height: 1.5; margin-bottom: 20px; }
+    .gate__in { width: 100%; box-sizing: border-box; text-align: center; letter-spacing: .12em; font-size: 16px; padding: 13px;
+      border: 1.5px solid var(--color-border); border-radius: 11px; text-transform: uppercase; }
+    .gate__in:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 4px var(--color-primary-bg); }
+    .gate__btn { width: 100%; margin-top: 12px; padding: 13px; font-size: 15px; font-weight: 650; border: none; border-radius: 11px; cursor: pointer;
+      background: linear-gradient(180deg, var(--color-primary, #2E2FA6), #23248a); color: #fff; box-shadow: 0 8px 20px rgba(46,47,166,.35); }
+    .gate__btn:active { transform: translateY(1px); }
+    .gate__err { color: var(--color-error, #b91c1c); font-size: 13px; margin-top: 12px; min-height: 18px; }
+    .gate__note { font-size: 11.5px; color: var(--color-text-faint); margin-top: 16px; line-height: 1.5; }
+
+    /* ---- room ---- */
+    .room { display: none; min-height: 100vh; background: var(--color-bg-field, #f4f6fb); }
+    .room.on { display: block; }
+    .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 16px; padding: 12px 22px;
+      background: linear-gradient(180deg, #11183a, #0d1430); color: #fff; box-shadow: 0 2px 14px rgba(0,0,0,.25); }
+    .topbar__brand { font-family: var(--font-heading); font-weight: 680; letter-spacing: -.01em; }
+    .topbar__brand small { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; opacity: .65; font-weight: 400; }
+    .topbar select { margin-left: 8px; }
+    .topbar .spacer { flex: 1; }
+    .topbar__lock { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.18); border-radius: 9px; padding: 7px 13px; font-size: 12.5px; cursor: pointer; }
+    .ribbon { background: var(--color-warning-bg, #fef3c7); color: #7c5e00; font-size: 12.5px; text-align: center; padding: 7px 16px; border-bottom: 1px solid rgba(180,120,0,.18); }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 22px; }
+    .saleline { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .saleline h1 { font-family: var(--font-heading); font-size: 22px; font-weight: 680; letter-spacing: -.02em; color: var(--color-ink); margin: 0; }
+    .saleline .sub { font-size: 13px; color: var(--color-text-muted); }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--color-border); margin-bottom: 18px; }
+    .tabs button { background: none; border: none; padding: 11px 16px; font-size: 14px; font-weight: 600; color: var(--color-text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; }
+    .tabs button.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+    #content { min-height: 300px; }
+  </style>
+</head>
+<body>
+  <!-- GATE -->
+  <div class="gate" id="gate">
+    <div class="gate__card">
+      <div class="gate__lock">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <div class="gate__ey">HUD OAS · Qualified Bidder Access</div>
+      <div class="gate__t">Historical Sale Data Room</div>
+      <div class="gate__s">This area is gated. Enter your access code to review the historical sale files — loan documents, valuations, and property detail — exactly as a qualified bidder would see them.</div>
+      <input class="gate__in" id="code" placeholder="Access code" autocomplete="off" autofocus />
+      <button class="gate__btn" id="enter">Enter the data room →</button>
+      <div class="gate__err" id="err"></div>
+      <div class="gate__note">Demonstration environment. Files are sample/historical data, watermarked to the viewer and access-logged. Nothing here is live, and no real borrower data is present.</div>
+    </div>
+  </div>
+
+  <!-- ROOM -->
+  <div class="room" id="room">
+    <div class="topbar">
+      <div class="topbar__brand">HUD OAS<small>SECURE DATA ROOM</small></div>
+      <select class="form-select" id="sale-select" style="width:auto;"></select>
+      <div class="spacer"></div>
+      <button class="topbar__lock" id="lock">Lock &amp; exit</button>
+    </div>
+    <div class="ribbon">Viewing historical sale files as a qualified bidder — downloads are watermarked to you and access-logged.</div>
+    <div class="wrap">
+      <div class="saleline"><h1 id="sale-name">…</h1><span class="sub" id="sale-sub"></span></div>
+      <div class="tabs">
+        <button data-tab="data" class="active">Data Room</button>
+        <button data-tab="props">Properties</button>
+      </div>
+      <div id="content"><p class="empty">Loading…</p></div>
+    </div>
+  </div>
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/doc-classify.js"></script>
+  <script src="../shared/demo-docs.js"></script>
+  <script src="../shared/geo.js"></script>
+  <script src="../shared/property-view.js"></script>
+  <script src="../shared/vdr-room.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="data.js"></script>
+  <script src="gnma/data.js"></script>
+  <script src="../shared/api-demo.js"></script>
+  <script>
+  (function () {
+    // Access code (demo gate — protects sample files, not real data). Shareable.
+    var CODE = 'OAS-2026';
+    var GATE_KEY = 'hsg.vault.ok';
+    // The historical sales loaded for the gated review.
+    var OLD_SALES = ['HVLS-2026-2', 'SFLS-2026-1', 'MHLS-2026-1'];
+
+    var $gate = document.getElementById('gate'), $room = document.getElementById('room');
+    var $err = document.getElementById('err'), $code = document.getElementById('code');
+    var claims = { email: 'qualified.bidder@demo.hudloansales' };
+    var current = null, tab = 'data', loanCache = {};
+
+    function unlock() {
+      try { sessionStorage.setItem(GATE_KEY, '1'); } catch (e) {}
+      $gate.style.display = 'none'; $room.classList.add('on'); boot();
+    }
+    document.getElementById('enter').addEventListener('click', tryCode);
+    $code.addEventListener('keydown', function (e) { if (e.key === 'Enter') tryCode(); });
+    function tryCode() {
+      if (String($code.value || '').trim().toUpperCase() === CODE) { $err.textContent = ''; unlock(); }
+      else { $err.textContent = 'That code is not recognized. Check with Jelani.'; $code.select(); }
+    }
+    try { if (sessionStorage.getItem(GATE_KEY) === '1') unlock(); } catch (e) {}
+
+    document.getElementById('lock').addEventListener('click', function () {
+      try { sessionStorage.removeItem(GATE_KEY); } catch (e) {}
+      window.location.reload();
+    });
+
+    // ---- room ----
+    function boot() {
+      var sel = document.getElementById('sale-select');
+      Promise.all(OLD_SALES.map(function (id) { return HSG.api.sales.get(id).then(function (r) { return r.sale || r; }, function () { return null; }); }))
+        .then(function (sales) {
+          sales = sales.filter(Boolean);
+          sel.innerHTML = sales.map(function (s) { return '<option value="' + s.saleId + '">' + (s.long_name || s.sale_name || s.saleId) + '</option>'; }).join('');
+          sel.addEventListener('change', function () { selectSale(sel.value); });
+          document.querySelectorAll('.tabs button').forEach(function (b) {
+            b.addEventListener('click', function () {
+              tab = b.getAttribute('data-tab');
+              document.querySelectorAll('.tabs button').forEach(function (x) { x.classList.toggle('active', x === b); });
+              renderTab();
+            });
+          });
+          if (sales.length) selectSale(sales[0].saleId);
+        });
+    }
+
+    function selectSale(saleId) {
+      HSG.api.sales.get(saleId).then(function (r) {
+        current = r.sale || r;
+        document.getElementById('sale-name').textContent = current.long_name || current.sale_name || saleId;
+        var pools = (current.pools || []).length;
+        document.getElementById('sale-sub').textContent = saleId + (pools ? ' · ' + pools + ' pools' : '');
+        renderTab();
+      });
+    }
+
+    function renderTab() {
+      var c = document.getElementById('content');
+      c.innerHTML = '<p class="empty">Loading…</p>';
+      if (tab === 'data') {
+        HSG.vdrRoom.render(c, current, { actorEmail: claims.email });
+      } else {
+        Promise.all([
+          HSG.api.sales.pools(current.saleId).then(function (r) { return r.pools || r; }, function () { return []; }),
+          (loanCache[current.saleId] ? Promise.resolve(loanCache[current.saleId]) : HSG.api.sales.loans(current.saleId, {}).then(function (r) { return (loanCache[current.saleId] = r.loans || r); }, function () { return []; }))
+        ]).then(function (a) {
+          HSG.propertyView.render(c, { sale: current, pools: a[0], loans: a[1] });
+        });
+      }
+    }
+  })();
+  </script>
+</body>
+</html>
