@@ -34,6 +34,13 @@ Parameters:
     Type: String
     Default: claude-sonnet-4-6
     Description: Model id the AI-assist Lambda calls.
+  VaultCode:
+    Type: String
+    Default: ''
+    NoEcho: true
+    Description: >-
+      Shared access code for the historical-file vault (internal testing). Blank
+      in the template; set on the live function's env out-of-band.
   CertificateArn:
     Type: String
     Default: ''
@@ -967,6 +974,35 @@ Resources:
             Method: POST
             Path: /ai/assist
             Auth: { Authorizer: CognitoJwt }
+
+  # Vault access — shared-code gate over the private, KMS-encrypted historical
+  # file set (s3://docs/vault/...). No Cognito authorizer; gated by VAULT_CODE.
+  # Internal-testing use. Deployed out-of-band; code set on the live env.
+  FnVaultAccess:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-vault-access'
+      CodeUri: src/
+      Handler: handlers/vault/access.handler
+      Timeout: 30
+      MemorySize: 512
+      Environment:
+        Variables:
+          VAULT_CODE: !Ref VaultCode
+      Policies:
+        - S3ReadPolicy: { BucketName: !Ref DocsBucket }
+        - Statement:
+            - Effect: Allow
+              Action: [kms:Decrypt]
+              Resource: !GetAtt KmsKey.Arn
+      Events:
+        HttpVault:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /vault
+            # No Auth — gated by the shared VAULT_CODE checked in the handler.
 
   FnDocsList:
     Type: AWS::Serverless::Function

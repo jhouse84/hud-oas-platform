@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OAS Historical Data Room (CONFIDENTIAL)</title>
+<script src="../shared/config.js"></script>
+<style>
+:root{--ink:#0f1430;--muted:#5b6478;--faint:#94a0b8;--line:#e3e7ef;--bg:#eef1f7;
+--primary:#2E2FA6;--primary-bg:#eef0ff;--ok:#047857;--ok-bg:#ecfdf5;--admin:#7c2d12;--admin-bg:#fff7ed;--warn-bg:#fef3c7;--warn:#7c5e00;--err:#b91c1c;}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+a{color:var(--primary);text-decoration:none}
+.gate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(1100px 560px at 50% -10%,#1b2550,#0b1020 60%);padding:20px;overflow:auto}
+.gate__c{width:100%;max-width:620px;background:#fff;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.5);padding:30px 34px;margin:24px 0}
+.gate__ey{font:600 11px/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.gate__t{font-size:23px;font-weight:740;letter-spacing:-.02em;margin:7px 0 4px}
+.ca{border:1px solid var(--line);border-radius:11px;background:#fbfcfe;padding:16px 18px;font-size:13px;line-height:1.62;color:#2b3344;max-height:230px;overflow:auto;margin:14px 0}
+.ca h4{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.ca p{margin:0 0 10px}
+.fld{display:block;margin:12px 0 4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.in{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px}
+.in:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-bg)}
+#code{letter-spacing:.12em;text-transform:uppercase;font-family:ui-monospace,monospace}
+.chk{display:flex;gap:10px;align-items:flex-start;margin:14px 0;font-size:13.5px;line-height:1.5}.chk input{margin-top:3px;width:17px;height:17px}
+.btn{width:100%;margin-top:6px;padding:13px;font-size:15px;font-weight:650;border:none;border-radius:11px;cursor:pointer;color:#fff;background:linear-gradient(180deg,var(--primary),#23248a);box-shadow:0 8px 20px rgba(46,47,166,.35)}
+.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.err{color:var(--err);font-size:13px;margin-top:12px;min-height:18px}
+.note{font-size:11.5px;color:var(--faint);margin-top:14px;line-height:1.5}
+.top{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;padding:11px 20px;background:linear-gradient(180deg,#11183a,#0d1430);color:#fff;flex-wrap:wrap}
+.top b{font-weight:740}.top small{display:block;font:400 10px/1.3 ui-monospace,monospace;letter-spacing:.12em;opacity:.6}
+.top .lock{margin-left:auto;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:9px;padding:7px 13px;font-size:12.5px;cursor:pointer}
+.ribbon{background:var(--warn-bg);color:var(--warn);font-size:12.5px;text-align:center;padding:6px 16px;font-weight:600}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 20px 60px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:6px 0 16px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px}.kpi b{display:block;font-size:20px;font-weight:740;letter-spacing:-.02em}.kpi span{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.search{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:11px;font-size:14px;margin-bottom:14px}
+.sale{background:#fff;border:1px solid var(--line);border-radius:13px;margin-bottom:11px;overflow:hidden}
+.sale>summary{cursor:pointer;list-style:none;padding:14px 18px;display:flex;align-items:center;gap:12px;font-weight:680;font-size:15px}.sale>summary::-webkit-details-marker{display:none}.sale>summary .ct{margin-left:auto;font:500 12px/1 ui-monospace,monospace;color:var(--muted)}
+.lane{padding:0 18px 12px}.lane__h{font:600 11px/1 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;margin:12px 0 6px;display:flex;align-items:center;gap:8px}
+.pill{font:600 10px/1 ui-monospace,monospace;padding:3px 8px;border-radius:6px}.pill--b{background:var(--ok-bg);color:var(--ok)}.pill--a{background:var(--admin-bg);color:var(--admin)}
+.cat{border-top:1px solid var(--line)}.cat>summary{cursor:pointer;list-style:none;padding:9px 2px;font-size:13.5px;font-weight:600;display:flex;gap:8px;color:#243049}.cat>summary::-webkit-details-marker{display:none}.cat>summary .ct{margin-left:auto;font:500 11px/1 ui-monospace,monospace;color:var(--faint)}
+.f{display:flex;align-items:center;gap:10px;padding:6px 2px 6px 16px;border-top:1px solid #f1f3f8;font-size:12.5px}
+.f a{font-family:ui-monospace,monospace;font-size:12px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f .asset{font:600 10px/1 ui-monospace,monospace;background:#eef2ff;color:#3730a3;padding:2px 6px;border-radius:5px}.f .sz{margin-left:auto;color:var(--faint);font-size:11px;white-space:nowrap}
+.foot{font-size:11px;color:var(--faint);text-align:center;margin-top:24px;line-height:1.6}
+mark{background:#fde68a}
+</style></head>
+<body>
+<div class="gate" id="gate"><div class="gate__c">
+  <div class="gate__ey">HUD OAS &middot; Transaction Specialist Workspace</div>
+  <div class="gate__t">Historical Sale Data Room &mdash; Confidential</div>
+  <div style="font-size:13.5px;color:var(--muted);margin-bottom:6px">Confidential loan-sale due-diligence materials from closed (sold) transactions, for <b>internal team testing only</b>. Access is conditioned on the agreement below and your access code.</div>
+  <div class="ca">
+    <h4>Confidentiality Agreement &amp; Acknowledgment</h4>
+    <p>I acknowledge that the documents in this data room are <b>confidential and proprietary</b> and contain non-public personal information (NPI) of borrowers and confidential business information relating to HUD loan-sale transactions, notwithstanding that the underlying loans have been sold.</p>
+    <p>I agree to: (1) use these materials <b>solely for internal testing and evaluation</b> of this platform; (2) distribute them <b>only to internal team members, and only for testing purposes</b> &mdash; never to any external party, client, or third party; (3) protect them with at least the same care I use for my own confidential information; and (4) <b>destroy or return</b> them when the purpose is complete or upon request.</p>
+    <p>I understand this is a working acknowledgment for an internal testing environment and does not replace any executed Confidentiality Agreement governing the underlying transaction.</p>
+  </div>
+  <label class="fld">Your name</label>
+  <input class="in" id="who" placeholder="Full name" autocomplete="off">
+  <label class="fld">Access code</label>
+  <input class="in" id="code" placeholder="Access code" autocomplete="off">
+  <label class="chk"><input type="checkbox" id="agree"><span>I have read and agree to the Confidentiality Agreement &amp; Acknowledgment, will use these materials for internal testing only, and am authorized to access them.</span></label>
+  <button class="btn" id="enter" disabled>Accept &amp; enter the data room &rarr;</button>
+  <div class="err" id="err"></div>
+  <div class="note">Files are stored privately and encrypted; this gate releases short-lived, watermark-eligible links to internal testers only. Your name, code use, and file access are logged.</div>
+</div></div>
+
+<div id="room" style="display:none">
+  <div class="top"><div><b>HUD OAS</b><small>HISTORICAL DATA ROOM</small></div>
+    <span style="font-size:12.5px;opacity:.85">Closed sales &middot; internal testing</span>
+    <button class="lock" id="lock">Lock &amp; exit</button></div>
+  <div class="ribbon">CONFIDENTIAL &mdash; internal testing only &middot; do not distribute outside the team</div>
+  <div class="wrap">
+    <div class="kpis" id="kpis"></div>
+    <input class="search" id="q" placeholder="Search filename, FHA case #, category, or sale…">
+    <div id="tree"><p style="color:var(--muted)">Loading the index…</p></div>
+    <div class="foot">Real inbound set, classified by the OAS taxonomy. Working files (HTML, Outlook messages, loose images, temp) are not shown. Links expire after a few minutes.</div>
+  </div>
+</div>
+
+<script>
+var API=(window.HSG_CONFIG&&window.HSG_CONFIG.apiBase)||'';
+var CATORDER=['Bidder Information Package','Loan Tape','Asset Summaries','Sale Procedures','Forms & Agreements','Valuation','Property Reports','Collateral & Case Files','Due Diligence Files','BEM & Pricing','Bid Day Ops','Pricing & Analytics','Results & Post-Sale','TS Internal','Borrower & Award Letters','Unsorted'];
+var SALELABEL={'HVLS-2026-2':'HECM Vacant Loan Sale 2026-2','HNVLS-2026-1':'HECM Non-Vacant Loan Sale 2026-1','HNVLS-2026-2':'HECM Non-Vacant Loan Sale 2026-2','SFLS-2016-2':'Single Family Loan Sale 2016-2','SFLS-2026-1':'Single Family Loan Sale 2026-1','HLS-2026-1':'Healthcare Loan Sale 2026-1','MHLS-2023-2':'Multifamily & Healthcare Loan Sale 2023-2'};
+var CODE='', FILES=[];
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
+function mb(n){return n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';}
+function api(action,extra){
+  return fetch(API+'/vault',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(Object.assign({code:CODE,action:action},extra||{}))})
+    .then(function(r){return r.json().then(function(j){ if(!r.ok) throw new Error(j.message||('HTTP '+r.status)); return j;});});
+}
+
+var who=document.getElementById('who'),codeEl=document.getElementById('code'),agree=document.getElementById('agree'),enter=document.getElementById('enter'),err=document.getElementById('err');
+function sync(){enter.disabled=!(who.value.trim().length>1 && codeEl.value.trim().length>3 && agree.checked);}
+[who,codeEl].forEach(function(e){e.addEventListener('input',sync);});agree.addEventListener('change',sync);
+codeEl.addEventListener('keydown',function(e){if(e.key==='Enter'&&!enter.disabled)enter.click();});
+enter.addEventListener('click',function(){
+  CODE=codeEl.value.trim().toUpperCase(); err.textContent='Verifying…'; enter.disabled=true;
+  api('index').then(function(idx){
+    FILES=idx.files||[];
+    try{sessionStorage.setItem('oas.vault',JSON.stringify({name:who.value.trim(),code:CODE}));}catch(e){}
+    openRoom();
+  },function(e){ err.textContent=/code/i.test(e.message)?'That access code is not recognized.':e.message; enter.disabled=false; });
+});
+try{var sv=JSON.parse(sessionStorage.getItem('oas.vault')||'null'); if(sv&&sv.code){who.value=sv.name||'';codeEl.value=sv.code;CODE=sv.code;sync();}}catch(e){}
+sync();
+
+document.getElementById('lock').addEventListener('click',function(){try{sessionStorage.removeItem('oas.vault');}catch(e){}window.location.reload();});
+
+function openRoom(){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('room').style.display='block';
+  var sales=Array.from(new Set(FILES.map(function(f){return f.sale;}))).length;
+  var bytes=FILES.reduce(function(s,f){return s+(f.size||0);},0);
+  var nb=FILES.filter(function(f){return f.vis==='bidder';}).length, na=FILES.filter(function(f){return f.vis==='admin';}).length;
+  document.getElementById('kpis').innerHTML=
+    kpi(FILES.length,'Files')+kpi(sales,'Sales')+kpi(mb(bytes),'Total')+kpi(nb,'Bidder docs')+kpi(na,'Admin / internal');
+  render('');
+}
+function kpi(v,l){return '<div class="kpi"><b>'+v+'</b><span>'+l+'</span></div>';}
+
+function render(query){
+  var q=query.trim().toLowerCase();
+  var files=FILES.filter(function(f){return !q||(f.name+' '+f.cat+' '+f.asset+' '+f.sale+' '+(SALELABEL[f.sale]||'')).toLowerCase().indexOf(q)>=0;});
+  var bySale={}; files.forEach(function(f){(bySale[f.sale]=bySale[f.sale]||[]).push(f);});
+  var sales=Object.keys(bySale).sort(); var open=q.length>0;
+  document.getElementById('tree').innerHTML=sales.map(function(sale){
+    var fs=bySale[sale], lanes={bidder:{},admin:{}};
+    fs.forEach(function(f){var L=lanes[f.vis]||(lanes[f.vis]={});(L[f.cat]=L[f.cat]||[]).push(f);});
+    function laneHtml(L,cls,label){
+      var cats=Object.keys(L).sort(function(a,b){return CATORDER.indexOf(a)-CATORDER.indexOf(b);});
+      if(!cats.length)return '';
+      var n=cats.reduce(function(s,c){return s+L[c].length;},0);
+      return '<div class="lane"><div class="lane__h"><span class="pill pill--'+cls+'">'+label+'</span>'+n+' files</div>'+
+        cats.map(function(c){var arr=L[c].sort(function(a,b){return (a.asset+a.name).localeCompare(b.asset+b.name);});
+          return '<details class="cat"'+(open?' open':'')+'><summary>'+esc(c)+'<span class="ct">'+arr.length+'</span></summary>'+
+            arr.map(function(f){return '<div class="f">'+(f.asset?'<span class="asset">'+esc(f.asset)+'</span>':'')+
+              '<a onclick="openFile(this.getAttribute(\'data-r\'))" data-r="'+esc(f.rel)+'" title="'+esc(f.rel)+'">'+hl(f.name,q)+'</a>'+
+              '<span class="sz">'+mb(f.size)+'</span></div>';}).join('')+'</details>';
+        }).join('')+'</div>';
+    }
+    return '<details class="sale"'+(open||sales.length<=2?' open':'')+'><summary>'+esc(SALELABEL[sale]||sale)+'<span class="ct">'+fs.length+' files</span></summary>'+
+      laneHtml(lanes.bidder,'b','BIDDER')+laneHtml(lanes.admin,'a','ADMIN / INTERNAL')+'</details>';
+  }).join('')||'<p style="color:var(--muted);padding:20px">No files match.</p>';
+}
+function hl(s,q){if(!q)return esc(s);var i=s.toLowerCase().indexOf(q);if(i<0)return esc(s);return esc(s.slice(0,i))+'<mark>'+esc(s.slice(i,i+q.length))+'</mark>'+esc(s.slice(i+q.length));}
+
+// open: a blank window is opened synchronously (keeps the user gesture so it is
+// not popup-blocked), then pointed at the short-lived presigned URL.
+function openFile(rel){
+  var win=window.open('','_blank');
+  api('url',{rel:rel}).then(function(r){ if(win)win.location=r.url; else window.location=r.url; },
+    function(e){ if(win)win.close(); alert('Could not open: '+e.message); });
+}
+var qel=document.getElementById('q'),t;qel.addEventListener('input',function(){clearTimeout(t);t=setTimeout(function(){render(qel.value);},120);});
+</script>
+</body></html>
