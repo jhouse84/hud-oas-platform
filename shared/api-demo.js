@@ -760,6 +760,37 @@
       }
     },
 
+    // ---- AI assist: in production this is a secured server-side Claude
+    // injection point (POST /ai/assist). In the demo it is simulated locally
+    // with the rule classifier, clearly flagged simulated:true, so the feature
+    // is visible without exposing a model key. ----
+    ai: (function () {
+      function classify(saleId, files) {
+        var dc = window.HSG && HSG.docClassify;
+        var results = (files || []).map(function (f) {
+          var path = f.path || f.name || '';
+          var c = dc ? dc.classifyImport(path) : { category: 'Unsorted', visibility: 'admin', scope: 'sale', asset: null, fileName: path };
+          return {
+            path: path, name: c.fileName || String(path).split('/').pop(),
+            category: c.category, visibility: c.visibility, scope: c.scope, asset: c.asset || null,
+            confidence: c.category === 'Unsorted' || c.category === 'Excluded' ? 'low' : 'high',
+            reason: 'Demo classifier placed this in ' + c.category + (c.asset ? ' (asset ' + c.asset + ')' : ''),
+            simulated: true
+          };
+        });
+        return Promise.resolve({ task: 'classify', simulated: true, results: results });
+      }
+      return {
+        classify: classify,
+        suggestPools: function () { return Promise.resolve({ task: 'pools', simulated: true, pools: [], note: 'Pool suggestions run live in the secured admin console.' }); },
+        assist: function (task, payload) {
+          payload = payload || {};
+          if (task === 'classify') return classify(payload.saleId, payload.files);
+          return Promise.resolve({ task: task, simulated: true, note: 'This AI task runs server-side in the live console.' });
+        }
+      };
+    })(),
+
     qa: {
       listForSale: function (saleId) {
         var items = store.qa.filter(function (q) { return q.saleId === saleId; });

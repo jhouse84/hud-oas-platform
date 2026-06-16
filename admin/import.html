@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bulk Import · HUD OAS Admin</title>
+  <link rel="stylesheet" href="../shared/design-system.css" />
+  <link rel="stylesheet" href="_shell.css" />
+  <script src="../shared/config.js"></script>
+  <style>
+    .dz { border: 1.5px dashed var(--color-border-strong); border-radius: var(--radius-xl); background: var(--color-surface); padding: 34px 26px; text-align: center; transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out); }
+    .dz.drag { border-color: var(--color-primary); background: var(--color-primary-bg); }
+    .dz__icon { width: 50px; height: 50px; border-radius: 13px; background: var(--color-primary-bg); color: var(--color-primary); display: grid; place-items: center; margin: 0 auto 14px; }
+    .dz__row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+    .dz__hint { font-size: 12.5px; color: var(--color-text-muted); margin-top: 12px; }
+    .dz__hint code { font-family: var(--font-mono); font-size: 12px; background: var(--color-surface-2); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--color-border); }
+
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 4px 0 20px; }
+    .kpi { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+    .kpi__v { font-family: var(--font-heading); font-size: 22px; font-weight: 650; letter-spacing: -0.02em; color: var(--color-ink); }
+    .kpi__l { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); margin-top: 3px; }
+    .kpi--bidder .kpi__v { color: var(--color-success); }
+    .kpi--admin .kpi__v { color: var(--color-text); }
+    .kpi--excl .kpi__v { color: var(--color-text-faint); }
+
+    .grp { border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); overflow: hidden; margin-bottom: 12px; }
+    .grp > summary { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; list-style: none; }
+    .grp > summary::-webkit-details-marker { display: none; }
+    .grp__dot { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+    .grp__name { font-weight: 600; font-size: 14px; color: var(--color-ink); }
+    .grp__meta { font-size: 12px; color: var(--color-text-muted); margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .grp__files { border-top: 1px solid var(--color-divider); }
+    .frow { display: grid; grid-template-columns: 1fr auto auto auto; gap: 10px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--color-divider); font-size: 12.5px; }
+    .frow:last-child { border-bottom: none; }
+    .frow.excluded { opacity: 0.45; }
+    .frow__fn { font-family: var(--font-mono); font-size: 11.5px; color: var(--color-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .frow__path { font-size: 10.5px; color: var(--color-text-faint); }
+    .tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.03em; padding: 2px 7px; border-radius: 5px; white-space: nowrap; }
+    .tag--asset { background: var(--color-info-bg); color: var(--color-info); }
+    .tag--ai { background: #ede9fe; color: #6d28d9; }
+    .vis { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.03em; padding: 3px 9px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; user-select: none; }
+    .vis--bidder { background: var(--color-success-bg); color: var(--color-success); border-color: rgba(4,120,87,0.18); }
+    .vis--admin { background: var(--color-surface-2); color: var(--color-text-muted); border-color: var(--color-border); }
+    .vis--exclude { background: var(--color-surface-2); color: var(--color-text-faint); border-color: var(--color-border); text-decoration: line-through; }
+
+    .sect-h { font-family: var(--font-heading); font-size: 15px; font-weight: 600; letter-spacing: 0.01em; color: var(--color-text); margin: 24px 0 10px; display: flex; align-items: center; gap: 9px; text-transform: uppercase; }
+    .sect-h .count { font-family: var(--font-mono); font-size: 12px; color: var(--color-text-muted); text-transform: none; letter-spacing: 0; }
+
+    .bar { height: 9px; border-radius: 6px; background: var(--color-surface-2); overflow: hidden; border: 1px solid var(--color-border); }
+    .bar__fill { height: 100%; background: linear-gradient(90deg, var(--color-primary), var(--color-success)); width: 0%; transition: width 180ms var(--ease-out); }
+
+    .banner { display: flex; gap: 12px; align-items: flex-start; padding: 13px 16px; border-radius: var(--radius-lg); font-size: 13px; line-height: 1.5; margin-bottom: 18px; }
+    .banner--gate { background: var(--color-warning-bg); border: 1px solid rgba(180,120,0,0.2); color: #7c5e00; }
+    .banner--ai { background: #f5f3ff; border: 1px solid #ddd6fe; color: #5b21b6; }
+    .banner svg { flex: none; margin-top: 1px; }
+
+    .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0 0 16px; }
+    .toolbar .spacer { flex: 1; }
+    .stage { display: none; }
+    .stage.on { display: block; }
+  </style>
+</head>
+<body data-portal="admin">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <div class="sidebar__brand-label">HUD OAS Admin</div>
+        <div class="sidebar__brand-name">Console</div>
+      </div>
+      <div class="sidebar__section">Set up a sale</div>
+      <a class="sidebar__nav-item" href="sale-setup.html">Sale setup</a>
+      <a class="sidebar__nav-item active" href="import.html">Bulk import</a>
+      <a class="sidebar__nav-item" href="dataroom.html">Data room</a>
+      <div class="sidebar__section">Overview</div>
+      <a class="sidebar__nav-item" href="index.html">Dashboard</a>
+      <a class="sidebar__nav-item" href="bidders.html">Bidders</a>
+      <a class="sidebar__nav-item" href="bid-day.html">Bid day ops</a>
+      <a class="sidebar__nav-item" href="bem.html">BEM &amp; awards</a>
+      <div class="sidebar__section">Post-sale</div>
+      <a class="sidebar__nav-item" href="qa.html">Q&amp;A inbox</a>
+      <a class="sidebar__nav-item" href="settlements.html">Settlements</a>
+      <a class="sidebar__nav-item" href="compliance.html">Compliance &amp; QC</a>
+      <div class="sidebar__user">
+        <div id="user-name" style="color: #FFF; font-weight: 600;">…</div>
+        <div id="user-email" style="font-size: var(--text-xs); opacity: 0.7;"></div>
+        <a href="#" id="signout-link" style="display: inline-block; margin-top: var(--space-2); color: var(--color-primary-light); text-decoration: underline; font-size: var(--text-sm);">Sign out</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="main__header">
+        <div>
+          <h1 class="main__title">Bulk Document Import</h1>
+          <div style="font-size: 12.5px; color: var(--color-text-muted); margin-top: 2px;">Pick a folder &middot; auto-classify into the data room &middot; gated upload to encrypted storage</div>
+        </div>
+        <select class="form-select" id="sale-select" style="width: auto; min-width: 230px;"></select>
+      </header>
+      <div class="main__content" id="app"><p class="empty">Loading…</p></div>
+    </div>
+  </div>
+
+  <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none;" />
+  <input type="file" id="file-input" multiple style="display:none;" />
+
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/cognito.js"></script>
+  <script src="../shared/doc-classify.js"></script>
+  <script src="../shared/demo-docs.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="../demo/data.js"></script>
+  <script src="../demo/gnma/data.js"></script>
+  <script src="../shared/api-demo.js"></script>
+  <script>
+  (function () {
+    var u = HSG.utils;
+    var DC = window.HSG.docClassify;
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+    function kb(n){ if(!n) return '0 KB'; return n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB'; }
+
+    // ----- auth gate (demo twin forces isAuthenticated → true) -----
+    if (!HSG.cognito.isAuthenticated()) { window.location.href = 'login.html?next=import.html'; return; }
+    var claims = HSG.api.decodeClaims() || {};
+    document.getElementById('user-name').textContent = claims['custom:entityName'] || claims.email || 'Admin';
+    document.getElementById('user-email').textContent = claims.email || '';
+    document.getElementById('signout-link').addEventListener('click', function(e){ e.preventDefault(); HSG.cognito.signOut(); window.location.href='login.html'; });
+
+    var IS_DEMO = !!window.HSG_DEMO;
+    var $app = document.getElementById('app');
+    var $sale = document.getElementById('sale-select');
+    var currentSale = null;
+    var plan = [];   // [{ file, path, name, size, category, visibility, scope, asset, ai, excluded }]
+
+    // category → swatch colour
+    var CAT_COLOR = {
+      'Bidder Information Package':'#2563eb','Loan Tape':'#0891b2','Asset Summaries':'#0d9488',
+      'Sale Procedures':'#7c3aed','Forms & Agreements':'#9333ea','Valuation':'#059669',
+      'Property Reports':'#16a34a','Collateral & Case Files':'#ca8a04','Due Diligence Files':'#d97706',
+      'BEM & Pricing':'#64748b','Bid Day Ops':'#64748b','Pricing & Analytics':'#64748b',
+      'Results & Post-Sale':'#475569','TS Internal':'#94a3b8','Borrower & Award Letters':'#475569',
+      'Unsorted':'#b45309','Excluded':'#cbd5e1'
+    };
+    function dot(cat){ return '<span class="grp__dot" style="background:'+(CAT_COLOR[cat]||'#94a3b8')+'"></span>'; }
+
+    function load() {
+      HSG.api.sales.list({}).then(function (r) {
+        var sales = (r && r.sales) || [];
+        $sale.innerHTML = sales.map(function (s){ var id=s.saleId||s.sale_id; return '<option value="'+esc(id)+'">'+esc(s.long_name||s.sale_name||s.name||id)+'</option>'; }).join('') || '<option value="">No sales — create one in Sale setup</option>';
+        $sale.addEventListener('change', function(){ currentSale = $sale.value; resetPlan(); });
+        currentSale = sales.length ? (sales[0].saleId || sales[0].sale_id) : null;
+        renderIntake();
+      }).catch(function(err){ $app.innerHTML = '<div class="error-box">'+esc(err.message)+'</div>'; });
+    }
+
+    // ---------- Stage 1: intake (folder / files / drag-drop) ----------
+    function renderIntake() {
+      $app.innerHTML =
+        (IS_DEMO ? demoBanner() : '') +
+        '<div class="banner banner--gate">'+ shield() +
+          '<div><strong>Gated import.</strong> Files land in encrypted, access-logged storage under <code>originals/{sale}/</code>. '+
+          'Anything classified <em>admin</em> (BEM, pricing, bid-day, post-sale, borrower letters, or anything unrecognized) is never bidder-visible. '+
+          'Review the plan before you upload.</div></div>' +
+        '<div class="dz" id="dz">'+
+          '<div class="dz__icon">'+ folderIcon() +'</div>'+
+          '<div style="font-weight:600;font-size:15px;color:var(--color-ink)">Drop a sale folder here, or choose below</div>'+
+          '<div class="dz__hint">The importer reads the folder tree and sorts every file into the data&#8209;room taxonomy automatically &mdash; '+
+            'BPOs &amp; AVMs &rarr; <code>Valuation</code>, notes/mortgages/titles &rarr; <code>Collateral</code>, '+
+            'BIP / tape / procedures &rarr; bidder docs, BEM / bid&#8209;day / results &rarr; admin&#8209;only.</div>'+
+          '<div class="dz__row">'+
+            '<button class="btn btn--primary" id="pick-folder">Choose folder…</button>'+
+            '<button class="btn btn--secondary" id="pick-files">Choose files…</button>'+
+          '</div>'+
+        '</div>';
+
+      document.getElementById('pick-folder').onclick = function(){ document.getElementById('folder-input').click(); };
+      document.getElementById('pick-files').onclick = function(){ document.getElementById('file-input').click(); };
+
+      var dz = document.getElementById('dz');
+      ['dragenter','dragover'].forEach(function(ev){ dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.add('drag'); }); });
+      ['dragleave','drop'].forEach(function(ev){ dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.remove('drag'); }); });
+      dz.addEventListener('drop', function(e){ handleDrop(e); });
+    }
+    function demoBanner(){
+      return '<div class="banner banner--ai">'+ sparkIcon() +
+        '<div><strong>Demonstration.</strong> Classification is fully live (the same engine the real console uses), and the AI assist is simulated locally. '+
+        'Uploading the bytes is disabled here &mdash; that step runs in the secure admin console against gated storage.</div></div>';
+    }
+
+    document.getElementById('folder-input').addEventListener('change', function(e){ ingest(Array.prototype.slice.call(e.target.files)); e.target.value=''; });
+    document.getElementById('file-input').addEventListener('change', function(e){ ingest(Array.prototype.slice.call(e.target.files)); e.target.value=''; });
+
+    function handleDrop(e){
+      var items = e.dataTransfer && e.dataTransfer.items;
+      if (items && items.length && items[0].webkitGetAsEntry) {
+        var entries = []; for (var i=0;i<items.length;i++){ var en = items[i].webkitGetAsEntry(); if (en) entries.push(en); }
+        var files = [];
+        Promise.all(entries.map(function(en){ return walkEntry(en, files); })).then(function(){ ingest(files); });
+      } else {
+        ingest(Array.prototype.slice.call(e.dataTransfer.files));
+      }
+    }
+    function walkEntry(entry, out){
+      return new Promise(function(resolve){
+        if (entry.isFile) { entry.file(function(f){ try { f._rel = entry.fullPath.replace(/^\//,''); } catch(e){} out.push(f); resolve(); }, function(){ resolve(); }); }
+        else if (entry.isDirectory) {
+          var reader = entry.createReader(); var all = [];
+          (function readMore(){ reader.readEntries(function(batch){ if(!batch.length){ Promise.all(all.map(function(en){return walkEntry(en,out);})).then(resolve); return; } all=all.concat(Array.prototype.slice.call(batch)); readMore(); }, function(){ resolve(); }); })();
+        } else resolve();
+      });
+    }
+
+    // ---------- classify a file list into the plan ----------
+    function relPath(f){ return f.webkitRelativePath || f._rel || f.name; }
+    function ingest(files) {
+      files = (files||[]).filter(function(f){ return f && (f.size===undefined || f.size>0) && !/^\./.test(f.name) && f.name.toLowerCase()!=='.ds_store'; });
+      if (!files.length) { return; }
+      plan = files.map(function(f){
+        var path = relPath(f);
+        var c = DC.classifyImport(path);
+        return { file: f, path: path, name: c.fileName || f.name, size: f.size||0,
+          category: c.category, visibility: c.visibility, scope: c.scope, asset: c.asset||null, ai:false, excluded: c.visibility==='exclude' };
+      });
+      renderPlan();
+    }
+    function resetPlan(){ plan = []; renderIntake(); }
+
+    // ---------- Stage 2: the plan ----------
+    function totals(){
+      var t = { files:0, bidder:0, admin:0, excl:0, bBytes:0, aBytes:0, xBytes:0, assets:{}, unsorted:0 };
+      plan.forEach(function(p){
+        t.files++;
+        if (p.excluded || p.visibility==='exclude') { t.excl++; t.xBytes+=p.size; return; }
+        if (p.visibility==='bidder') { t.bidder++; t.bBytes+=p.size; } else { t.admin++; t.aBytes+=p.size; }
+        if (p.asset) t.assets[p.asset]=1;
+        if (p.category==='Unsorted') t.unsorted++;
+      });
+      t.assetCount = Object.keys(t.assets).length;
+      return t;
+    }
+
+    function renderPlan() {
+      var t = totals();
+      var saleLabel = $sale.options[$sale.selectedIndex] ? $sale.options[$sale.selectedIndex].text : currentSale;
+      var html = '';
+      html += '<div class="toolbar">'+
+        '<button class="btn btn--ghost btn--sm" id="back">&larr; Choose different files</button>'+
+        '<div class="spacer"></div>'+
+        (t.unsorted ? '<button class="btn btn--secondary btn--sm" id="ai-sort">'+ sparkIconSm() +' AI&#8209;sort the '+t.unsorted+' unrecognized</button>' : '')+
+        '<button class="btn btn--primary" id="do-import"'+(t.bidder+t.admin===0?' disabled':'')+'>'+
+          (IS_DEMO ? 'Preview import ('+(t.bidder+t.admin)+' files)' : 'Import '+(t.bidder+t.admin)+' files &rarr;')+'</button>'+
+        '</div>';
+
+      html += '<div class="kpis">'+
+        kpi('', t.files, 'Files scanned')+
+        kpi('bidder', t.bidder, 'Bidder-visible &middot; '+kb(t.bBytes))+
+        kpi('admin', t.admin, 'Admin-only &middot; '+kb(t.aBytes))+
+        kpi('', t.assetCount, 'Assets matched')+
+        kpi('excl', t.excl, 'Excluded &middot; '+kb(t.xBytes))+
+        '</div>';
+
+      html += '<div style="font-size:12.5px;color:var(--color-text-muted);margin:-8px 0 6px">Filing into <strong>'+esc(saleLabel)+'</strong>. Click a visibility chip to override; the data room enforces it.</div>';
+
+      // group by visibility lane then category
+      var lanes = { bidder: {}, admin: {}, exclude: {} };
+      plan.forEach(function(p, i){
+        var lane = (p.excluded||p.visibility==='exclude') ? 'exclude' : p.visibility;
+        (lanes[lane][p.category] = lanes[lane][p.category] || []).push(i);
+      });
+
+      html += '<div class="sect-h">'+ tinyDot('var(--color-success)') +'Bidder documents <span class="count">'+ laneCount(lanes.bidder) +'</span></div>';
+      html += renderLane(lanes.bidder) || '<p class="empty" style="font-size:13px">No bidder-visible files in this batch.</p>';
+
+      html += '<div class="sect-h">'+ tinyDot('var(--color-text-muted)') +'Admin&#8209;only <span class="count">'+ laneCount(lanes.admin) +'</span></div>';
+      html += renderLane(lanes.admin) || '<p class="empty" style="font-size:13px">No admin-only files in this batch.</p>';
+
+      if (laneCount(lanes.exclude)) {
+        html += '<div class="sect-h">'+ tinyDot('var(--color-border-strong)') +'Excluded <span class="count">'+ laneCount(lanes.exclude) +'</span></div>';
+        html += '<div style="font-size:12px;color:var(--color-text-muted);margin-bottom:8px">Working files the importer skips (HTML, MS Project, Outlook messages, loose images, temp/db). Not uploaded.</div>';
+        html += renderLane(lanes.exclude, true);
+      }
+
+      $app.innerHTML = html;
+
+      document.getElementById('back').onclick = resetPlan;
+      var imp = document.getElementById('do-import'); if (imp) imp.onclick = doImport;
+      var ai = document.getElementById('ai-sort'); if (ai) ai.onclick = aiSort;
+      bindChips();
+    }
+
+    function kpi(mod, v, l){ return '<div class="kpi'+(mod?' kpi--'+mod:'')+'"><div class="kpi__v">'+v+'</div><div class="kpi__l">'+l+'</div></div>'; }
+    function tinyDot(c){ return '<span style="width:9px;height:9px;border-radius:3px;background:'+c+';display:inline-block"></span>'; }
+    function laneCount(lane){ var n=0; Object.keys(lane).forEach(function(k){ n+=lane[k].length; }); return n; }
+
+    function renderLane(lane, isExcl) {
+      var cats = Object.keys(lane).sort();
+      if (!cats.length) return '';
+      return cats.map(function(cat){
+        var idxs = lane[cat];
+        var bytes = idxs.reduce(function(s,i){ return s+plan[i].size; }, 0);
+        var rows = idxs.map(function(i){ return frow(i, isExcl); }).join('');
+        return '<details class="grp"'+(idxs.length<=40?' open':'')+'>'+
+          '<summary>'+ dot(cat) +'<span class="grp__name">'+esc(cat)+'</span>'+
+            '<span class="grp__meta"><span>'+idxs.length+' file'+(idxs.length!==1?'s':'')+'</span><span>'+kb(bytes)+'</span></span>'+
+          '</summary>'+
+          '<div class="grp__files">'+rows+'</div></details>';
+      }).join('');
+    }
+
+    function frow(i, isExcl) {
+      var p = plan[i];
+      var visClass = (p.excluded||p.visibility==='exclude') ? 'exclude' : p.visibility;
+      var visLabel = visClass==='bidder' ? 'BIDDER' : (visClass==='admin' ? 'ADMIN' : 'SKIP');
+      return '<div class="frow'+((p.excluded||p.visibility==='exclude')?' excluded':'')+'" data-i="'+i+'">'+
+        '<div><div class="frow__fn">'+esc(p.name)+'</div>'+ (p.path!==p.name ? '<div class="frow__path">'+esc(p.path)+'</div>':'') +'</div>'+
+        (p.asset ? '<span class="tag tag--asset">'+esc(p.asset)+'</span>' : '<span></span>')+
+        (p.ai ? '<span class="tag tag--ai">AI</span>' : '<span></span>')+
+        (isExcl ? '<span class="vis vis--exclude">SKIP</span>' : '<span class="vis vis--'+visClass+'" data-i="'+i+'" title="Click to change">'+visLabel+'</span>')+
+        '</div>';
+    }
+
+    // visibility cycle: bidder → admin → exclude → bidder
+    function bindChips() {
+      Array.prototype.forEach.call($app.querySelectorAll('.vis[data-i]'), function(el){
+        el.addEventListener('click', function(){
+          var i = +el.getAttribute('data-i'); var p = plan[i];
+          if (p.excluded || p.visibility==='exclude') { p.excluded=false; p.visibility='bidder'; }
+          else if (p.visibility==='bidder') p.visibility='admin';
+          else if (p.visibility==='admin') { p.excluded=true; p.visibility='exclude'; }
+          renderPlan();
+        });
+      });
+    }
+
+    // ---------- AI assist: resolve the unrecognized tail via the secured proxy ----------
+    function aiSort() {
+      var targets = plan.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return x.p.category==='Unsorted'; });
+      if (!targets.length) return;
+      var btn = document.getElementById('ai-sort'); if (btn){ btn.disabled=true; btn.innerHTML = 'Asking the model…'; }
+      var files = targets.map(function(x){ return { path: x.p.path, name: x.p.name }; });
+      HSG.api.ai.classify(currentSale, files, DC.IMPORT_CATEGORIES).then(function(res){
+        var results = (res && res.results) || [];
+        var byPath = {}; results.forEach(function(r){ byPath[r.path]=r; });
+        var moved = 0;
+        targets.forEach(function(x){
+          var r = byPath[x.p.path]; if (!r || !r.category) return;
+          if (r.category!=='Unsorted') {
+            x.p.category = r.category; x.p.visibility = r.visibility || 'admin';
+            x.p.scope = r.scope || x.p.scope; if (r.asset) x.p.asset = r.asset;
+            x.p.ai = true; x.p.aiReason = r.reason || ''; moved++;
+          }
+        });
+        renderPlan();
+        toast(res && res.simulated
+          ? 'AI assist (simulated in demo) reviewed '+results.length+' file'+(results.length!==1?'s':'')+', re&#8209;placed '+moved+'.'
+          : 'Claude reviewed '+results.length+' file'+(results.length!==1?'s':'')+' and re&#8209;placed '+moved+'.');
+      }).catch(function(err){
+        var b=document.getElementById('ai-sort'); if(b){ b.disabled=false; b.innerHTML = sparkIconSm()+' AI&#8209;sort the unrecognized'; }
+        toast('AI assist unavailable: '+esc(err.message), true);
+      });
+    }
+
+    // ---------- Stage 3: upload ----------
+    function doImport() {
+      var queue = plan.filter(function(p){ return !p.excluded && p.visibility!=='exclude'; });
+      if (!queue.length) return;
+
+      if (IS_DEMO) {
+        $app.insertAdjacentHTML('afterbegin',
+          '<div class="banner banner--ai" id="demo-note">'+ sparkIcon() +
+          '<div><strong>Preview only.</strong> In the live console these '+queue.length+' files presign and PUT straight to gated, KMS&#8209;encrypted storage '+
+          '(bidder docs under <code>originals/'+esc(currentSale)+'/{category}/</code>, admin under <code>&hellip;/_admin/</code>), with this same progress and review. '+
+          'No bytes leave the browser in the demo.</div></div>');
+        document.getElementById('demo-note').scrollIntoView({behavior:'smooth', block:'center'});
+        return;
+      }
+
+      var total = queue.length, done = 0, failed = [];
+      $app.innerHTML =
+        '<div class="card" style="max-width:620px;margin:8px auto;padding:26px">'+
+          '<div style="font-weight:650;font-size:16px;color:var(--color-ink);margin-bottom:4px">Importing to '+esc(currentSale)+'</div>'+
+          '<div id="up-sub" style="font-size:13px;color:var(--color-text-muted);margin-bottom:16px">Presigning and uploading '+total+' files to encrypted storage…</div>'+
+          '<div class="bar"><div class="bar__fill" id="up-bar"></div></div>'+
+          '<div id="up-stat" style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-muted);margin-top:10px">0 / '+total+'</div>'+
+          '<div id="up-fail" style="margin-top:12px"></div>'+
+        '</div>';
+      var $bar=document.getElementById('up-bar'), $stat=document.getElementById('up-stat');
+
+      function folderFor(p){ return p.visibility==='admin' ? ('_admin/'+p.category) : p.category; }
+      function tick(){ done++; $bar.style.width = Math.round(done/total*100)+'%'; $stat.textContent = done+' / '+total + (failed.length?(' · '+failed.length+' failed'):''); }
+
+      function one(p){
+        var ct = p.file.type || 'application/octet-stream';
+        return HSG.api.docs.presignUpload(currentSale, p.name, ct, { folder: folderFor(p) }).then(function(pre){
+          var headers = pre.requiredHeaders || { 'content-type': ct };
+          return fetch(pre.url, { method:'PUT', headers: headers, body: p.file }).then(function(r){
+            if (!r.ok) throw new Error('S3 '+r.status);
+            tick();
+          });
+        }).catch(function(err){ failed.push({ name:p.name, err: err.message }); tick(); });
+      }
+
+      // bounded concurrency
+      var idx=0, CONC=4;
+      function worker(){ if (idx>=queue.length) return Promise.resolve(); var p=queue[idx++]; return one(p).then(worker); }
+      Promise.all(Array.from({length:Math.min(CONC,queue.length)}, worker)).then(function(){ uploadDone(total, failed); });
+    }
+
+    function uploadDone(total, failed) {
+      var ok = total - failed.length;
+      var html = '<div class="card" style="max-width:640px;margin:8px auto;padding:28px;text-align:center">'+
+        '<div style="width:54px;height:54px;border-radius:50%;background:var(--color-success-bg);color:var(--color-success);display:grid;place-items:center;margin:0 auto 14px">'+ checkIcon() +'</div>'+
+        '<div style="font-family:var(--font-heading);font-size:20px;font-weight:650;color:var(--color-ink)">Imported '+ok+' of '+total+' files</div>'+
+        '<div style="font-size:13px;color:var(--color-text-muted);margin-top:6px">Filed into the '+esc(currentSale)+' data room, gated and access&#8209;logged. Bidder visibility is enforced server&#8209;side.</div>';
+      if (failed.length) {
+        html += '<div class="banner banner--gate" style="text-align:left;margin-top:16px">'+ shield() +'<div><strong>'+failed.length+' file'+(failed.length!==1?'s':'')+' failed.</strong> '+
+          esc(failed.slice(0,6).map(function(f){return f.name;}).join(', '))+(failed.length>6?'…':'')+'. Re&#8209;run the import for just those.</div></div>';
+      }
+      html += '<div class="toolbar" style="justify-content:center;margin-top:20px">'+
+        '<a class="btn btn--primary" href="dataroom.html">Open the data room &rarr;</a>'+
+        '<button class="btn btn--secondary" id="more">Import more</button>'+
+        '</div></div>';
+      $app.innerHTML = html;
+      document.getElementById('more').onclick = resetPlan;
+    }
+
+    // ---------- toast ----------
+    function toast(msg, isErr) {
+      var t = document.createElement('div');
+      t.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:50;background:'+(isErr?'#7f1d1d':'var(--color-ink)')+';color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;box-shadow:var(--shadow-lg);max-width:560px';
+      t.innerHTML=msg; document.body.appendChild(t);
+      setTimeout(function(){ t.style.transition='opacity .4s'; t.style.opacity='0'; setTimeout(function(){ t.remove(); }, 420); }, 3200);
+    }
+
+    // ---------- icons ----------
+    function folderIcon(){ return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>'; }
+    function shield(){ return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>'; }
+    function sparkIcon(){ return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8z"/></svg>'; }
+    function sparkIconSm(){ return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>'; }
+    function checkIcon(){ return '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 13l4 4L19 7"/></svg>'; }
+
+    // Diagnostic seam (only when ?diag=1) — lets a sample batch drive the real
+    // classify→plan→AI-sort path without a file picker. No effect in normal use.
+    if (/(?:^|[?&])diag=1(?:&|$)/.test(window.location.search)) {
+      window.__import = {
+        ingestPaths: function (paths) {
+          var files = paths.map(function (p) {
+            var name = String(p).split('/').pop();
+            var f = new File([new Uint8Array(2048)], name, { type: /\.pdf$/i.test(name) ? 'application/pdf' : 'application/octet-stream' });
+            f._rel = p; return f;
+          });
+          ingest(files);
+        },
+        plan: function () { return plan; },
+        totals: function () { return totals(); }
+      };
+    }
+
+    load();
+  })();
+  </script>
+</body>
+</html>

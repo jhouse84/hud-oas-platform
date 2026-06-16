@@ -31,13 +31,18 @@ export const handler = wrap(async (event) => {
   const prefix = `originals/${saleId}/`;
   const objects = await listObjects({ bucket: BUCKETS.DOCS, prefix });
 
-  const docs = objects.map(o => ({
+  let docs = objects.map(o => ({
     docId:    o.Key,
     docKey:   o.Key.replace(prefix, ''),
     filename: o.Key.split('/').pop(),
     size:     o.Size,
     modified: o.LastModified
   }));
+
+  // Admin-only documents live under originals/{saleId}/_admin/ (BEM, pricing,
+  // bid-day, post-sale, borrower letters, anything unrecognized). They are never
+  // listed to a bidder, only to staff.
+  if (!me.isAdmin) docs = docs.filter(d => !/(^|\/)_admin(\/|$)/.test(d.docKey));
 
   return ok({ saleId, docs, count: docs.length });
 });

@@ -257,7 +257,10 @@ HSG.api = (function () {
       return request('POST', '/docs/presign-download', { saleId: saleId, docKey: docKey }, opts);
     },
     presignUpload: function (saleId, filename, contentType, opts) {
-      return request('POST', '/docs/presign-upload', { saleId: saleId, filename: filename, contentType: contentType }, opts);
+      opts = opts || {};
+      var body = { saleId: saleId, filename: filename, contentType: contentType };
+      if (opts.folder) body.folder = opts.folder;   // bulk importer: land the file in a category subfolder
+      return request('POST', '/docs/presign-upload', body, opts);
     },
     logAccess: function (entry, opts) {
       return request('POST', '/access-log', entry, opts);
@@ -322,7 +325,8 @@ HSG.api = (function () {
         var file = rec._file;
         if (!file) { skipped.push(rec.fileName); return next(i + 1); }
         var ct = rec.contentType || file.type || 'application/octet-stream';
-        return docs.presignUpload(saleId, rec.fileName, ct, opts).then(function (p) {
+        var upOpts = rec.folder ? Object.assign({}, opts, { folder: rec.folder }) : opts;
+        return docs.presignUpload(saleId, rec.fileName, ct, upOpts).then(function (p) {
           var headers = p.requiredHeaders || { 'content-type': ct };
           return fetch(p.url, { method: 'PUT', headers: headers, body: file }).then(function (res) {
             if (!res.ok) throw new Error('S3 upload failed (' + res.status + ') for ' + rec.fileName);
@@ -453,6 +457,27 @@ HSG.api = (function () {
   };
 
   // ---------------------------------------------------------------------
+  //  AI assist — a secured, server-side Claude injection point. The browser
+  //  never holds the model key; POST /ai/assist runs the model inside an
+  //  admin-gated Lambda and returns structured JSON. One reusable backbone for
+  //  document classification, field extraction, pool suggestions, summaries.
+  // ---------------------------------------------------------------------
+  var ai = {
+    assist: function (task, payload, opts) {
+      return request('POST', '/ai/assist', Object.assign({ task: task }, payload || {}), opts);
+    },
+    // Resolve the importer's ambiguous tail — files the rule engine left Unsorted.
+    // files: [{ path, name }]; returns [{ path, category, visibility, confidence, reason }].
+    classify: function (saleId, files, categories, opts) {
+      return request('POST', '/ai/assist', { task: 'classify', saleId: saleId, files: files || [], categories: categories || null }, opts);
+    },
+    // Suggest pool cuts from a loan tape — geography, balance band, status, with rationale.
+    suggestPools: function (saleId, loans, opts) {
+      return request('POST', '/ai/assist', { task: 'pools', saleId: saleId, loans: loans || [] }, opts);
+    }
+  };
+
+  // ---------------------------------------------------------------------
   //  Public surface
   // ---------------------------------------------------------------------
   return {
@@ -473,6 +498,7 @@ HSG.api = (function () {
     settlements: settlements,
     bem: bem,
     screening: screening,
-    notifications: notifications
+    notifications: notifications,
+    ai: ai
   };
 })();

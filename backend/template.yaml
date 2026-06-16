@@ -22,6 +22,18 @@ Parameters:
     Type: String
     Default: jelani.house@housestrategiesgroup.com
     Description: First admin user (auto-invited to Cognito at stack creation).
+  AnthropicApiKey:
+    Type: String
+    Default: ''
+    NoEcho: true
+    Description: >-
+      Anthropic API key for the AI-assist injection point. Left blank in the
+      template; set on the live function's environment out-of-band so the secret
+      never lives in source or the change set.
+  AiModel:
+    Type: String
+    Default: claude-sonnet-4-6
+    Description: Model id the AI-assist Lambda calls.
   CertificateArn:
     Type: String
     Default: ''
@@ -931,6 +943,29 @@ Resources:
             ApiId: !Ref HttpApi
             Method: POST
             Path: /docs/presign-upload
+            Auth: { Authorizer: CognitoJwt }
+
+  # AI assist — secured server-side Claude injection point (admin-gated).
+  # Deployed out-of-band; ANTHROPIC_API_KEY set on the live function's env.
+  FnAiAssist:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hsg-${Stage}-ai-assist'
+      CodeUri: src/
+      Handler: handlers/ai/assist.handler
+      Timeout: 60
+      MemorySize: 512
+      Environment:
+        Variables:
+          ANTHROPIC_API_KEY: !Ref AnthropicApiKey
+          AI_MODEL: !Ref AiModel
+      Events:
+        HttpAiAssist:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /ai/assist
             Auth: { Authorizer: CognitoJwt }
 
   FnDocsList:

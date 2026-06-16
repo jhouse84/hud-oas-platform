@@ -29,6 +29,12 @@ export const handler = wrap(async (event) => {
     throw new HttpError('Invalid document key', 400, 'ValidationError');
   }
 
+  // Admin-only documents live under _admin/ and are never served to a bidder,
+  // even by direct key. Staff (isAdmin) may retrieve them.
+  if (!me.isAdmin && /(^|\/)_admin(\/|$)/.test(docKey)) {
+    return forbidden('This document is not part of the bidder data room');
+  }
+
   const sale = await getItem(TABLES.SALES, { saleId });
   if (!sale) return notFound('Sale');
   stampPortal(sale);
