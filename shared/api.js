@@ -51,12 +51,12 @@ HSG.api = (function () {
     var host = (window.location && window.location.hostname) || '';
     if (host.indexOf('residential') === 0) return 'residential';
     if (host.indexOf('commercial')  === 0) return 'commercial';
-    if (host.indexOf('admin')       === 0) return 'admin';
+    if (host.indexOf('admin')       === 0) return 'both';   // admin console spans both portals — never filter to a non-existent 'admin' portal
     // Local dev: fall back to URL path
     var path = window.location.pathname || '';
     if (path.indexOf('/residential') === 0) return 'residential';
     if (path.indexOf('/commercial')  === 0) return 'commercial';
-    if (path.indexOf('/admin')       === 0) return 'admin';
+    if (path.indexOf('/admin')       === 0) return 'both';  // admin console spans both portals
     return null;
   }
 

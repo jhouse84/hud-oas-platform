@@ -6,7 +6,10 @@ import { filterByPortal, stampPortal, programsForPortal } from '../../lib/portal
 export const handler = wrap(async (event) => {
   const me = identity(event);
   const qs = event.queryStringParameters || {};
-  const portal = qs.portal || me.portalScope;
+  // 'admin' is not a portal — the admin console spans both. Coerce it (or a
+  // missing scope for an admin) to 'both' so the console never filters to empty.
+  let portal = qs.portal || me.portalScope;
+  if (portal === 'admin') portal = 'both';
   const status = qs.status;
   const programType = qs.programType;
 
